@@ -10,8 +10,9 @@ class POI {
   final String audioUrl;
   final double rating;
   
-  // Campos processados
-  final String description;
+  // Guardamos o mapa de descrições
+  final Map<String, dynamic> descriptionMap; 
+  
   final String arModelUrl;
   final double arScale;
 
@@ -23,33 +24,36 @@ class POI {
     required this.images,
     required this.audioUrl,
     required this.rating,
-    required this.description,
+    required this.descriptionMap,
     required this.arModelUrl,
     this.arScale = 1.0,
   });
 
+  // --- 1. LER DO FIREBASE (Já tinhas isto) ---
   factory POI.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
-    // 1. Tratar Localização
     GeoPoint geo = data['localizacao'] ?? const GeoPoint(0, 0);
 
-    // 2. Tratar Imagens (Proteção contra links vazios)
     List<dynamic> rawImages = data['imagens'] ?? [];
     List<String> listaImagens = rawImages
         .map((e) => e.toString())
-        .where((e) => e.isNotEmpty) // Remove strings vazias ""
+        .where((e) => e.isNotEmpty)
         .toList();
     
     if (listaImagens.isEmpty) {
-      listaImagens.add('https://via.placeholder.com/300'); // Imagem de segurança
+      listaImagens.add('https://via.placeholder.com/300');
     }
 
-    // 3. Tratar Descrição (Map -> String)
-    Map<String, dynamic> descMap = data['descricao'] ?? {};
-    String textoDescricao = descMap['pt'] ?? descMap['en'] ?? 'Sem descrição.';
+    Map<String, dynamic> descMap;
+    if (data['descricao'] is Map) {
+      descMap = data['descricao'];
+    } else if (data['descricao'] is String) {
+      descMap = {'pt': data['descricao']};
+    } else {
+      descMap = {'pt': 'Sem descrição.'};
+    }
 
-    // 4. Tratar AR (Map -> Campos)
     Map<String, dynamic> arMap = data['conteudoAr'] ?? {};
     
     return POI(
@@ -60,9 +64,51 @@ class POI {
       images: listaImagens,
       audioUrl: data['urlAudio'] ?? '',
       rating: (data['medAvaliacao'] ?? 0.0).toDouble(),
-      description: textoDescricao,
+      descriptionMap: descMap,
       arModelUrl: arMap['modelUrl'] ?? '',
       arScale: (arMap['scale'] ?? 1.0).toDouble(),
     );
   }
+
+  // --- 2. NOVO: CONVERTER PARA MAPA (Para o DownloadService guardar offline) ---
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'category': category,
+      // O LatLng não pode ser guardado direto, separamos em lat e lng
+      'lat': location.latitude,
+      'lng': location.longitude,
+      'images': images, // Quando guardares offline, isto terá os caminhos locais
+      'audioUrl': audioUrl,
+      'rating': rating,
+      'descriptionMap': descriptionMap,
+      'arModelUrl': arModelUrl,
+      'arScale': arScale,
+    };
+  }
+
+  // --- 3. NOVO: LER DO MAPA (Para o DownloadService ler do offline) ---
+  factory POI.fromMap(Map<String, dynamic> map) {
+    return POI(
+      id: map['id'],
+      name: map['name'],
+      category: map['category'],
+      // Reconstruímos o LatLng
+      location: LatLng(map['lat'], map['lng']),
+      images: List<String>.from(map['images']),
+      audioUrl: map['audioUrl'] ?? '',
+      rating: (map['rating'] ?? 0.0).toDouble(),
+      descriptionMap: Map<String, dynamic>.from(map['descriptionMap']),
+      arModelUrl: map['arModelUrl'] ?? '',
+      arScale: (map['arScale'] ?? 1.0).toDouble(),
+    );
+  }
+
+  // --- Helpers ---
+  String getDescription(String langCode) {
+    return descriptionMap[langCode] ?? descriptionMap['pt'] ?? descriptionMap['en'] ?? 'Sem descrição disponível.';
+  }
+
+  String get description => getDescription('pt');
 }

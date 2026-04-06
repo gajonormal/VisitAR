@@ -8,7 +8,7 @@ void main() async {
   // Inicializar Firebase (Ignoramos erros no teste para não crashar se falhar net)
   try {
     await Firebase.initializeApp();
-    print("Firebase ligado ✅");
+    print("Firebase ligado");
   } catch (e) {
     print("Erro Firebase (Verificar net): $e");
   }
@@ -27,6 +27,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
+        fontFamily: 'GoogleSans', // Define a fonte padrão da app
       ),
       // A App começa no nosso mapa
       home: const HomeMap(),

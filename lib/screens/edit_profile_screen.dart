@@ -1,9 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  // Recebemos os dados atuais para preencher o formulário
   final Map<String, dynamic> userData;
 
   const EditProfileScreen({super.key, required this.userData});
@@ -14,19 +16,18 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+  final Color kPrimaryGreen = const Color(0xFF0F9D58);
   bool isLoading = false;
-  
-  // Controladores
+  File? _selectedImage; 
+
   late TextEditingController _nameController;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _newPassController = TextEditingController();
   final TextEditingController _confirmPassController = TextEditingController();
   
-  // Valores para os Dropdowns
   late String _selectedGender;
   late String _selectedLanguage;
 
-  // Listas
   final List<String> _genders = ['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'];
   final Map<String, String> _languageMap = {
     'Portuguesa': 'pt',
@@ -51,13 +52,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _newPassController.dispose();
-    _confirmPassController.dispose();
-    super.dispose();
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -67,29 +70,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       String uid = FirebaseAuth.instance.currentUser!.uid;
       String langCode = _languageMap[_selectedLanguage] ?? 'pt';
+      String? photoUrl = widget.userData['urlFoto'];
+
+      if (_selectedImage != null) {
+        final storageRef = FirebaseStorage.instance.ref().child('user_images').child('$uid.jpg');
+        await storageRef.putFile(_selectedImage!);
+        photoUrl = await storageRef.getDownloadURL();
+      }
 
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'nome': _nameController.text.trim(),
         'genero': _selectedGender,
-        'linguagem': langCode, 
+        'linguagem': langCode,
+        'urlFoto': photoUrl,
       });
 
       if (_newPassController.text.isNotEmpty) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("A alteração de password requer passos adicionais (não implementado).")),
-        );
+         if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Atenção: Password requer re-autenticação.")));
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ Perfil atualizado com sucesso!")),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: const Text("Perfil atualizado!")));
         Navigator.pop(context);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro ao atualizar: $e")),
-      );
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.red, content: Text("Erro: $e")));
     } finally {
        if (mounted) setState(() => isLoading = false);
     }
@@ -97,149 +102,198 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ESTILO VISUAL IGUAL AO WIREFRAME ---
+    // --- ESTILO CONFORTÁVEL ---
     final inputDecoration = InputDecoration(
       filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), // Menos altura (estilo compacto)
-      // Borda Preta Definida (Estilo Desenho)
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(4), // Cantos pouco arredondados
-        borderSide: const BorderSide(color: Colors.black, width: 1.5),
-      ),
-      // Borda quando clicas
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(4),
-        borderSide: const BorderSide(color: Colors.black, width: 2.0),
-      ),
-      // Borda de erro
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(4),
-        borderSide: const BorderSide(color: Colors.red, width: 1.5),
-      ),
-      border: OutlineInputBorder(
-         borderRadius: BorderRadius.circular(4),
-         borderSide: const BorderSide(color: Colors.black, width: 1.5),
-      ),
-      labelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+      fillColor: Colors.grey[100], 
+      // Aumentei o padding vertical para 12 (era 8) para dar mais ar
+      contentPadding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+      
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: kPrimaryGreen, width: 2)),
+      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: Colors.red, width: 1.5)),
+      labelStyle: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 14),
+      floatingLabelBehavior: FloatingLabelBehavior.auto,
     );
 
+    ImageProvider? backgroundImage;
+    if (_selectedImage != null) {
+      backgroundImage = FileImage(_selectedImage!);
+    } else if (widget.userData['urlFoto'] != null && widget.userData['urlFoto'].isNotEmpty) {
+      backgroundImage = NetworkImage(widget.userData['urlFoto']);
+    }
+
     return Scaffold(
-      backgroundColor: Colors.white, // Fundo branco limpo
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("Editar Perfil", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        // Botão de voltar preto
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10),
           child: Form(
             key: _formKey,
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Avatar com borda preta
-                Container(
-                  padding: const EdgeInsets.all(2), // Espaço para a borda
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.black, width: 2),
-                  ),
-                  child: const CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 60, color: Colors.black),
-                  ),
+                // FOTO DE PERFIL (Voltou ao tamanho normal: 50)
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: kPrimaryGreen, width: 2)),
+                        child: CircleAvatar(
+                          radius: 50, // <--- MAIOR
+                          backgroundColor: Colors.grey[200],
+                          backgroundImage: backgroundImage,
+                          child: backgroundImage == null
+                              ? const Icon(Icons.camera_alt, size: 35, color: Colors.grey)
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 25), // <--- Mais espaço
 
-                // 1. Campo Nome
+                // NOME
                 TextFormField(
                   controller: _nameController,
-                  decoration: inputDecoration.copyWith(labelText: "Nome"),
+                  style: const TextStyle(fontSize: 15),
+                  decoration: inputDecoration.copyWith(
+                    labelText: "Nome", 
+                    prefixIcon: Icon(Icons.person_outline, color: kPrimaryGreen)
+                  ),
                   validator: (val) => val!.isEmpty ? "O nome não pode ser vazio" : null,
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 15), // <--- Espaço de 15px
 
-                // 2. Campo Email
+                // EMAIL
                 TextFormField(
                   controller: _emailController,
                   readOnly: true,
-                  // Fundo ligeiramente cinza para indicar que não dá para mudar
-                  decoration: inputDecoration.copyWith(labelText: "E-mail", fillColor: Colors.grey[100]),
+                  style: const TextStyle(fontSize: 15),
+                  decoration: inputDecoration.copyWith(
+                    labelText: "E-mail", 
+                    prefixIcon: Icon(Icons.email_outlined, color: Colors.grey), 
+                    fillColor: Colors.grey[200]
+                  ),
                 ),
                 const SizedBox(height: 15),
 
-                // 3. Campo Género (Dropdown com estilo de caixa)
-                DropdownButtonFormField<String>(
-                  value: _selectedGender,
-                  decoration: inputDecoration.copyWith(labelText: "Género"),
-                  icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
-                  dropdownColor: Colors.white,
-                  items: _genders.map((String value) {
-                    return DropdownMenuItem<String>(value: value, child: Text(value));
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedGender = val!),
+                // GÉNERO
+                ButtonTheme(
+                  alignedDropdown: true,
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _selectedGender,
+                    borderRadius: BorderRadius.circular(20),
+                    isExpanded: true,
+                    // Removi a restrição de altura fixa para ele crescer com o padding
+                    decoration: inputDecoration.copyWith(
+                      labelText: "Género",
+                      prefixIcon: Icon(Icons.people_outline, color: kPrimaryGreen),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    ),
+                    icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                    dropdownColor: Colors.white,
+                    items: _genders.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value, style: const TextStyle(fontSize: 15))
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => _selectedGender = val!),
+                  ),
                 ),
-                const SizedBox(height: 15),
-
-                // 4. Campo Nacionalidade
-                DropdownButtonFormField<String>(
-                  value: _selectedLanguage,
-                  decoration: inputDecoration.copyWith(labelText: "Nacionalidade"),
-                  icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
-                  dropdownColor: Colors.white,
-                  items: _languageMap.keys.map((String value) {
-                    return DropdownMenuItem<String>(value: value, child: Text(value));
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedLanguage = val!),
-                ),
-                const SizedBox(height: 30),
                 
-                // 5. Passwords
+                const SizedBox(height: 15),
+
+                // NACIONALIDADE
+                ButtonTheme(
+                  alignedDropdown: true,
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _selectedLanguage,
+                    borderRadius: BorderRadius.circular(20),
+                    isExpanded: true,
+                    decoration: inputDecoration.copyWith(
+                      labelText: "Nacionalidade",
+                      prefixIcon: Icon(Icons.flag_outlined, color: kPrimaryGreen),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    ),
+                    icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                    dropdownColor: Colors.white,
+                    items: _languageMap.keys.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value, style: const TextStyle(fontSize: 15))
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => _selectedLanguage = val!),
+                  ),
+                ),
+                
+                const SizedBox(height: 25),
+                const Divider(height: 20, thickness: 1),
+                const SizedBox(height: 10),
+                
+                const Text("Alterar Palavra-passe", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 15),
+
+                // PASSWORD 1
                 TextFormField(
                   controller: _newPassController,
                   obscureText: true,
-                  decoration: inputDecoration.copyWith(labelText: "Nova password"),
+                  style: const TextStyle(fontSize: 15),
+                  decoration: inputDecoration.copyWith(
+                    labelText: "Nova password", 
+                    prefixIcon: Icon(Icons.lock_outline, color: kPrimaryGreen)
+                  ),
                 ),
                 const SizedBox(height: 15),
+                
+                // PASSWORD 2
                 TextFormField(
                   controller: _confirmPassController,
                   obscureText: true,
-                  decoration: inputDecoration.copyWith(labelText: "Confirmar nova password"),
+                  style: const TextStyle(fontSize: 15),
+                  decoration: inputDecoration.copyWith(
+                    labelText: "Confirmar nova password", 
+                    prefixIcon: Icon(Icons.lock_outline, color: kPrimaryGreen)
+                  ),
                   validator: (val) {
-                    if (_newPassController.text.isNotEmpty && val != _newPassController.text) {
-                      return "As passwords não coincidem";
-                    }
+                    if (_newPassController.text.isNotEmpty && val != _newPassController.text) return "Não coincidem";
                     return null;
                   },
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
 
-                // BOTÃO ESTILO WIREFRAME (Branco com borda preta)
+                // BOTÃO
                 isLoading 
-                ? const CircularProgressIndicator(color: Colors.black)
+                ? CircularProgressIndicator(color: kPrimaryGreen)
                 : SizedBox(
-                  width: double.infinity, // Largura total
-                  height: 50, // Altura fixa para ficar robusto
+                  width: double.infinity,
+                  height: 50, // Altura confortável para o dedo
                   child: ElevatedButton(
                     onPressed: _saveProfile,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white, // Fundo Branco
-                      foregroundColor: Colors.black, // Texto Preto
-                      elevation: 0,
-                      // Borda Preta com espessura 2
-                      side: const BorderSide(color: Colors.black, width: 2), 
-                      // Cantos pouco arredondados (quase retangulares)
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                      backgroundColor: kPrimaryGreen,
+                      foregroundColor: Colors.white,
+                      elevation: 5,
+                      shadowColor: kPrimaryGreen.withOpacity(0.4),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
-                    child: const Text("Confirmar alterações"),
+                    child: const Text("Guardar Alterações", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ],
