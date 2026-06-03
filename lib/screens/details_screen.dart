@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/poi.dart';
 import '../screens/services/download_service.dart';
+import '../screens/services/favorites_service.dart';
 import 'model_viewer_screen.dart'; 
 
 class DetailsScreen extends StatefulWidget {
@@ -32,6 +35,14 @@ class _DetailsScreenState extends State<DetailsScreen> {
   bool isLoadingDownload = false;
   bool _hasInternet = true; 
 
+  // --- DISTÂNCIA ---
+  Position? _userPosition;
+  bool _isLoadingLocation = true;
+  
+  // --- FAVORITOS ---
+  final FavoritesService _favoritesService = FavoritesService();
+  bool _isLoadingFavorite = false; 
+
   @override
   void initState() {
     super.initState();
@@ -39,7 +50,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
     _displayPoi = widget.poi;
 
     _checkInternet();
-    _checkDownloadStatus(); // <--- Isto agora vai carregar os dados offline se existirem
+    _checkDownloadStatus(); 
+    _getUserLocation();
+    _checkFavoriteStatus();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _measureHeaderHeight();
@@ -67,6 +80,78 @@ class _DetailsScreenState extends State<DetailsScreen> {
           }
         });
       }
+    }
+  }
+
+  // --- LOCALIZAÇÃO & DISTÂNCIA ---
+  Future<void> _getUserLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) setState(() => _isLoadingLocation = false);
+          return;
+        }
+      }
+      Position pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      if (mounted) {
+        setState(() {
+          _userPosition = pos;
+          _isLoadingLocation = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingLocation = false);
+    }
+  }
+
+  String _formatDistance() {
+    if (_isLoadingLocation) return 'Calculando...';
+    if (_userPosition == null) return '— km';
+    double dist = Geolocator.distanceBetween(
+        _userPosition!.latitude, _userPosition!.longitude,
+        _displayPoi.location.latitude, _displayPoi.location.longitude);
+    if (dist < 1000) return '${dist.toStringAsFixed(0)} m';
+    return '${(dist / 1000).toStringAsFixed(1)} km';
+  }
+
+  // --- FAVORITOS ---
+  Future<void> _checkFavoriteStatus() async {
+    if (FirebaseAuth.instance.currentUser == null) return;
+    bool isFav = await _favoritesService.isFavorite(widget.poi.id);
+    if (mounted) {
+      setState(() {
+        isFavorite = isFav;
+      });
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Inicia sessão para guardar nos favoritos.")),
+      );
+      return;
+    }
+
+    setState(() => _isLoadingFavorite = true);
+    try {
+      if (isFavorite) {
+        await _favoritesService.removeFavorite(widget.poi.id);
+        if (mounted) setState(() => isFavorite = false);
+      } else {
+        await _favoritesService.addFavorite(_displayPoi);
+        if (mounted) setState(() => isFavorite = true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Erro ao atualizar favoritos."), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingFavorite = false);
     }
   }
   // ------------------------------------------------
@@ -356,12 +441,12 @@ Widget _buildHeaderContent() {
 
               const SizedBox(height: 8),
 
-              // 3. LOCALIZAÇÃO
+              // 3. LOCALIZAÇÃO E DISTÂNCIA
               Row(
                 children: [
                   Icon(Icons.location_on, size: 16, color: kPrimaryGreen),
                   const SizedBox(width: 4),
-                  Text("Aprox. 20m", style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text(_formatDistance(), style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 13)),
                 ],
               ),
             ],
@@ -371,11 +456,13 @@ Widget _buildHeaderContent() {
         // BOTÕES DO LADO DIREITO
         Row(
           children: [
-            _buildCircleButton(
-              icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : Colors.grey,
-              onTap: () => setState(() => isFavorite = !isFavorite),
-            ),
+            _isLoadingFavorite
+                ? const SizedBox(width: 35, height: 35, child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)))
+                : _buildCircleButton(
+                    icon: isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : Colors.grey,
+                    onTap: _toggleFavorite,
+                  ),
             const SizedBox(width: 8),
             _buildCircleButton(
               icon: isInItinerary ? Icons.playlist_add_check : Icons.playlist_add,

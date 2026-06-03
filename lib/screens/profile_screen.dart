@@ -7,6 +7,7 @@ import 'edit_profile_screen.dart';
 import 'offline_content_screen.dart';
 import 'admin_add_poi.dart'; 
 import 'settings_screen.dart';
+import 'favorites_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -155,7 +156,7 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.favorite_outlined,
                   text: "Os meus favoritos",
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("A abrir...")));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen()));
                   },
                 ),
 

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/poi.dart';
 import 'services/download_service.dart';
+import '../models/roteiro.dart';
 import 'details_screen.dart';
+import 'roteiro_details_screen.dart';
 
 class OfflineContentScreen extends StatefulWidget {
   const OfflineContentScreen({super.key});
@@ -21,12 +23,13 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   String _searchQuery = "";
 
   List<POI> _offlinePois = [];
+  List<Roteiro> _offlineRoteiros = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadOfflinePois();
+    _loadAllOfflineData();
   }
 
   @override
@@ -36,59 +39,72 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   }
 
   // 1. LOAD
-  Future<void> _loadOfflinePois() async {
+  Future<void> _loadAllOfflineData() async {
     setState(() => _isLoading = true);
     
     final prefs = await SharedPreferences.getInstance();
-    List<String> offlineIds = prefs.getStringList('offline_poi_ids') ?? [];
     
+    // Carregar POIs
+    List<String> offlinePoiIds = prefs.getStringList('offline_poi_ids') ?? [];
     List<POI> loadedPois = [];
-    
-    for (String id in offlineIds) {
+    for (String id in offlinePoiIds) {
       POI? poi = await _downloadService.getOfflinePoi(id);
-      if (poi != null) {
-        loadedPois.add(poi);
-      }
+      if (poi != null) loadedPois.add(poi);
+    }
+    
+    // Carregar Roteiros
+    List<String> offlineRoteiroIds = prefs.getStringList('offline_roteiro_ids') ?? [];
+    List<Roteiro> loadedRoteiros = [];
+    for (String id in offlineRoteiroIds) {
+      Roteiro? roteiro = await _downloadService.getOfflineRoteiro(id);
+      if (roteiro != null) loadedRoteiros.add(roteiro);
     }
 
     if (mounted) {
       setState(() {
         _offlinePois = loadedPois;
+        _offlineRoteiros = loadedRoteiros;
         _isLoading = false;
       });
     }
   }
 
-  // 2. DELETE
+  // 2. DELETE POI
   Future<void> _deletePoi(POI poi) async {
     try {
       await _downloadService.deleteFile("poi_${poi.id}.glb");
-
       for (int i = 0; i < poi.images.length; i++) {
         String imgName = "poi_${poi.id}_img_$i.jpg";
         await _downloadService.deleteFile(imgName);
       }
-
       await _downloadService.removeOfflinePoiData(poi.id);
-
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('nome_${poi.id}');
 
-      setState(() {
-        _offlinePois.removeWhere((p) => p.id == poi.id);
-      });
-
+      setState(() => _offlinePois.removeWhere((p) => p.id == poi.id));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: kPrimaryGreen, content: Text("${poi.name} removido.")),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: Text("${poi.name} removido.")));
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(backgroundColor: Colors.red, content: Text("Erro ao remover.")),
-        );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Colors.red, content: Text("Erro ao remover.")));
+    }
+  }
+
+  // 3. DELETE ROTEIRO
+  Future<void> _deleteRoteiro(Roteiro roteiro) async {
+    try {
+      if (roteiro.imagemCapa.isNotEmpty) {
+        await _downloadService.deleteFile("roteiro_${roteiro.id}_capa.jpg");
       }
+      // Aqui poderíamos também apagar os POIs se não estivessem a ser usados noutro lado, mas por segurança apagamos apenas o Roteiro
+      await _downloadService.removeOfflineRoteiroData(roteiro.id);
+
+      setState(() => _offlineRoteiros.removeWhere((r) => r.id == roteiro.id));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: Text("${roteiro.titulo} removido.")));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Colors.red, content: Text("Erro ao remover roteiro.")));
     }
   }
 
@@ -252,7 +268,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                   itemBuilder: (context, index) {
                     final poi = filteredPois[index];
                     return _buildCard(
-                      poi: poi,
+                      itemName: poi.name,
+                      coverImagePath: poi.images.isNotEmpty ? poi.images[0] : null,
                       title: poi.name,
                       subtitle: "Disponível offline",
                       onDelete: () => _deletePoi(poi),
@@ -260,7 +277,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                         Navigator.push(
                           context, 
                           MaterialPageRoute(builder: (context) => DetailsScreen(poi: poi))
-                        ).then((_) => _loadOfflinePois());
+                        ).then((_) => _loadAllOfflineData());
                       }
                     );
                   },
@@ -271,19 +288,76 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   }
 
   Widget _buildRoteirosList() {
-    return const Center(child: Text("Funcionalidade de Roteiros em breve."));
+    if (_isLoading) return Center(child: CircularProgressIndicator(color: kPrimaryGreen));
+    
+    if (_offlineRoteiros.isEmpty && _searchQuery.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.route, size: 60, color: Colors.grey[300]),
+            const SizedBox(height: 15),
+            Text("Sem roteiros offline", style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+          ],
+        ),
+      );
+    }
+
+    final filteredRoteiros = _offlineRoteiros.where((roteiro) {
+      return roteiro.titulo.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+
+    return Column(
+      children: [
+        _buildSearchBar(),
+        Expanded(
+          child: filteredRoteiros.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
+                      const SizedBox(height: 10),
+                      Text("Nenhum roteiro encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                  itemCount: filteredRoteiros.length,
+                  itemBuilder: (context, index) {
+                    final roteiro = filteredRoteiros[index];
+                    return _buildCard(
+                      itemName: roteiro.titulo,
+                      coverImagePath: roteiro.imagemCapa.isNotEmpty ? roteiro.imagemCapa : null,
+                      title: roteiro.titulo,
+                      subtitle: "${roteiro.poiIds.length} paragens • Offline",
+                      onDelete: () => _deleteRoteiro(roteiro),
+                      onTap: () {
+                        Navigator.push(
+                          context, 
+                          MaterialPageRoute(builder: (context) => RoteiroDetailsScreen(roteiro: roteiro))
+                        ).then((_) => _loadAllOfflineData());
+                      }
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
   }
 
   Widget _buildCard({
-    required POI poi,
+    required String itemName,
+    required String? coverImagePath,
     required String title, 
     required String subtitle, 
     required VoidCallback onDelete,
     required VoidCallback onTap,
   }) {
-    File? coverImage;
-    if (poi.images.isNotEmpty) {
-      coverImage = File(poi.images[0]);
+    File? coverFile;
+    if (coverImagePath != null && coverImagePath.isNotEmpty) {
+      coverFile = File(coverImagePath);
     }
 
     return GestureDetector(
@@ -309,8 +383,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: coverImage != null && coverImage.existsSync()
-                ? Image.file(coverImage, fit: BoxFit.cover)
+              child: coverFile != null && coverFile.existsSync()
+                ? Image.file(coverFile, fit: BoxFit.cover)
                 : Icon(Icons.place, color: kPrimaryGreen, size: 22),
             ),
           ),
@@ -334,7 +408,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: const Text("Apagar Download?"),
-                  content: Text("Deseja remover '${poi.name}' dos downloads?"),
+                  content: Text("Deseja remover '$itemName' dos downloads?"),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx),

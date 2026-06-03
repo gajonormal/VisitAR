@@ -39,6 +39,7 @@ dependencies:
   http: ^1.1.0         # Para fazer o download inicial
   dio: ^5.9.0
   shared_preferences: ^2.5.4
+  url_launcher: ^6.3.1
   flutter_svg: ^2.2.3
 
 dev_dependencies:

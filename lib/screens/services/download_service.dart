@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/models/poi.dart';
+import '/models/roteiro.dart';
 
 class DownloadService {
   final Dio _dio = Dio();
@@ -121,5 +122,125 @@ class DownloadService {
     List<String> offlineIds = prefs.getStringList('offline_poi_ids') ?? [];
     offlineIds.remove(poiId);
     await prefs.setStringList('offline_poi_ids', offlineIds);
+  }
+
+  // --- ROTEIROS OFFLINE ---
+
+  /// Faz download de todos os recursos necessários para um Roteiro
+  Future<bool> downloadRoteiroCompleto(Roteiro roteiro, List<POI> pois) async {
+    try {
+      // 1. Guardar Roteiro JSON localmente (modificando caminhos de imagens de rede para locais, se aplicável, mas podemos simplificar guardando apenas os metadados)
+      await saveOfflineRoteiroData(roteiro);
+
+      // 2. Fazer download da capa do roteiro se existir
+      if (roteiro.imagemCapa.startsWith('http')) {
+        String fileName = 'roteiro_${roteiro.id}_capa.jpg';
+        String? localPath = await downloadFile(roteiro.imagemCapa, fileName);
+        if (localPath != null) {
+          // Atualiza o Roteiro offline com a imagem local
+          final localRoteiro = Roteiro(
+            id: roteiro.id,
+            titulo: roteiro.titulo,
+            descricao: roteiro.descricao,
+            imagemCapa: localPath,
+            poiIds: roteiro.poiIds,
+            dificuldade: roteiro.dificuldade,
+            duracao: roteiro.duracao,
+            distancia: roteiro.distancia,
+            avaliacao: roteiro.avaliacao,
+            criadorId: roteiro.criadorId,
+            dataCriacao: roteiro.dataCriacao,
+          );
+          await saveOfflineRoteiroData(localRoteiro);
+        }
+      }
+
+      // 3. Fazer download de TODOS os POIs (Modelos 3D, imagens, etc.)
+      for (var poi in pois) {
+        // Download 3D Model
+        if (poi.arModelUrl.isNotEmpty) {
+          String modelName = 'poi_${poi.id}.glb';
+          await downloadFile(poi.arModelUrl, modelName);
+        }
+
+        // Download Images
+        List<String> localImages = [];
+        for (int i = 0; i < poi.images.length; i++) {
+          String url = poi.images[i];
+          if (url.startsWith('http')) {
+            String imgName = 'poi_${poi.id}_img_$i.jpg';
+            String? localImg = await downloadFile(url, imgName);
+            if (localImg != null) localImages.add(localImg);
+          } else {
+            localImages.add(url);
+          }
+        }
+
+        // Download Audio
+        String localAudio = '';
+        if (poi.audioUrl.isNotEmpty) {
+          String audioName = 'poi_${poi.id}_audio.mp3';
+          String? lAudio = await downloadFile(poi.audioUrl, audioName);
+          if (lAudio != null) localAudio = lAudio;
+        }
+
+        // Save local POI copy
+        final offlinePoi = POI(
+          id: poi.id,
+          name: poi.name,
+          category: poi.category,
+          location: poi.location,
+          images: localImages,
+          audioUrl: localAudio,
+          rating: poi.rating,
+          descriptionMap: poi.descriptionMap,
+          arModelUrl: poi.arModelUrl.isNotEmpty ? await getFullPath('poi_${poi.id}.glb') : '',
+          arScale: poi.arScale,
+        );
+        await saveOfflinePoiData(offlinePoi);
+      }
+      return true;
+    } catch (e) {
+      print("Erro ao baixar roteiro completo: $e");
+      return false;
+    }
+  }
+
+  Future<void> saveOfflineRoteiroData(Roteiro roteiro) async {
+    final prefs = await SharedPreferences.getInstance();
+    String jsonString = jsonEncode(roteiro.toJsonMap());
+    
+    await prefs.setString('offline_roteiro_${roteiro.id}', jsonString);
+    
+    List<String> offlineIds = prefs.getStringList('offline_roteiro_ids') ?? [];
+    if (!offlineIds.contains(roteiro.id)) {
+      offlineIds.add(roteiro.id);
+      await prefs.setStringList('offline_roteiro_ids', offlineIds);
+    }
+  }
+
+  Future<Roteiro?> getOfflineRoteiro(String roteiroId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? jsonString = prefs.getString('offline_roteiro_$roteiroId');
+      
+      if (jsonString != null) {
+        Map<String, dynamic> map = jsonDecode(jsonString);
+        return Roteiro.fromMap(map);
+      }
+      return null;
+    } catch (e) {
+      print("Erro ao ler offline Roteiro: $e");
+      return null;
+    }
+  }
+
+  Future<void> removeOfflineRoteiroData(String roteiroId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('offline_roteiro_$roteiroId');
+
+    List<String> offlineIds = prefs.getStringList('offline_roteiro_ids') ?? [];
+    offlineIds.remove(roteiroId);
+    await prefs.setStringList('offline_roteiro_ids', offlineIds);
   }
 }
