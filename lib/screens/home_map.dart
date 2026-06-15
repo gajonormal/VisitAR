@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui; // Necessário para desenhar os marcadores
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Para ByteData
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -10,6 +12,8 @@ import '../screens/services/download_service.dart';
 import '../screens/services/roteiro_state.dart';
 import '../models/poi.dart';
 import '../models/roteiro.dart';
+import '../screens/services/roteiros_service.dart';
+import '../screens/services/routing_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/services/favorites_service.dart';
 import 'details_screen.dart';
@@ -18,6 +22,7 @@ import 'profile_screen.dart';
 import 'explore_screen.dart';
 import 'favorites_screen.dart';
 import 'roteiros_screen.dart';
+import 'login_screen.dart';
 
 class HomeMap extends StatefulWidget {
   const HomeMap({super.key});
@@ -33,10 +38,11 @@ class _HomeMapState extends State<HomeMap> {
   List<POI> _allPois = [];
   List<POI> _visiblePois = [];
   Set<Marker> _markers = {}; 
-  Set<Polyline> _polylines = {}; // <-- Novo: Polylines para o Roteiro
-  
+  Set<Polyline> _polylines = {}; // <-- Novo: Polylines para  // Ícones do mapa
   BitmapDescriptor? _markerIconNormal;
   BitmapDescriptor? _markerIconSelected;
+  Map<int, BitmapDescriptor> _numberedMarkersNormal = {};
+  Map<int, BitmapDescriptor> _numberedMarkersSelected = {};
 
   // --- ESTADO UI ---
   int _selectedIndex = 0;
@@ -45,7 +51,25 @@ class _HomeMapState extends State<HomeMap> {
   late PageController _pageController;
   GoogleMapController? _mapController;
   final Color kPrimaryGreen = const Color(0xFF0F9D58);
-  final double _filterRadiusMeters = 500.0;
+  final double _filterRadiusMeters = 50000.0; // 50km — mostra todos os POIs durante testes
+
+  // --- NAVEGAÇÃO ROTEIRO ---
+  Timer? _roteiroTimer;
+  StreamSubscription<Position>? _positionStreamSubscription;
+  bool _isRoteiroPaused = false;
+  int _roteiroElapsedSeconds = 0;
+  double _roteiroDistanceCovered = 0.0;
+  Position? _lastRoteiroPosition;
+  double _distanceToNextPoi = 0.0;
+  List<POI> _currentRoteiroPois = [];
+  int _nextPoiIndex = 0;
+  
+  // Throttle para requisições do OSRM da linha dinâmica
+  DateTime? _lastRouteFetch;
+  List<LatLng> _currentDynamicRoute = [];
+  
+  // Cartão de topo na navegação
+  POI? _selectedTopPoi;
 
   // --- PESQUISA ---
   final TextEditingController _searchController = TextEditingController();
@@ -98,7 +122,11 @@ class _HomeMapState extends State<HomeMap> {
   Future<void> _onActiveRoteiroChanged() async {
     Roteiro? roteiro = activeRoteiroNotifier.value;
     if (roteiro == null) {
-      setState(() => _polylines.clear());
+      _stopRoteiroTracking();
+      setState(() {
+        _polylines.clear();
+        _updateMarkers();
+      });
       return;
     }
 
@@ -115,7 +143,8 @@ class _HomeMapState extends State<HomeMap> {
     List<POI> roteiroPois = await DatabaseService().getPOIsByIds(roteiro.poiIds);
     if (roteiroPois.isEmpty) return;
 
-    List<LatLng> points = roteiroPois.map((p) => p.location).toList();
+    List<LatLng> waypoints = roteiroPois.map((p) => p.location).toList();
+    List<LatLng> points = await RoutingService.getFullRoteiroRoute(waypoints);
 
     setState(() {
       _polylines = {
@@ -134,7 +163,150 @@ class _HomeMapState extends State<HomeMap> {
       _mapController!.animateCamera(CameraUpdate.newLatLngZoom(points.first, 15));
     }
     
-    // Opcional: Podíamos adicionar marcadores especiais apenas para os pontos do roteiro
+    // Iniciar Navegação Ativa
+    _startRoteiroTracking(roteiroPois);
+  }
+
+  void _startRoteiroTracking(List<POI> roteiroPois) {
+    WakelockPlus.enable(); // Manter ecrã ligado
+    _isRoteiroPaused = false;
+    _roteiroElapsedSeconds = 0;
+    _roteiroDistanceCovered = 0.0;
+    _currentRoteiroPois = roteiroPois;
+    _nextPoiIndex = 0;
+    _lastRoteiroPosition = null;
+    _lastRouteFetch = null;
+    _currentDynamicRoute = [];
+    _selectedTopPoi = null;
+
+    _updateMarkers(); // <-- CRUCIAL PARA MOSTRAR OS NÚMEROS!
+    _updateDistanceToNextPoi();
+
+    _roteiroTimer?.cancel();
+    _roteiroTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!_isRoteiroPaused) {
+        setState(() {
+          _roteiroElapsedSeconds++;
+        });
+      }
+    });
+
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 5),
+    ).listen((Position position) {
+      if (_isRoteiroPaused) return;
+
+      if (_lastRoteiroPosition != null) {
+        double distance = Geolocator.distanceBetween(
+          _lastRoteiroPosition!.latitude, _lastRoteiroPosition!.longitude,
+          position.latitude, position.longitude,
+        );
+        setState(() {
+          _roteiroDistanceCovered += distance;
+        });
+      }
+      _lastRoteiroPosition = position;
+      _updateDistanceToNextPoi();
+    });
+  }
+
+  void _updateDistanceToNextPoi() async {
+    if (_nextPoiIndex >= _currentRoteiroPois.length) return;
+    try {
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      POI nextPoi = _currentRoteiroPois[_nextPoiIndex];
+      double dist = Geolocator.distanceBetween(
+        position.latitude, position.longitude,
+        nextPoi.location.latitude, nextPoi.location.longitude,
+      );
+      
+      // Se estiver muito perto (ex: 20 metros), avança para o próximo POI
+      if (dist < 20.0) {
+        _nextPoiIndex++;
+        if (_nextPoiIndex < _currentRoteiroPois.length) {
+          nextPoi = _currentRoteiroPois[_nextPoiIndex];
+          dist = Geolocator.distanceBetween(
+            position.latitude, position.longitude,
+            nextPoi.location.latitude, nextPoi.location.longitude,
+          );
+        } else {
+          dist = 0.0; // Chegou ao fim
+        }
+      }
+      
+      setState(() {
+        _distanceToNextPoi = dist;
+        
+        // Atualizar a linha entre o utilizador e o próximo POI
+        _polylines.removeWhere((p) => p.polylineId.value == 'user_to_next');
+        if (_nextPoiIndex < _currentRoteiroPois.length) {
+          
+          bool shouldFetch = _lastRouteFetch == null || DateTime.now().difference(_lastRouteFetch!).inSeconds > 10;
+          
+          if (shouldFetch || _currentDynamicRoute.isEmpty) {
+            _lastRouteFetch = DateTime.now();
+            RoutingService.getPedestrianRoute(
+              LatLng(position.latitude, position.longitude), 
+              nextPoi.location
+            ).then((route) {
+              if (mounted) {
+                setState(() {
+                  _currentDynamicRoute = route;
+                  // Atualizar polyline com a nova rota
+                  _polylines.removeWhere((p) => p.polylineId.value == 'user_to_next');
+                  _polylines.add(
+                    Polyline(
+                      polylineId: const PolylineId('user_to_next'),
+                      points: _currentDynamicRoute,
+                      color: Colors.blueAccent,
+                      width: 4,
+                      patterns: [PatternItem.dash(20), PatternItem.gap(15)],
+                    ),
+                  );
+                });
+              }
+            });
+          } else {
+            // Se não formos buscar à net, apenas atualizamos o ponto de partida da rota existente
+            if (_currentDynamicRoute.isNotEmpty) {
+              _currentDynamicRoute[0] = LatLng(position.latitude, position.longitude);
+            }
+          }
+
+          _polylines.add(
+            Polyline(
+              polylineId: const PolylineId('user_to_next'),
+              points: _currentDynamicRoute.isNotEmpty ? _currentDynamicRoute : [
+                LatLng(position.latitude, position.longitude),
+                nextPoi.location,
+              ],
+              color: Colors.blueAccent,
+              width: 4,
+              patterns: [PatternItem.dash(20), PatternItem.gap(15)],
+            ),
+          );
+        }
+      });
+    } catch (e) {
+      print("Erro ao atualizar distância do POI: $e");
+    }
+  }
+
+  void _stopRoteiroTracking() {
+    WakelockPlus.disable();
+    _roteiroTimer?.cancel();
+    _positionStreamSubscription?.cancel();
+    setState(() {
+      _currentRoteiroPois = [];
+      _nextPoiIndex = 0;
+      _roteiroElapsedSeconds = 0;
+      _roteiroDistanceCovered = 0.0;
+      _distanceToNextPoi = 0.0;
+      _lastRouteFetch = null;
+      _currentDynamicRoute = [];
+      _selectedTopPoi = null;
+    });
   }
 
   // ... (MANTÉM AS FUNÇÕES DE DADOS IGUAIS: _loadCustomMarkerIcons, _initData, _updateCardsContext, _updateMarkers, _onPageChanged, _getUserLocation, _locateUser, _onItemTapped) ...
@@ -143,7 +315,23 @@ class _HomeMapState extends State<HomeMap> {
   Future<void> _loadCustomMarkerIcons() async {
     final normal = await getCustomMarker(color: Colors.white, iconColor: kPrimaryGreen, isSelected: false);
     final selected = await getCustomMarker(color: kPrimaryGreen, iconColor: Colors.white, isSelected: true);
-    if (mounted) setState(() { _markerIconNormal = normal; _markerIconSelected = selected; });
+    
+    // Gerar marcadores de 1 a 20 para os roteiros
+    Map<int, BitmapDescriptor> numNormals = {};
+    Map<int, BitmapDescriptor> numSelected = {};
+    for (int i = 1; i <= 20; i++) {
+      numNormals[i] = await getCustomMarker(color: Colors.white, iconColor: kPrimaryGreen, isSelected: false, text: i.toString());
+      numSelected[i] = await getCustomMarker(color: kPrimaryGreen, iconColor: Colors.white, isSelected: true, text: i.toString());
+    }
+
+    if (mounted) {
+      setState(() { 
+        _markerIconNormal = normal; 
+        _markerIconSelected = selected; 
+        _numberedMarkersNormal = numNormals;
+        _numberedMarkersSelected = numSelected;
+      });
+    }
   }
 
   Future<void> _initData() async {
@@ -169,6 +357,13 @@ class _HomeMapState extends State<HomeMap> {
       double dist = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, poi.location.latitude, poi.location.longitude);
       return dist <= _filterRadiusMeters;
     }).toList();
+
+    // Fallback de teste: se o utilizador estiver em casa a testar a app (e portanto longe dos POIs),
+    // mostramos todos os POIs disponíveis para que o mapa e o carrossel não fiquem vazios.
+    if (nearby.isEmpty) {
+      nearby = List.from(_allPois);
+    }
+
     nearby.sort((a, b) {
       double distA = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, a.location.latitude, a.location.longitude);
       double distB = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, b.location.latitude, b.location.longitude);
@@ -189,19 +384,47 @@ class _HomeMapState extends State<HomeMap> {
   void _updateMarkers() {
     if (_markerIconNormal == null || _markerIconSelected == null) return;
     Set<Marker> newMarkers = {};
-    for (var poi in _allPois) {
-      bool isSelected = false;
-      if (_selectedPoiIndex != -1 && _selectedPoiIndex < _visiblePois.length) {
-        isSelected = _visiblePois[_selectedPoiIndex].id == poi.id;
+    
+    bool isRoteiroActive = activeRoteiroNotifier.value != null;
+
+    if (isRoteiroActive) {
+      for (int i = 0; i < _currentRoteiroPois.length; i++) {
+        var poi = _currentRoteiroPois[i];
+        newMarkers.add(Marker(
+          markerId: MarkerId(poi.id),
+          position: poi.location,
+          icon: _numberedMarkersNormal[i + 1] ?? _markerIconNormal!,
+          zIndex: 1,
+          anchor: const Offset(0.5, 0.5),
+          onTap: () {
+            setState(() {
+              _selectedTopPoi = poi;
+            });
+            if (_mapController != null) {
+               _mapController!.animateCamera(CameraUpdate.newLatLng(poi.location));
+            }
+          }
+        ));
       }
-      newMarkers.add(Marker(
-        markerId: MarkerId(poi.id),
-        position: poi.location,
-        icon: isSelected ? _markerIconSelected! : _markerIconNormal!,
-        zIndex: isSelected ? 2 : 1,
-        anchor: const Offset(0.5, 0.5),
-        onTap: () { _updateCardsContext(poi.location); },
-      ));
+    } else {
+      for (var poi in _allPois) {
+        bool isSelected = false;
+        if (_selectedPoiIndex != -1 && _selectedPoiIndex < _visiblePois.length) {
+          isSelected = _visiblePois[_selectedPoiIndex].id == poi.id;
+        }
+        newMarkers.add(Marker(
+          markerId: MarkerId(poi.id),
+          position: poi.location,
+          icon: isSelected ? _markerIconSelected! : _markerIconNormal!,
+          zIndex: isSelected ? 2 : 1,
+          anchor: const Offset(0.5, 0.5),
+          onTap: () { 
+            if (activeRoteiroNotifier.value == null) {
+              _updateCardsContext(poi.location); 
+            }
+          },
+        ));
+      }
     }
     setState(() { _markers = newMarkers; });
   }
@@ -229,7 +452,9 @@ class _HomeMapState extends State<HomeMap> {
     Position? pos = await _getUserLocation();
     if (pos != null) {
       if (_mapController != null) _mapController!.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: LatLng(pos.latitude, pos.longitude), zoom: 18)));
-      _updateCardsContext(LatLng(pos.latitude, pos.longitude));
+      if (activeRoteiroNotifier.value == null) {
+        _updateCardsContext(LatLng(pos.latitude, pos.longitude));
+      }
     }
   }
 
@@ -418,13 +643,17 @@ class _HomeMapState extends State<HomeMap> {
                 onTap: (_) { 
                   // 4. Fechar o teclado ao clicar no mapa
                   FocusScope.of(context).unfocus();
-                  setState(() { _selectedPoiIndex = -1; }); 
+                  setState(() { 
+                    _selectedPoiIndex = -1; 
+                    _selectedTopPoi = null;
+                  }); 
                   _updateMarkers(); 
                 },
               ),
               
               // BARRA DE PESQUISA ATUALIZADA
-              _buildSearchBar(),
+              if (activeRoteiroNotifier.value == null)
+                _buildSearchBar(),
               
               // BOTÃO GPS — esconde quando a pesquisa está ativa
               AnimatedPositioned(
@@ -440,7 +669,7 @@ class _HomeMapState extends State<HomeMap> {
               // BOTÃO AR
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,
-                bottom: 100, 
+                bottom: activeRoteiroNotifier.value != null ? 220 : 100, 
                 // Se teclado aberto OU cartões visíveis, esconde botão AR
                 right: (areCardsVisible || isKeyboardOpen) ? -200 : 20, 
                 child: FloatingActionButton.extended(
@@ -470,22 +699,13 @@ class _HomeMapState extends State<HomeMap> {
                 ),
               ),
 
-              // BOTÃO SAIR DO ROTEIRO
+              // PAINEL DE NAVEGAÇÃO ATIVA
               if (activeRoteiroNotifier.value != null)
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,
-                  top: 110,
-                  left: 20,
-                  child: FloatingActionButton.extended(
-                    heroTag: "exit_roteiro_btn",
-                    backgroundColor: Colors.white,
-                    onPressed: () {
-                      activeRoteiroNotifier.value = null;
-                    },
-                    icon: const Icon(Icons.close, color: Colors.red),
-                    label: const Text("Sair", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                  ),
-                ),
+                _buildActiveNavigationPanel(),
+
+              // MINI CARTÃO DE TOPO (Apenas na Navegação Ativa)
+              if (activeRoteiroNotifier.value != null && _selectedTopPoi != null)
+                _buildTopMiniCard(),
 
               // CARROSSEL
               AnimatedPositioned(
@@ -522,8 +742,202 @@ class _HomeMapState extends State<HomeMap> {
           const ProfileScreen(),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: activeRoteiroNotifier.value != null ? null : _buildBottomNav(),
     );
+  }
+
+  // --- PAINEL DE NAVEGAÇÃO ATIVA ---
+  Widget _buildActiveNavigationPanel() {
+    String formatTime(int seconds) {
+      int m = seconds ~/ 60;
+      int s = seconds % 60;
+      int h = m ~/ 60;
+      m = m % 60;
+      if (h > 0) {
+        return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+      }
+      return '${m.toString()}:${s.toString().padLeft(2, '0')}';
+    }
+
+    String formatDistance(double meters) {
+      if (meters >= 1000) {
+        return '${(meters / 1000).toStringAsFixed(2)}km';
+      }
+      return '${meters.toStringAsFixed(0)}m';
+    }
+
+    return Positioned(
+      bottom: 0, left: 0, right: 0,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, -5))],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(formatTime(_roteiroElapsedSeconds), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                    const Text("Tempo", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  ],
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(activeRoteiroNotifier.value!.titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        if (_nextPoiIndex < _currentRoteiroPois.length)
+                          Text("A ${formatDistance(_distanceToNextPoi)} de ${_currentRoteiroPois[_nextPoiIndex].name}", style: TextStyle(color: kPrimaryGreen, fontSize: 12, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(formatDistance(_roteiroDistanceCovered), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const Text("Distância", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _isRoteiroPaused = !_isRoteiroPaused;
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isRoteiroPaused ? Colors.orange : kPrimaryGreen,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    ),
+                    child: Text(_isRoteiroPaused ? "Continuar" : "Pausar", style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _showEndRoteiroDialog,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[600],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    ),
+                    child: const Text("Terminar", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- ECRÃ DE RESUMO DO ROTEIRO ---
+  void _showEndRoteiroDialog() {
+    // Pausar tracking temporariamente
+    setState(() => _isRoteiroPaused = true);
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Terminar Roteiro", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Tens a certeza que queres terminar este roteiro?", textAlign: TextAlign.center),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(15)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      Icon(Icons.timer, color: kPrimaryGreen),
+                      const SizedBox(height: 5),
+                      Text("${(_roteiroElapsedSeconds / 60).toStringAsFixed(1)} min", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Icon(Icons.directions_walk, color: kPrimaryGreen),
+                      const SizedBox(height: 5),
+                      Text("${(_roteiroDistanceCovered / 1000).toStringAsFixed(2)} km", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    setState(() => _isRoteiroPaused = false); // Continuar
+                  },
+                  child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+                ),
+              ),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _finishRoteiro();
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: kPrimaryGreen, foregroundColor: Colors.white),
+                  child: const Text("Concluir"),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _finishRoteiro() {
+    final roteiroId = activeRoteiroNotifier.value!.id;
+    // Marcar como concluído
+    RoteirosService().markRoteiroAsCompleted(roteiroId); 
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: kPrimaryGreen,
+        content: const Text("Parabéns! Roteiro concluído com sucesso."),
+      )
+    );
+    activeRoteiroNotifier.value = null; // Isto chama o _onActiveRoteiroChanged que limpa a UI
   }
 
   // --- BARRA DE PESQUISA FUNCIONAL ---
@@ -771,10 +1185,64 @@ class _HomeMapState extends State<HomeMap> {
       ),
     );
   }
+// -----------------------------------------------------------
+// --- HELPER: MINI CARTÃO DE TOPO (Navegação Ativa) ---
+// -----------------------------------------------------------
+  Widget _buildTopMiniCard() {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      top: 60.0,
+      left: 20, 
+      right: 20,
+      child: GestureDetector(
+        onTap: () {
+           Navigator.push(context, MaterialPageRoute(builder: (_) => DetailsScreen(poi: _selectedTopPoi!)));
+        },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
+          ),
+          child: Row(
+            children: [
+               ClipRRect(
+                 borderRadius: BorderRadius.circular(10),
+                 child: Image.network(
+                   _selectedTopPoi!.images.isNotEmpty ? _selectedTopPoi!.images.first : '', 
+                   width: 50, 
+                   height: 50, 
+                   fit: BoxFit.cover, 
+                   errorBuilder: (_,__,___) => Container(
+                     width: 50, height: 50, color: Colors.grey.shade200,
+                     child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                   )
+                 ),
+               ),
+               const SizedBox(width: 12),
+               Expanded(
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Text(_selectedTopPoi!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                     Text(_selectedTopPoi!.category, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                   ],
+                 ),
+               ),
+               const Icon(Icons.chevron_right, color: Colors.grey),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 // -----------------------------------------------------------
 // --- NOVO WIDGET DO CARTÃO (CARD) ---
 // -----------------------------------------------------------
+
 class PoiMapCard extends StatefulWidget {
   final POI poi;
   const PoiMapCard({super.key, required this.poi});
@@ -816,7 +1284,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
 
   Future<void> _toggleFavorite() async {
     if (FirebaseAuth.instance.currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Inicia sessão para guardar nos favoritos.")));
+      _showLoginRequiredDialog();
       return;
     }
     setState(() => _isLoadingFavorite = true);
@@ -833,6 +1301,70 @@ class _PoiMapCardState extends State<PoiMapCard> {
     } finally {
       if (mounted) setState(() => _isLoadingFavorite = false);
     }
+  }
+
+  void _showLoginRequiredDialog() {
+    const Color kGreen = Color(0xFF0F9D58);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: kGreen.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.lock_outline_rounded, color: kGreen, size: 32),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Sessão necessária',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Para guardar nos favoritos, precisas de ter uma conta e iniciar sessão.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.4),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[200],
+                    foregroundColor: Colors.grey[700],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Agora não'),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Iniciar sessão'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _getUserLocation() async {
@@ -959,7 +1491,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
 // -----------------------------------------------------------
 // --- HELPER: DESENHAR MARCADOR PERSONALIZADO ---
 // -----------------------------------------------------------
-Future<BitmapDescriptor> getCustomMarker({required Color color, required Color iconColor, required bool isSelected}) async {
+Future<BitmapDescriptor> getCustomMarker({required Color color, required Color iconColor, required bool isSelected, String? text}) async {
   final double size = isSelected ? 120.0 : 90.0;
   final double iconSize = isSelected ? 70.0 : 50.0;
   final double borderSize = isSelected ? 8.0 : 6.0;
@@ -982,14 +1514,25 @@ Future<BitmapDescriptor> getCustomMarker({required Color color, required Color i
   canvas.drawCircle(Offset(radius, radius), radius - borderSize, paint); 
 
   TextPainter textPainter = TextPainter(textDirection: TextDirection.ltr);
-  textPainter.text = TextSpan(
-    text: String.fromCharCode(Icons.location_on.codePoint),
-    style: TextStyle(
-      fontSize: iconSize, 
-      fontFamily: Icons.location_on.fontFamily, 
-      color: iconColor
-    ),
-  );
+  if (text != null) {
+    textPainter.text = TextSpan(
+      text: text,
+      style: TextStyle(
+        fontSize: iconSize * 0.8, 
+        fontWeight: FontWeight.bold,
+        color: iconColor
+      ),
+    );
+  } else {
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(Icons.location_on.codePoint),
+      style: TextStyle(
+        fontSize: iconSize, 
+        fontFamily: Icons.location_on.fontFamily, 
+        color: iconColor
+      ),
+    );
+  }
   textPainter.layout();
   textPainter.paint(canvas, Offset(radius - textPainter.width / 2, radius - textPainter.height / 2));
 

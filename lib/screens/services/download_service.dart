@@ -82,7 +82,7 @@ class DownloadService {
   }
 
   /// 2. Guardar os dados do POI (JSON) para uso offline
-  Future<void> saveOfflinePoiData(POI poi) async {
+  Future<void> saveOfflinePoiData(POI poi, {bool isStandalone = false}) async {
     final prefs = await SharedPreferences.getInstance();
     // Converte o objeto POI (que já tem caminhos locais nas imagens) para texto
     String jsonString = jsonEncode(poi.toMap());
@@ -94,6 +94,14 @@ class DownloadService {
     if (!offlineIds.contains(poi.id)) {
       offlineIds.add(poi.id);
       await prefs.setStringList('offline_poi_ids', offlineIds);
+    }
+
+    if (isStandalone) {
+      List<String> standaloneIds = prefs.getStringList('standalone_offline_poi_ids') ?? [];
+      if (!standaloneIds.contains(poi.id)) {
+        standaloneIds.add(poi.id);
+        await prefs.setStringList('standalone_offline_poi_ids', standaloneIds);
+      }
     }
   }
 
@@ -122,6 +130,10 @@ class DownloadService {
     List<String> offlineIds = prefs.getStringList('offline_poi_ids') ?? [];
     offlineIds.remove(poiId);
     await prefs.setStringList('offline_poi_ids', offlineIds);
+
+    List<String> standaloneIds = prefs.getStringList('standalone_offline_poi_ids') ?? [];
+    standaloneIds.remove(poiId);
+    await prefs.setStringList('standalone_offline_poi_ids', standaloneIds);
   }
 
   // --- ROTEIROS OFFLINE ---
@@ -242,5 +254,53 @@ class DownloadService {
     List<String> offlineIds = prefs.getStringList('offline_roteiro_ids') ?? [];
     offlineIds.remove(roteiroId);
     await prefs.setStringList('offline_roteiro_ids', offlineIds);
+  }
+
+  /// Remove um roteiro e todos os seus POIs que não estejam a ser usados noutro lado
+  Future<void> deleteRoteiroCompletoSmart(Roteiro roteiro) async {
+    // 1. Apagar capa do roteiro
+    if (roteiro.imagemCapa.isNotEmpty) {
+      await deleteFile("roteiro_${roteiro.id}_capa.jpg");
+    }
+    // 2. Apagar Roteiro JSON
+    await removeOfflineRoteiroData(roteiro.id);
+
+    // 3. Obter todos os roteiros offline RESTANTES
+    final prefs = await SharedPreferences.getInstance();
+    List<String> remainingRoteiroIds = prefs.getStringList('offline_roteiro_ids') ?? [];
+    
+    Set<String> poisInOtherRoteiros = {};
+    for (String rId in remainingRoteiroIds) {
+      Roteiro? r = await getOfflineRoteiro(rId);
+      if (r != null) {
+        poisInOtherRoteiros.addAll(r.poiIds);
+      }
+    }
+
+    List<String> standaloneIds = prefs.getStringList('standalone_offline_poi_ids') ?? [];
+
+    // 4. Verificar POIs do roteiro que foi apagado
+    for (String poiId in roteiro.poiIds) {
+      bool isStandalone = standaloneIds.contains(poiId);
+      bool isUsedElsewhere = poisInOtherRoteiros.contains(poiId);
+
+      if (!isStandalone && !isUsedElsewhere) {
+        // Pode ser apagado em segurança!
+        POI? poi = await getOfflinePoi(poiId);
+        if (poi != null) {
+          // Apagar Modelo 3D
+          await deleteFile("poi_${poi.id}.glb");
+          // Apagar Imagens
+          for (int i = 0; i < poi.images.length; i++) {
+            await deleteFile("poi_${poi.id}_img_$i.jpg");
+          }
+          // Apagar áudio
+          await deleteFile("poi_${poi.id}_audio.mp3");
+          // Remover dados offline
+          await removeOfflinePoiData(poi.id);
+          await prefs.remove('nome_$poiId'); // remove nome guardado localmente
+        }
+      }
+    }
   }
 }

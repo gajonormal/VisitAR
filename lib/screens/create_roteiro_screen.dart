@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../models/roteiro.dart';
 import '../../models/poi.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/database_services.dart';
 import 'services/roteiros_service.dart';
 
@@ -18,6 +22,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
   final _formKey = GlobalKey<FormState>();
   final _tituloController = TextEditingController();
   final _descricaoController = TextEditingController();
+  final _searchController = TextEditingController();
   
   String _dificuldade = 'FÁCIL';
   final List<String> _dificuldades = ['FÁCIL', 'MODERADO', 'DIFÍCIL'];
@@ -28,6 +33,9 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
   List<POI> _allPois = [];
   final List<POI> _selectedPois = []; 
 
+  // Imagem de Capa
+  File? _imagemCapaFile;
+
   // Pesquisa
   String _searchQuery = "";
 
@@ -37,12 +45,38 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
     _loadPois();
   }
 
+  @override
+  void dispose() {
+    _tituloController.dispose();
+    _descricaoController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadPois() async {
     final pois = await DatabaseService().getPOIs();
+    
+    // --- LER CARRINHO DE POIS ---
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartIds = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
+    
+    List<POI> preSelected = pois.where((p) => cartIds.contains(p.id)).toList();
+
     if (mounted) {
       setState(() {
         _allPois = pois;
+        _selectedPois.addAll(preSelected); // Adiciona logo ao criar a página!
         _isLoadingPois = false;
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imagemCapaFile = File(pickedFile.path);
       });
     }
   }
@@ -86,7 +120,16 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
       int m = ((horasTotais - h) * 60).round();
       String duracaoFinal = "${h}h ${m}m";
 
-      String capa = _selectedPois.first.images.isNotEmpty ? _selectedPois.first.images.first : '';
+      String capa = '';
+      if (_imagemCapaFile != null) {
+        // Upload para o Firebase Storage
+        final fileName = 'roteiros/${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final ref = FirebaseStorage.instance.ref().child(fileName);
+        final uploadTask = await ref.putFile(_imagemCapaFile!);
+        capa = await uploadTask.ref.getDownloadURL();
+      } else {
+        capa = _selectedPois.first.images.isNotEmpty ? _selectedPois.first.images.first : '';
+      }
 
       final novoRoteiro = Roteiro(
         id: '',
@@ -102,6 +145,10 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
       );
 
       await RoteirosService().createRoteiro(novoRoteiro);
+
+      // Limpa o carrinho de POIs depois de criar com sucesso
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('roteiro_cart_poi_ids');
 
       if (mounted) {
         Navigator.pop(context);
@@ -146,42 +193,70 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                     _buildTextField(_tituloController, "Nome do roteiro"),
                     const SizedBox(height: 15),
 
-                    // Imagem Placeholder (Design)
-                    Container(
-                      height: 140,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Center(
-                        child: Icon(Icons.camera_alt_outlined, size: 50, color: Colors.white),
+                    // Imagem Placeholder / Selecionada
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        height: 140,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(20),
+                          image: _imagemCapaFile != null
+                              ? DecorationImage(image: FileImage(_imagemCapaFile!), fit: BoxFit.cover)
+                              : null,
+                        ),
+                        child: _imagemCapaFile == null
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.camera_alt_outlined, size: 40, color: Colors.white),
+                                    const SizedBox(height: 5),
+                                    const Text("Adicionar Capa", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              )
+                            : Stack(
+                                children: [
+                                  Positioned(
+                                    top: 10, right: 10,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(5),
+                                      decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                      child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                                    ),
+                                  )
+                                ],
+                              ),
                       ),
                     ),
                     const SizedBox(height: 15),
 
                     // Categoria / Dificuldade
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-                      ),
-                      child: DropdownButtonFormField<String>(
-                        value: _dificuldade,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                          border: InputBorder.none,
-                          hintText: "Categoria",
+                    DropdownButtonFormField<String>(
+                      value: _dificuldade,
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
                         ),
-                        icon: Icon(Icons.arrow_drop_down, color: kPrimaryGreen),
-                        items: _dificuldades.map((String dif) {
-                          return DropdownMenuItem(value: dif, child: Text(dif));
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => _dificuldade = val);
-                        },
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        hintText: "Categoria",
                       ),
+                      icon: Icon(Icons.arrow_drop_down, color: kPrimaryGreen),
+                      items: _dificuldades.map((String dif) {
+                        return DropdownMenuItem(value: dif, child: Text(dif));
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) setState(() => _dificuldade = val);
+                      },
                     ),
                     const SizedBox(height: 15),
 
@@ -207,7 +282,14 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                                   title: Text("${index + 1}. ${poi.name}", style: const TextStyle(fontWeight: FontWeight.bold)),
                                   trailing: IconButton(
                                     icon: const Icon(Icons.remove, color: Colors.black),
-                                    onPressed: () => setState(() => _selectedPois.remove(poi)),
+                                    onPressed: () async {
+                                      setState(() => _selectedPois.remove(poi));
+                                      // Remove também do carrinho
+                                      final prefs = await SharedPreferences.getInstance();
+                                      List<String> cart = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
+                                      cart.remove(poi.id);
+                                      await prefs.setStringList('roteiro_cart_poi_ids', cart);
+                                    },
                                   ),
                                 );
                               },
@@ -229,41 +311,79 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                         children: [
                           // Search bar inside
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
+                            padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
                             child: Container(
+                              height: 50,
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey[300]!),
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5))],
+                                border: Border.all(color: Colors.grey.shade100),
                               ),
-                              child: TextField(
-                                onChanged: (val) => setState(() => _searchQuery = val),
-                                decoration: InputDecoration(
-                                  hintText: "Pesquisar local...",
-                                  prefixIcon: const Icon(Icons.search, color: Colors.black),
-                                  suffixIcon: Icon(Icons.tune, color: kPrimaryGreen),
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                                ),
+                              child: Row(
+                                children: [
+                                  const SizedBox(width: 15),
+                                  const Icon(Icons.search, color: Colors.grey),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _searchController,
+                                      onChanged: (val) => setState(() => _searchQuery = val),
+                                      decoration: const InputDecoration(
+                                        hintText: "Pesquisar local...",
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.zero,
+                                      ),
+                                    ),
+                                  ),
+                                  if (_searchQuery.isNotEmpty)
+                                    IconButton(
+                                      icon: Icon(Icons.close, color: kPrimaryGreen, size: 20),
+                                      onPressed: () {
+                                        setState(() {
+                                          _searchQuery = "";
+                                          _searchController.clear();
+                                        });
+                                      },
+                                      padding: EdgeInsets.zero,
+                                      splashRadius: 20,
+                                      constraints: const BoxConstraints(),
+                                    ),
+                                  const SizedBox(width: 15),
+                                ],
                               ),
                             ),
                           ),
                           
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _availablePois.length,
-                            itemBuilder: (context, index) {
-                              final poi = _availablePois[index];
-                              return ListTile(
-                                title: Text(poi.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.add, color: Colors.black),
-                                  onPressed: () => setState(() => _selectedPois.add(poi)),
-                                ),
-                              );
-                            },
-                          ),
+                          if (_availablePois.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 20),
+                              child: Text("Nenhum local disponível.", style: TextStyle(color: Colors.grey)),
+                            )
+                          else
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _availablePois.length,
+                              itemBuilder: (context, index) {
+                                final poi = _availablePois[index];
+                                return ListTile(
+                                  title: Text(poi.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.add, color: Colors.black),
+                                    onPressed: () async {
+                                      setState(() => _selectedPois.add(poi));
+                                      // Adiciona ao carrinho caso o utilizador volte atrás
+                                      final prefs = await SharedPreferences.getInstance();
+                                      List<String> cart = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
+                                      if (!cart.contains(poi.id)) cart.add(poi.id);
+                                      await prefs.setStringList('roteiro_cart_poi_ids', cart);
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
                         ],
                       ),
                     ),
@@ -294,28 +414,24 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
   }
 
   Widget _buildTextField(TextEditingController controller, String hint, {int maxLines = 1}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          )
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          hintText: hint,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          border: InputBorder.none,
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Colors.grey[300]!),
         ),
-        validator: (val) => val == null || val.isEmpty ? 'Campo obrigatório' : null,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
       ),
+      validator: (val) => val == null || val.trim().isEmpty ? 'Campo obrigatório' : null,
     );
   }
 

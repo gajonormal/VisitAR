@@ -93,13 +93,14 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   // 3. DELETE ROTEIRO
   Future<void> _deleteRoteiro(Roteiro roteiro) async {
     try {
-      if (roteiro.imagemCapa.isNotEmpty) {
-        await _downloadService.deleteFile("roteiro_${roteiro.id}_capa.jpg");
-      }
-      // Aqui poderíamos também apagar os POIs se não estivessem a ser usados noutro lado, mas por segurança apagamos apenas o Roteiro
-      await _downloadService.removeOfflineRoteiroData(roteiro.id);
+      // Usa a nova versão inteligente que apaga o roteiro e os POIs não utilizados
+      await _downloadService.deleteRoteiroCompletoSmart(roteiro);
 
       setState(() => _offlineRoteiros.removeWhere((r) => r.id == roteiro.id));
+      
+      // Recarrega todos os dados porque alguns POIs podem ter sido apagados
+      await _loadAllOfflineData();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: Text("${roteiro.titulo} removido.")));
       }
@@ -136,10 +137,17 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             ],
           ),
         ),
-        body: TabBarView(
+        body: Column(
           children: [
-            _buildPoiList(),
-            _buildRoteirosList(),
+            _buildSearchBar(),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildPoiList(),
+                  _buildRoteirosList(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -243,14 +251,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       return poi.name.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
-    return Column(
-      children: [
-        // 1. Barra de Pesquisa no topo
-        _buildSearchBar(),
-
-        // 2. Lista
-        Expanded(
-          child: filteredPois.isEmpty
+    return filteredPois.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -281,10 +282,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                       }
                     );
                   },
-                ),
-        ),
-      ],
-    );
+                );
   }
 
   Widget _buildRoteirosList() {
@@ -307,43 +305,38 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       return roteiro.titulo.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
-    return Column(
-      children: [
-        _buildSearchBar(),
-        Expanded(
-          child: filteredRoteiros.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
-                      const SizedBox(height: 10),
-                      Text("Nenhum roteiro encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                  itemCount: filteredRoteiros.length,
-                  itemBuilder: (context, index) {
-                    final roteiro = filteredRoteiros[index];
-                    return _buildCard(
-                      itemName: roteiro.titulo,
-                      coverImagePath: roteiro.imagemCapa.isNotEmpty ? roteiro.imagemCapa : null,
-                      title: roteiro.titulo,
-                      subtitle: "${roteiro.poiIds.length} paragens • Offline",
-                      onDelete: () => _deleteRoteiro(roteiro),
-                      onTap: () {
-                        Navigator.push(
-                          context, 
-                          MaterialPageRoute(builder: (context) => RoteiroDetailsScreen(roteiro: roteiro))
-                        ).then((_) => _loadAllOfflineData());
-                      }
-                    );
-                  },
-                ),
+    if (filteredRoteiros.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
+            const SizedBox(height: 10),
+            Text("Nenhum roteiro encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
+          ],
         ),
-      ],
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+      itemCount: filteredRoteiros.length,
+      itemBuilder: (context, index) {
+        final roteiro = filteredRoteiros[index];
+        return _buildCard(
+          itemName: roteiro.titulo,
+          coverImagePath: roteiro.imagemCapa.isNotEmpty ? roteiro.imagemCapa : null,
+          title: roteiro.titulo,
+          subtitle: "${roteiro.poiIds.length} paragens • Offline",
+          onDelete: () => _deleteRoteiro(roteiro),
+          onTap: () {
+            Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (context) => RoteiroDetailsScreen(roteiro: roteiro))
+            ).then((_) => _loadAllOfflineData());
+          }
+        );
+      },
     );
   }
 

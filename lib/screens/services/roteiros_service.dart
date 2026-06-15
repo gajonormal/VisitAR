@@ -111,4 +111,31 @@ class RoteirosService {
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.id).toList());
   }
+
+  /// Retorna um stream com os roteiros concluídos pelo utilizador atual
+  Stream<List<Roteiro>> getCompletedRoteiros() {
+    if (_uid == null) return Stream.value([]);
+
+    return _firestore
+        .collection('users')
+        .doc(_uid)
+        .collection('concluidos')
+        .snapshots()
+        .asyncMap((snapshot) async {
+          final ids = snapshot.docs.map((doc) => doc.id).toList();
+          if (ids.isEmpty) return [];
+
+          // Buscar os roteiros correspondentes (em lotes de 10 por limitação do Firestore)
+          List<Roteiro> result = [];
+          for (int i = 0; i < ids.length; i += 10) {
+            final batch = ids.sublist(i, i + 10 > ids.length ? ids.length : i + 10);
+            final snap = await _firestore
+                .collection('roteiros')
+                .where(FieldPath.documentId, whereIn: batch)
+                .get();
+            result.addAll(snap.docs.map((doc) => Roteiro.fromFirestore(doc)));
+          }
+          return result;
+        });
+  }
 }

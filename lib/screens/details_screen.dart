@@ -7,6 +7,7 @@ import '../models/poi.dart';
 import '../screens/services/download_service.dart';
 import '../screens/services/favorites_service.dart';
 import 'model_viewer_screen.dart'; 
+import 'login_screen.dart';
 
 class DetailsScreen extends StatefulWidget {
   final POI poi;
@@ -53,10 +54,39 @@ class _DetailsScreenState extends State<DetailsScreen> {
     _checkDownloadStatus(); 
     _getUserLocation();
     _checkFavoriteStatus();
+    _checkItineraryStatus(); // NOVO
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _measureHeaderHeight();
     });
+  }
+
+  // --- ROTEIRO CART ---
+  Future<void> _checkItineraryStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartIds = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
+    if (mounted) {
+      setState(() {
+        isInItinerary = cartIds.contains(widget.poi.id);
+      });
+    }
+  }
+
+  Future<void> _toggleItinerary() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> cartIds = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
+    
+    setState(() => isInItinerary = !isInItinerary);
+
+    if (isInItinerary) {
+      if (!cartIds.contains(widget.poi.id)) cartIds.add(widget.poi.id);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Adicionado aos locais para o novo Roteiro!"), duration: Duration(seconds: 2)));
+    } else {
+      cartIds.remove(widget.poi.id);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Removido dos locais para o novo Roteiro."), duration: Duration(seconds: 2)));
+    }
+    
+    await prefs.setStringList('roteiro_cart_poi_ids', cartIds);
   }
 
   // --- NOVO: Função para Carregar Dados Offline ---
@@ -129,9 +159,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
   Future<void> _toggleFavorite() async {
     if (FirebaseAuth.instance.currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Inicia sessão para guardar nos favoritos.")),
-      );
+      _showLoginRequiredDialog('guardar nos favoritos');
       return;
     }
 
@@ -154,7 +182,70 @@ class _DetailsScreenState extends State<DetailsScreen> {
       if (mounted) setState(() => _isLoadingFavorite = false);
     }
   }
-  // ------------------------------------------------
+
+  void _showLoginRequiredDialog(String acao) {
+    final Color kPrimaryGreen = const Color(0xFF0F9D58);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: kPrimaryGreen.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.lock_outline_rounded, color: kPrimaryGreen, size: 32),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Sessão necessária',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Para $acao, precisas de ter uma conta e iniciar sessão.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.4),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[200],
+                    foregroundColor: Colors.grey[700],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Agora não'),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Iniciar sessão'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<void> _checkInternet() async {
     try {
@@ -244,7 +335,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
       );
 
       // 4. Guardar JSON
-      await downloadService.saveOfflinePoiData(offlinePoi);
+      await downloadService.saveOfflinePoiData(offlinePoi, isStandalone: true);
       await _savePoiNameLocally();
 
       if (mounted) {
@@ -467,7 +558,7 @@ Widget _buildHeaderContent() {
             _buildCircleButton(
               icon: isInItinerary ? Icons.playlist_add_check : Icons.playlist_add,
               color: isInItinerary ? kPrimaryGreen : Colors.grey,
-              onTap: () => setState(() => isInItinerary = !isInItinerary),
+              onTap: _toggleItinerary,
             ),
             const SizedBox(width: 8),
 if (isLoadingDownload)

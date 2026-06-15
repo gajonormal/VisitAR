@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/roteiro.dart';
 import '../../models/poi.dart';
 import 'services/database_services.dart';
@@ -7,6 +8,7 @@ import 'services/favorites_service.dart';
 import 'services/download_service.dart';
 import 'services/roteiro_state.dart';
 import 'details_screen.dart';
+import 'login_screen.dart';
 
 class RoteiroDetailsScreen extends StatefulWidget {
   final Roteiro roteiro;
@@ -49,6 +51,10 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
   }
 
   Future<void> _toggleFavorite() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      _showLoginRequiredDialog('guardar roteiros nos favoritos');
+      return;
+    }
     try {
       if (_isFavorite) {
         await _favoritesService.removeFavoriteRoteiro(widget.roteiro.id);
@@ -65,6 +71,69 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao atualizar favorito")));
     }
+  }
+
+  void _showLoginRequiredDialog(String acao) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: kPrimaryGreen.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.lock_outline_rounded, color: kPrimaryGreen, size: 32),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Sessão necessária',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Para $acao, precisas de ter uma conta e iniciar sessão.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.4),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[200],
+                    foregroundColor: Colors.grey[700],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Agora não'),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Iniciar sessão'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _handleDownload() async {
@@ -347,8 +416,16 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
         width: double.infinity,
         child: widget.roteiro.imagemCapa.isNotEmpty
             ? (widget.roteiro.imagemCapa.startsWith('http')
-                ? Image.network(widget.roteiro.imagemCapa, fit: BoxFit.cover)
-                : Image.file(File(widget.roteiro.imagemCapa), fit: BoxFit.cover))
+                ? Image.network(
+                    widget.roteiro.imagemCapa, 
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
+                  )
+                : Image.file(
+                    File(widget.roteiro.imagemCapa), 
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
+                  ))
             : Container(
                 color: Colors.grey[300], 
                 child: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 50)
@@ -460,7 +537,9 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                           child: SizedBox(
                             width: 45, height: 45,
                             child: img != null 
-                              ? (img.startsWith('http') ? Image.network(img, fit: BoxFit.cover) : Image.file(File(img), fit: BoxFit.cover))
+                              ? (img.startsWith('http') 
+                                  ? Image.network(img, fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(color: Colors.grey[200], child: const Icon(Icons.place, color: Colors.grey, size: 20))) 
+                                  : Image.file(File(img), fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(color: Colors.grey[200], child: const Icon(Icons.place, color: Colors.grey, size: 20))))
                               : Container(color: Colors.grey[200]),
                           ),
                         ),

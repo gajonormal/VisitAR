@@ -21,12 +21,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
 
-  late Stream<List<POI>> _favoritesStream;
-
   @override
   void initState() {
     super.initState();
-    _favoritesStream = _favoritesService.getFavoritePois();
   }
 
   @override
@@ -78,10 +75,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ],
           ),
         ),
-        body: TabBarView(
+        body: Column(
           children: [
-            _buildPoiTab(),
-            _buildRoteirosTab(),
+            _buildSearchBar(),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildPoiTab(),
+                  _buildRoteirosTab(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -150,14 +154,28 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Widget _buildPoiTab() {
     return StreamBuilder<List<POI>>(
-      stream: _favoritesStream,
+      stream: _favoritesService.getFavoritePois(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator(color: kPrimaryGreen));
         }
-
         if (snapshot.hasError) {
-          return const Center(child: Text("Erro ao carregar favoritos.", style: TextStyle(color: Colors.grey)));
+          print('ERRO favorites POIs: ${snapshot.error}');
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                  const SizedBox(height: 12),
+                  const Text("Erro ao carregar favoritos.", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Text(snapshot.error.toString(), style: const TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          );
         }
 
         final allFavorites = snapshot.data ?? [];
@@ -179,43 +197,38 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           return poi.name.toLowerCase().contains(_searchQuery.toLowerCase());
         }).toList();
 
-        return Column(
-          children: [
-            _buildSearchBar(),
-            Expanded(
-              child: filteredPois.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
-                          const SizedBox(height: 10),
-                          Text("Nenhum local encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                      itemCount: filteredPois.length,
-                      itemBuilder: (context, index) {
-                        final poi = filteredPois[index];
-                        return _buildCard(
-                          itemName: poi.name,
-                          coverImage: poi.images.isNotEmpty ? poi.images.first : null,
-                          title: poi.name,
-                          subtitle: poi.category,
-                          onDelete: () => _removeFavorite(poi),
-                          onTap: () {
-                            Navigator.push(
-                              context, 
-                              MaterialPageRoute(builder: (context) => DetailsScreen(poi: poi))
-                            );
-                          }
-                        );
-                      },
-                    ),
+        if (filteredPois.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
+                const SizedBox(height: 10),
+                Text("Nenhum local encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
+              ],
             ),
-          ],
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+          itemCount: filteredPois.length,
+          itemBuilder: (context, index) {
+            final poi = filteredPois[index];
+            return _buildCard(
+              itemName: poi.name,
+              coverImage: poi.images.isNotEmpty ? poi.images.first : null,
+              title: poi.name,
+              subtitle: poi.category,
+              onDelete: () => _removeFavorite(poi),
+              onTap: () {
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(builder: (context) => DetailsScreen(poi: poi))
+                );
+              }
+            );
+          },
         );
       }
     );
@@ -228,9 +241,23 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator(color: kPrimaryGreen));
         }
-
         if (snapshot.hasError) {
-          return const Center(child: Text("Erro ao carregar roteiros favoritos.", style: TextStyle(color: Colors.grey)));
+          print('ERRO favorites Roteiros: ${snapshot.error}');
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                  const SizedBox(height: 12),
+                  const Text("Erro ao carregar roteiros favoritos.", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Text(snapshot.error.toString(), style: const TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          );
         }
 
         final allFavorites = snapshot.data ?? [];
@@ -252,50 +279,45 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           return roteiro.titulo.toLowerCase().contains(_searchQuery.toLowerCase());
         }).toList();
 
-        return Column(
-          children: [
-            _buildSearchBar(),
-            Expanded(
-              child: filteredRoteiros.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
-                          const SizedBox(height: 10),
-                          Text("Nenhum roteiro encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                      itemCount: filteredRoteiros.length,
-                      itemBuilder: (context, index) {
-                        final roteiro = filteredRoteiros[index];
-                        return _buildCard(
-                          itemName: roteiro.titulo,
-                          coverImage: roteiro.imagemCapa.isNotEmpty ? roteiro.imagemCapa : null,
-                          title: roteiro.titulo,
-                          subtitle: "${roteiro.poiIds.length} Paragens • ${roteiro.duracao}",
-                          onDelete: () async {
-                            await _favoritesService.removeFavoriteRoteiro(roteiro.id);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(backgroundColor: kPrimaryGreen, content: Text("${roteiro.titulo} removido dos favoritos."))
-                              );
-                            }
-                          },
-                          onTap: () {
-                            Navigator.push(
-                              context, 
-                              MaterialPageRoute(builder: (context) => RoteiroDetailsScreen(roteiro: roteiro))
-                            );
-                          }
-                        );
-                      },
-                    ),
+        if (filteredRoteiros.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
+                const SizedBox(height: 10),
+                Text("Nenhum roteiro encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
+              ],
             ),
-          ],
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+          itemCount: filteredRoteiros.length,
+          itemBuilder: (context, index) {
+            final roteiro = filteredRoteiros[index];
+            return _buildCard(
+              itemName: roteiro.titulo,
+              coverImage: roteiro.imagemCapa.isNotEmpty ? roteiro.imagemCapa : null,
+              title: roteiro.titulo,
+              subtitle: "${roteiro.poiIds.length} Paragens • ${roteiro.duracao}",
+              onDelete: () async {
+                await _favoritesService.removeFavoriteRoteiro(roteiro.id);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(backgroundColor: kPrimaryGreen, content: Text("${roteiro.titulo} removido dos favoritos."))
+                  );
+                }
+              },
+              onTap: () {
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(builder: (context) => RoteiroDetailsScreen(roteiro: roteiro))
+                );
+              }
+            );
+          },
         );
       }
     );

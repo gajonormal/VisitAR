@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/home_map.dart'; // Importamos o ficheiro que criámos
+import 'firebase_options.dart'; // Ficheiro gerado pelo FlutterFire CLI
+import 'screens/home_map.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializar Firebase (Ignoramos erros no teste para não crashar se falhar net)
   try {
-    await Firebase.initializeApp();
-    print("Firebase ligado");
+    // Inicialização moderna com suporte multi-plataforma
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("Firebase ligado à nova base de dados!");
   } catch (e) {
-    print("Erro Firebase (Verificar net): $e");
+    print("Erro Firebase: $e");
   }
 
   runApp(const MyApp());
