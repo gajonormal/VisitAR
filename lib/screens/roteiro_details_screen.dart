@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/roteiro.dart';
 import '../../models/poi.dart';
 import 'services/database_services.dart';
@@ -9,6 +10,10 @@ import 'services/download_service.dart';
 import 'services/roteiro_state.dart';
 import 'details_screen.dart';
 import 'login_screen.dart';
+import 'create_roteiro_screen.dart';
+import 'services/roteiros_service.dart';
+import 'services/passport_service.dart';
+import '../../models/badge_model.dart';
 
 class RoteiroDetailsScreen extends StatefulWidget {
   final Roteiro roteiro;
@@ -25,6 +30,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
   final FavoritesService _favoritesService = FavoritesService();
   final DownloadService _downloadService = DownloadService();
   
+  late Roteiro _currentRoteiro;
   bool _isLoadingPois = true;
   List<POI> _poisDoRoteiro = [];
   
@@ -35,13 +41,32 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    _currentRoteiro = widget.roteiro;
+    _checkAndFetchFullRoteiro();
     _loadPois();
     _checkStatus();
   }
 
+  Future<void> _checkAndFetchFullRoteiro() async {
+    // Se o Roteiro foi carregado a partir de favoritos antigos ou offline,
+    // o criadorId pode estar vazio. Precisamos de ir buscar a versão completa.
+    if (_currentRoteiro.criadorId.isEmpty || _currentRoteiro.criadorId == 'admin' && _currentRoteiro.descricao.isEmpty) {
+      try {
+        final doc = await FirebaseFirestore.instance.collection('roteiros').doc(_currentRoteiro.id).get();
+        if (doc.exists && mounted) {
+          setState(() {
+            _currentRoteiro = Roteiro.fromFirestore(doc);
+          });
+        }
+      } catch (e) {
+        print("Erro ao tentar buscar roteiro completo: $e");
+      }
+    }
+  }
+
   Future<void> _checkStatus() async {
-    bool fav = await _favoritesService.isFavoriteRoteiro(widget.roteiro.id);
-    Roteiro? offline = await _downloadService.getOfflineRoteiro(widget.roteiro.id);
+    bool fav = await _favoritesService.isFavoriteRoteiro(_currentRoteiro.id);
+    Roteiro? offline = await _downloadService.getOfflineRoteiro(_currentRoteiro.id);
     if (mounted) {
       setState(() {
         _isFavorite = fav;
@@ -57,9 +82,9 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
     }
     try {
       if (_isFavorite) {
-        await _favoritesService.removeFavoriteRoteiro(widget.roteiro.id);
+        await _favoritesService.removeFavoriteRoteiro(_currentRoteiro.id);
       } else {
-        await _favoritesService.addFavoriteRoteiro(widget.roteiro);
+        await _favoritesService.addFavoriteRoteiro(_currentRoteiro);
       }
       if (mounted) {
         setState(() => _isFavorite = !_isFavorite);
@@ -143,7 +168,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
     }
     setState(() => _isDownloading = true);
     
-    bool success = await _downloadService.downloadRoteiroCompleto(widget.roteiro, _poisDoRoteiro);
+    bool success = await _downloadService.downloadRoteiroCompleto(_currentRoteiro, _poisDoRoteiro);
     
     if (mounted) {
       setState(() {
@@ -158,13 +183,52 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
   }
 
   Future<void> _loadPois() async {
-    List<POI> pois = await _dbService.getPOIsByIds(widget.roteiro.poiIds);
+    List<POI> pois = await _dbService.getPOIsByIds(_currentRoteiro.poiIds);
     if (mounted) {
       setState(() {
         _poisDoRoteiro = pois;
         _isLoadingPois = false;
       });
     }
+  }
+
+  Future<void> _showBadgeUnlockedDialog(List<BadgeModel> badges) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Column(
+          children: [
+            const Icon(Icons.military_tech_outlined, color: Color(0xFFFFD700), size: 54),
+            const SizedBox(height: 8),
+            const Text('Conquista Desbloqueada!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: badges.map((b) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Column(
+              children: [
+                Text(b.titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                const SizedBox(height: 4),
+                Text(b.descricao, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+              ],
+            ),
+          )).toList(),
+        ),
+        actions: [
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(foregroundColor: kPrimaryGreen),
+              child: const Text('Fantástico!', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -174,14 +238,18 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          widget.roteiro.titulo,
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
+        title: Center(
+          child: Text(
+            _currentRoteiro.titulo,
+            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         actions: [
           _buildCircleButton(
@@ -201,7 +269,47 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                   color: _isDownloaded ? kPrimaryGreen : Colors.grey[600]!,
                   onTap: _handleDownload,
                 ),
-          const SizedBox(width: 15),
+          if (FirebaseAuth.instance.currentUser?.uid == _currentRoteiro.criadorId || FirebaseAuth.instance.currentUser?.uid == 'admin') ...[
+            const SizedBox(width: 8),
+            _buildCircleButton(
+              Icons.edit,
+              color: Colors.grey[700]!,
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => CreateRoteiroScreen(roteiroToEdit: _currentRoteiro)));
+              },
+            ),
+            const SizedBox(width: 8),
+            _buildCircleButton(
+              Icons.delete_outline,
+              color: Colors.grey[700]!,
+              onTap: () async {
+                bool confirmar = await showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text("Apagar Roteiro"),
+                    content: const Text("Tens a certeza que queres apagar este roteiro? Esta ação é irreversível."),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancelar", style: TextStyle(color: Colors.grey))),
+                      TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Apagar", style: TextStyle(color: Colors.red))),
+                    ],
+                  ),
+                ) ?? false;
+                
+                if (confirmar && mounted) {
+                  try {
+                    await RoteirosService().deleteRoteiro(_currentRoteiro.id);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Roteiro apagado com sucesso!")));
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao apagar roteiro.")));
+                  }
+                }
+              },
+            ),
+          ],
+          const SizedBox(width: 10),
         ],
       ),
       body: SingleChildScrollView(
@@ -223,11 +331,11 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             // ESTATÍSTICAS EM CHIPS VERDES (ESTILO FILTROS)
             Row(
               children: [
-                Expanded(child: _buildStatChip("POIs - ${widget.roteiro.poiIds.length}")),
+                Expanded(child: _buildStatChip("POIs - ${_currentRoteiro.poiIds.length}")),
                 const SizedBox(width: 8),
-                Expanded(flex: 1, child: _buildStatChip("Duração - ${widget.roteiro.duracao}")),
+                Expanded(flex: 1, child: _buildStatChip("Duração - ${_currentRoteiro.duracao}")),
                 const SizedBox(width: 8),
-                Expanded(flex: 1, child: _buildStatChip("Distância - ${widget.roteiro.distancia.toStringAsFixed(1)}km")),
+                Expanded(flex: 1, child: _buildStatChip("Distância - ${_currentRoteiro.distancia.toStringAsFixed(1)}km")),
               ],
             ),
             
@@ -247,11 +355,68 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                   const Text("Descrição", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                   const SizedBox(height: 10),
                   Text(
-                    widget.roteiro.descricao.isEmpty ? "Sem descrição." : widget.roteiro.descricao,
+                    _currentRoteiro.descricao.isEmpty ? "Sem descrição." : _currentRoteiro.descricao,
                     style: TextStyle(fontSize: 15, height: 1.5, color: Colors.grey[800]),
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 30),
+
+            // PROGRESSO DO ROTEIRO
+            StreamBuilder<RoteiroProgress>(
+              stream: PassportService().getRoteiroProgressStream(_currentRoteiro),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const SizedBox();
+                final progress = snapshot.data!;
+                
+                // Se o roteiro acabou de ser concluído, regista e possivelmente lança conquista
+                if (progress.isCompleted) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
+                    if (!mounted) return;
+                    final novasBadges = await PassportService().registerRoteiroCompletion(_currentRoteiro.id);
+                    if (novasBadges.isNotEmpty && mounted) {
+                      _showBadgeUnlockedDialog(novasBadges);
+                    }
+                  });
+                }
+
+                return _buildGreenSection(
+                  title: "Progresso da Exploração",
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${progress.visitedCount} de ${progress.total} locais visitados', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text('${(progress.percentage * 100).toInt()}%', style: TextStyle(fontWeight: FontWeight.bold, color: kPrimaryGreen)),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: progress.percentage,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(progress.isCompleted ? const Color(0xFFFFD700) : kPrimaryGreen),
+                          minHeight: 10,
+                        ),
+                      ),
+                      if (progress.isCompleted) ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.verified, color: Color(0xFFFFD700), size: 18),
+                            const SizedBox(width: 6),
+                            const Text("Roteiro totalmente explorado!", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD4AF37))),
+                          ],
+                        ),
+                      ]
+                    ],
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 30),
             
@@ -286,7 +451,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.roteiro.avaliacao.toStringAsFixed(0),
+                        _currentRoteiro.avaliacao.toStringAsFixed(0),
                         style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
                       ),
                       Row(
@@ -330,41 +495,20 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             const SizedBox(height: 40),
             
             // BOTÕES INFERIORES
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        activeRoteiroNotifier.value = widget.roteiro;
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryGreen,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                      ),
-                      child: const Text("Iniciar Roteiro", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {
+                  activeRoteiroNotifier.value = _currentRoteiro;
+                  Navigator.popUntil(context, (route) => route.isFirst);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kPrimaryGreen,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                 ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Edição de roteiros em breve.")));
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryGreen,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                      ),
-                      child: const Text("Editar Roteiro", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ),
-              ],
+                child: const Text("Iniciar Roteiro", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
             ),
             const SizedBox(height: 30),
           ],
@@ -414,15 +558,15 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
       child: SizedBox(
         height: 180,
         width: double.infinity,
-        child: widget.roteiro.imagemCapa.isNotEmpty
-            ? (widget.roteiro.imagemCapa.startsWith('http')
+        child: _currentRoteiro.imagemCapa.isNotEmpty
+            ? (_currentRoteiro.imagemCapa.startsWith('http')
                 ? Image.network(
-                    widget.roteiro.imagemCapa, 
+                    _currentRoteiro.imagemCapa, 
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
                   )
                 : Image.file(
-                    File(widget.roteiro.imagemCapa), 
+                    File(_currentRoteiro.imagemCapa), 
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
                   ))

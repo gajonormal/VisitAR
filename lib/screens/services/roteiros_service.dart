@@ -8,6 +8,13 @@ class RoteirosService {
 
   String? get _uid => _auth.currentUser?.uid;
 
+  Stream<Roteiro?> getRoteiroStream(String roteiroId) {
+    return _firestore.collection('roteiros').doc(roteiroId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return Roteiro.fromFirestore(doc);
+    });
+  }
+
   /// Retorna um stream com todos os roteiros
   Stream<List<Roteiro>> getRoteiros() {
     return _firestore
@@ -48,7 +55,6 @@ class RoteirosService {
         });
   }
 
-  /// Criar um novo roteiro
   Future<void> createRoteiro(Roteiro roteiro) async {
     if (_uid == null) throw Exception("Utilizador não autenticado");
     
@@ -68,6 +74,29 @@ class RoteirosService {
     );
 
     await _firestore.collection('roteiros').add(newRoteiro.toMap());
+  }
+
+  /// Atualizar um roteiro existente
+  Future<void> updateRoteiro(Roteiro roteiro) async {
+    if (_uid == null) throw Exception("Utilizador não autenticado");
+    // Verify if the current user is the creator (or admin)
+    final doc = await _firestore.collection('roteiros').doc(roteiro.id).get();
+    if (doc.exists && doc.data()?['criadorId'] != _uid && _uid != 'admin') {
+      throw Exception("Não tens permissão para editar este roteiro");
+    }
+
+    await _firestore.collection('roteiros').doc(roteiro.id).update(roteiro.toMap());
+  }
+
+  /// Apagar um roteiro existente
+  Future<void> deleteRoteiro(String id) async {
+    if (_uid == null) throw Exception("Utilizador não autenticado");
+    final doc = await _firestore.collection('roteiros').doc(id).get();
+    if (doc.exists && doc.data()?['criadorId'] != _uid && _uid != 'admin') {
+      throw Exception("Não tens permissão para apagar este roteiro");
+    }
+
+    await _firestore.collection('roteiros').doc(id).delete();
   }
 
   // --- ROTEIROS CONCLUÍDOS ---

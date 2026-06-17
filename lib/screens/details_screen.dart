@@ -6,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/poi.dart';
 import '../screens/services/download_service.dart';
 import '../screens/services/favorites_service.dart';
+import '../screens/services/passport_service.dart';
+import '../../models/badge_model.dart';
 import 'model_viewer_screen.dart'; 
 import 'login_screen.dart';
 
@@ -42,7 +44,13 @@ class _DetailsScreenState extends State<DetailsScreen> {
   
   // --- FAVORITOS ---
   final FavoritesService _favoritesService = FavoritesService();
-  bool _isLoadingFavorite = false; 
+  final PassportService _passportService = PassportService();
+  bool _isLoadingFavorite = false;
+
+  // --- PASSAPORTE ---
+  bool _isVisited = false;
+  bool _isRegisteringVisit = false;
+  double? _distanceToPoi;
 
   @override
   void initState() {
@@ -54,11 +62,108 @@ class _DetailsScreenState extends State<DetailsScreen> {
     _checkDownloadStatus(); 
     _getUserLocation();
     _checkFavoriteStatus();
-    _checkItineraryStatus(); // NOVO
+    _checkItineraryStatus();
+    _checkVisitStatus();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _measureHeaderHeight();
     });
+  }
+
+  Future<void> _checkVisitStatus() async {
+    if (FirebaseAuth.instance.currentUser == null) return;
+    final visited = await _passportService.hasVisited(widget.poi.id);
+    if (mounted) setState(() => _isVisited = visited);
+  }
+
+  Future<void> _registerVisit() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      _showLoginRequiredDialog('registar visitas no Passaporte');
+      return;
+    }
+    setState(() => _isRegisteringVisit = true);
+    try {
+      final distance = await _passportService.getDistanceToPoi(widget.poi);
+      if (distance == null) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível obter a tua localização.'), backgroundColor: Colors.orange),
+        );
+        return;
+      }
+      setState(() => _distanceToPoi = distance);
+      if (distance > PassportService.kVisitRadiusMeters) {
+        final dist = distance < 1000
+            ? '${distance.toStringAsFixed(0)} m'
+            : '${(distance / 1000).toStringAsFixed(1)} km';
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Estás a $dist deste local. Aproxima-te para registar a visita.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      // Perto! Registar.
+      final newBadges = await _passportService.registerVisit(widget.poi);
+      if (mounted) {
+        setState(() => _isVisited = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('✅ Visita registada no teu Passaporte!'),
+            backgroundColor: kPrimaryGreen,
+          ),
+        );
+        if (newBadges.isNotEmpty) {
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) _showBadgeUnlockedDialog(newBadges);
+        }
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao registar visita.'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isRegisteringVisit = false);
+    }
+  }
+
+  void _showBadgeUnlockedDialog(List<BadgeModel> badges) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Column(
+          children: [
+            const Icon(Icons.military_tech_outlined, color: Color(0xFFFFD700), size: 54),
+            const SizedBox(height: 8),
+            const Text('Conquista Desbloqueada!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: badges.map((b) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Column(
+              children: [
+                Text(b.titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                const SizedBox(height: 4),
+                Text(b.descricao, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+              ],
+            ),
+          )).toList(),
+        ),
+        actions: [
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(foregroundColor: kPrimaryGreen),
+              child: const Text('Fantástico!', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // --- ROTEIRO CART ---
@@ -560,6 +665,19 @@ Widget _buildHeaderContent() {
               color: isInItinerary ? kPrimaryGreen : Colors.grey,
               onTap: _toggleItinerary,
             ),
+            const SizedBox(width: 8),
+            // BOTÃO PASSAPORTE
+            _isRegisteringVisit
+                ? const SizedBox(width: 35, height: 35, child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))
+                : _buildCircleButton(
+                    icon: _isVisited ? Icons.verified : Icons.approval,
+                    color: _isVisited ? const Color(0xFFFFD700) : Colors.grey,
+                    onTap: _isVisited ? () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Já visitaste este local! ✅'), backgroundColor: Colors.green),
+                      );
+                    } : _registerVisit,
+                  ),
             const SizedBox(width: 8),
 if (isLoadingDownload)
               SizedBox( // Removi o 'const' aqui
