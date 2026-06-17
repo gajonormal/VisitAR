@@ -61,34 +61,27 @@ class FavoritesService {
     return doc.exists;
   }
 
-  Stream<List<POI>> getFavoritePois() {
-    if (_uid == null) return Stream.value([]);
+  Stream<QuerySnapshot<Map<String, dynamic>>> getFavoritePoisStream() {
+    if (_uid == null) return const Stream.empty();
+    return _firestore.collection('users').doc(_uid).collection('favorites').orderBy('timestamp', descending: true).snapshots();
+  }
 
-    return _firestore
-        .collection('users')
-        .doc(_uid)
-        .collection('favorites')
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return POI(
-          id: data['id'] ?? doc.id,
-          name: data['name'] ?? 'Desconhecido',
-          category: data['category'] ?? 'Outro',
-          location: LatLng(data['latitude'] ?? 0.0, data['longitude'] ?? 0.0),
-          images: data['image'] != null && data['image'].toString().isNotEmpty 
-              ? [data['image']] 
-              : [],
-          audioUrl: '', 
-          rating: (data['rating'] ?? 0).toDouble(),
-          descriptionMap: {}, 
-          arModelUrl: '', 
-          arScale: 1.0,
-        );
-      }).toList();
-    });
+  List<POI> mapPoisFromSnapshot(QuerySnapshot<Map<String, dynamic>> snapshot) {
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      return POI(
+        id: data['id'] ?? doc.id,
+        name: data['name'] ?? 'Desconhecido',
+        category: data['category'] ?? 'Outro',
+        location: LatLng(data['latitude'] ?? 0.0, data['longitude'] ?? 0.0),
+        images: data['image'] != null && data['image'].toString().isNotEmpty ? [data['image']] : [],
+        audioUrl: '', 
+        rating: (data['rating'] ?? 0).toDouble(),
+        descriptionMap: {}, 
+        arModelUrl: '', 
+        arScale: 1.0,
+      );
+    }).toList();
   }
 
   // --- FAVORITOS ROTEIROS ---
@@ -96,17 +89,8 @@ class FavoritesService {
   Future<void> addFavoriteRoteiro(Roteiro roteiro) async {
     if (_uid == null) throw Exception("Utilizador não autenticado");
 
-    final data = {
-      'id': roteiro.id,
-      'titulo': roteiro.titulo,
-      'dificuldade': roteiro.dificuldade,
-      'duracao': roteiro.duracao,
-      'distancia': roteiro.distancia,
-      'imagemCapa': roteiro.imagemCapa,
-      'avaliacao': roteiro.avaliacao,
-      'poiIds': roteiro.poiIds,
-      'timestamp': FieldValue.serverTimestamp(),
-    };
+    final data = roteiro.toMap();
+    data['timestamp'] = FieldValue.serverTimestamp();
 
     await _firestore
         .collection('users')
@@ -140,31 +124,26 @@ class FavoritesService {
     return doc.exists;
   }
 
-  Stream<List<Roteiro>> getFavoriteRoteiros() {
-    if (_uid == null) return Stream.value([]);
+  Stream<QuerySnapshot<Map<String, dynamic>>> getFavoriteRoteirosStream() {
+    if (_uid == null) return const Stream.empty();
+    return _firestore.collection('users').doc(_uid).collection('favorite_roteiros').orderBy('timestamp', descending: true).snapshots();
+  }
 
-    return _firestore
-        .collection('users')
-        .doc(_uid)
-        .collection('favorite_roteiros')
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return Roteiro(
-          id: data['id'] ?? doc.id,
-          titulo: data['titulo'] ?? 'Desconhecido',
-          descricao: '',
-          imagemCapa: data['imagemCapa'] ?? '',
-          poiIds: List<String>.from(data['poiIds'] ?? []),
-          dificuldade: data['dificuldade'] ?? 'FÁCIL',
-          duracao: data['duracao'] ?? '0h',
-          distancia: (data['distancia'] ?? 0.0).toDouble(),
-          avaliacao: (data['avaliacao'] ?? 0.0).toDouble(),
-          criadorId: '',
-        );
-      }).toList();
-    });
+  List<Roteiro> mapRoteirosFromSnapshot(QuerySnapshot<Map<String, dynamic>> snapshot) {
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      return Roteiro(
+        id: data['id'] ?? doc.id,
+        titulo: data['titulo'] ?? 'Desconhecido',
+        descricao: data['descricao'] ?? '',
+        imagemCapa: data['imagemCapa'] ?? '',
+        poiIds: List<String>.from(data['poiIds'] ?? []),
+        dificuldade: data['dificuldade'] ?? 'FÁCIL',
+        duracao: data['duracao'] ?? '0h',
+        distancia: (data['distancia'] ?? 0.0).toDouble(),
+        avaliacao: (data['avaliacao'] ?? 0.0).toDouble(),
+        criadorId: data['criadorId'] ?? '',
+      );
+    }).toList();
   }
 }

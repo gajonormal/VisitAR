@@ -8,9 +8,13 @@ import '../../models/poi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/database_services.dart';
 import 'services/roteiros_service.dart';
+import 'services/passport_service.dart';
+import '../../models/badge_model.dart';
 
 class CreateRoteiroScreen extends StatefulWidget {
-  const CreateRoteiroScreen({super.key});
+  final Roteiro? roteiroToEdit;
+  
+  const CreateRoteiroScreen({super.key, this.roteiroToEdit});
 
   @override
   State<CreateRoteiroScreen> createState() => _CreateRoteiroScreenState();
@@ -42,6 +46,11 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.roteiroToEdit != null) {
+      _tituloController.text = widget.roteiroToEdit!.titulo;
+      _descricaoController.text = widget.roteiroToEdit!.descricao;
+      _dificuldade = widget.roteiroToEdit!.dificuldade;
+    }
     _loadPois();
   }
 
@@ -56,11 +65,16 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
   Future<void> _loadPois() async {
     final pois = await DatabaseService().getPOIs();
     
-    // --- LER CARRINHO DE POIS ---
-    final prefs = await SharedPreferences.getInstance();
-    List<String> cartIds = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
-    
-    List<POI> preSelected = pois.where((p) => cartIds.contains(p.id)).toList();
+    // Se estiver a editar, carregamos os POIs do roteiro
+    List<POI> preSelected = [];
+    if (widget.roteiroToEdit != null) {
+      preSelected = pois.where((p) => widget.roteiroToEdit!.poiIds.contains(p.id)).toList();
+    } else {
+      // Senão carregamos do carrinho
+      final prefs = await SharedPreferences.getInstance();
+      List<String> cartIds = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
+      preSelected = pois.where((p) => cartIds.contains(p.id)).toList();
+    }
 
     if (mounted) {
       setState(() {
@@ -127,34 +141,50 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
         final ref = FirebaseStorage.instance.ref().child(fileName);
         final uploadTask = await ref.putFile(_imagemCapaFile!);
         capa = await uploadTask.ref.getDownloadURL();
+      } else if (widget.roteiroToEdit != null) {
+        capa = widget.roteiroToEdit!.imagemCapa;
       } else {
-        capa = _selectedPois.first.images.isNotEmpty ? _selectedPois.first.images.first : '';
+        capa = _selectedPois.isNotEmpty && _selectedPois.first.images.isNotEmpty ? _selectedPois.first.images.first : '';
       }
 
       final novoRoteiro = Roteiro(
-        id: '',
+        id: widget.roteiroToEdit?.id ?? '', // Firebase gera isto se for vazio
         titulo: _tituloController.text.trim(),
         descricao: _descricaoController.text.trim(),
         imagemCapa: capa,
-        poiIds: _selectedPois.map((p) => p.id).toList(),
+        poiIds: _selectedPois.map((e) => e.id).toList(),
         dificuldade: _dificuldade,
         duracao: duracaoFinal,
         distancia: distKm,
-        avaliacao: 5.0,
-        criadorId: '',
+        avaliacao: widget.roteiroToEdit?.avaliacao ?? 0.0,
+        criadorId: widget.roteiroToEdit?.criadorId ?? '', // Vai ser substituído no service
       );
+      
+      if (widget.roteiroToEdit != null) {
+        await RoteirosService().updateRoteiro(novoRoteiro);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Roteiro atualizado com sucesso!"), backgroundColor: Colors.green));
+          Navigator.pop(context); // Voltar aos detalhes
+        }
+      } else {
+        await RoteirosService().createRoteiro(novoRoteiro);
+        
+        // Limpar carrinho
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('roteiro_cart_poi_ids');
+        
+        // Verificar conquistas
+        final novasBadges = await PassportService().onRoteiroCreated();
 
-      await RoteirosService().createRoteiro(novoRoteiro);
-
-      // Limpa o carrinho de POIs depois de criar com sucesso
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('roteiro_cart_poi_ids');
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Roteiro '${novoRoteiro.titulo}' criado com sucesso!"), backgroundColor: kPrimaryGreen),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Roteiro criado com sucesso!"), backgroundColor: Colors.green));
+          
+          if (novasBadges.isNotEmpty) {
+            await _showBadgeUnlockedDialog(novasBadges);
+          }
+          
+          Navigator.pop(context); // Voltar
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -167,12 +197,51 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
     }
   }
 
+  Future<void> _showBadgeUnlockedDialog(List<BadgeModel> badges) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Column(
+          children: [
+            const Icon(Icons.military_tech_outlined, color: Color(0xFFFFD700), size: 54),
+            const SizedBox(height: 8),
+            const Text('Conquista Desbloqueada!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: badges.map((b) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Column(
+              children: [
+                Text(b.titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                const SizedBox(height: 4),
+                Text(b.descricao, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+              ],
+            ),
+          )).toList(),
+        ),
+        actions: [
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(foregroundColor: kPrimaryGreen),
+              child: const Text('Fantástico!', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Criar Roteiro", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(widget.roteiroToEdit != null ? "Editar Roteiro" : "Criar Novo Roteiro", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,

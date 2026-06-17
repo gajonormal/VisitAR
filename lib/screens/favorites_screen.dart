@@ -1,10 +1,14 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/poi.dart';
 import '../models/roteiro.dart';
 import 'services/favorites_service.dart';
+import 'services/roteiros_service.dart';
 import 'details_screen.dart';
 import 'roteiro_details_screen.dart';
+import 'login_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -16,14 +20,44 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> {
   final Color kPrimaryGreen = const Color(0xFF0F9D58);
   final FavoritesService _favoritesService = FavoritesService();
+  final RoteirosService _roteirosService = RoteirosService();
   
-  // Controlador para a barra de pesquisa
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
 
   @override
   void initState() {
     super.initState();
+    _cleanupInvalidFavorites();
+  }
+
+  Future<void> _cleanupInvalidFavorites() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      // Limpar POIs
+      final favPoisSnap = await FirebaseFirestore.instance.collection('users').doc(uid).collection('favorites').get();
+      if (favPoisSnap.docs.isNotEmpty) {
+        final allPoisSnap = await FirebaseFirestore.instance.collection('pois').get();
+        final validPoiIds = allPoisSnap.docs.map((d) => d.id).toSet();
+        for (var doc in favPoisSnap.docs) {
+          if (!validPoiIds.contains(doc.id)) await doc.reference.delete();
+        }
+      }
+
+      // Limpar Roteiros
+      final favRotSnap = await FirebaseFirestore.instance.collection('users').doc(uid).collection('favorite_roteiros').get();
+      if (favRotSnap.docs.isNotEmpty) {
+        final allRotSnap = await FirebaseFirestore.instance.collection('roteiros').get();
+        final validRotIds = allRotSnap.docs.map((d) => d.id).toSet();
+        for (var doc in favRotSnap.docs) {
+          if (!validRotIds.contains(doc.id)) await doc.reference.delete();
+        }
+      }
+    } catch (e) {
+      debugPrint("Erro ao limpar favoritos inválidos: $e");
+    }
   }
 
   @override
@@ -53,42 +87,97 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2, 
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: const Text("Favoritos", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-          bottom: TabBar(
-            labelColor: kPrimaryGreen,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: kPrimaryGreen,
-            indicatorWeight: 3,
-            indicatorSize: TabBarIndicatorSize.label,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            tabs: const [
-              Tab(text: "Locais (POIs)"),
-              Tab(text: "Roteiros"),
-            ],
-          ),
-        ),
-        body: Column(
-          children: [
-            _buildSearchBar(),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _buildPoiTab(),
-                  _buildRoteirosTab(),
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, authSnapshot) {
+        final user = authSnapshot.data;
+
+        // SE NÃO ESTÁ AUTENTICADO → ecrã de sessão necessária (igual aos Roteiros)
+        if (authSnapshot.connectionState != ConnectionState.waiting && user == null) {
+          return Scaffold(
+            backgroundColor: Colors.white,
+            appBar: AppBar(
+              title: const Text("Favoritos", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              backgroundColor: Colors.white,
+              elevation: 0,
+              centerTitle: true,
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lock_outline_rounded, size: 56, color: Colors.grey[350]),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Sessão necessária',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Inicia sessão para guardares e veres os teus favoritos.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.4),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kPrimaryGreen,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                      ),
+                      child: const Text('Iniciar sessão'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        // SE ESTÁ AUTENTICADO → ecrã normal com tabs
+        return DefaultTabController(
+          length: 2, 
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            appBar: AppBar(
+              title: const Text("Favoritos", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              backgroundColor: Colors.white,
+              elevation: 0,
+              centerTitle: true,
+              bottom: TabBar(
+                labelColor: kPrimaryGreen,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: kPrimaryGreen,
+                indicatorWeight: 3,
+                indicatorSize: TabBarIndicatorSize.label,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                tabs: const [
+                  Tab(text: "Locais (POIs)"),
+                  Tab(text: "Roteiros"),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
+            body: Column(
+              children: [
+                _buildSearchBar(),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _buildPoiTab(),
+                      _buildRoteirosTab(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -153,32 +242,32 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Widget _buildPoiTab() {
-    return StreamBuilder<List<POI>>(
-      stream: _favoritesService.getFavoritePois(),
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _favoritesService.getFavoritePoisStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: kPrimaryGreen));
+           return Center(child: CircularProgressIndicator(color: kPrimaryGreen));
         }
         if (snapshot.hasError) {
-          print('ERRO favorites POIs: ${snapshot.error}');
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
-                  const SizedBox(height: 12),
-                  const Text("Erro ao carregar favoritos.", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Text(snapshot.error.toString(), style: const TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
-                ],
-              ),
-            ),
-          );
+           print('ERRO favorites POIs: ${snapshot.error}');
+           return Center(
+             child: Padding(
+               padding: const EdgeInsets.all(20),
+               child: Column(
+                 mainAxisSize: MainAxisSize.min,
+                 children: [
+                   Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                   const SizedBox(height: 12),
+                   const Text("Erro ao carregar favoritos.", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                   const SizedBox(height: 6),
+                   Text(snapshot.error.toString(), style: const TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
+                 ],
+               ),
+             ),
+           );
         }
 
-        final allFavorites = snapshot.data ?? [];
+        final allFavorites = snapshot.data != null ? _favoritesService.mapPoisFromSnapshot(snapshot.data!) : <POI>[];
 
         if (allFavorites.isEmpty && _searchQuery.isEmpty) {
           return Center(
@@ -210,33 +299,37 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-          itemCount: filteredPois.length,
-          itemBuilder: (context, index) {
-            final poi = filteredPois[index];
-            return _buildCard(
-              itemName: poi.name,
-              coverImage: poi.images.isNotEmpty ? poi.images.first : null,
-              title: poi.name,
-              subtitle: poi.category,
-              onDelete: () => _removeFavorite(poi),
-              onTap: () {
-                Navigator.push(
-                  context, 
-                  MaterialPageRoute(builder: (context) => DetailsScreen(poi: poi))
-                );
-              }
-            );
-          },
+        return RefreshIndicator(
+          color: kPrimaryGreen,
+          onRefresh: _cleanupInvalidFavorites,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+            itemCount: filteredPois.length,
+            itemBuilder: (context, index) {
+              final poi = filteredPois[index];
+              return _buildCard(
+                itemName: poi.name,
+                coverImage: poi.images.isNotEmpty ? poi.images.first : null,
+                title: poi.name,
+                subtitle: poi.category,
+                onDelete: () => _removeFavorite(poi),
+                onTap: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => DetailsScreen(poi: poi))
+                  );
+                }
+              );
+            },
+          ),
         );
       }
     );
   }
 
   Widget _buildRoteirosTab() {
-    return StreamBuilder<List<Roteiro>>(
-      stream: _favoritesService.getFavoriteRoteiros(),
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _favoritesService.getFavoriteRoteirosStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator(color: kPrimaryGreen));
@@ -260,7 +353,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           );
         }
 
-        final allFavorites = snapshot.data ?? [];
+        final allFavorites = snapshot.data != null ? _favoritesService.mapRoteirosFromSnapshot(snapshot.data!) : <Roteiro>[];
 
         if (allFavorites.isEmpty && _searchQuery.isEmpty) {
           return Center(
@@ -292,32 +385,44 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-          itemCount: filteredRoteiros.length,
-          itemBuilder: (context, index) {
-            final roteiro = filteredRoteiros[index];
-            return _buildCard(
-              itemName: roteiro.titulo,
-              coverImage: roteiro.imagemCapa.isNotEmpty ? roteiro.imagemCapa : null,
-              title: roteiro.titulo,
-              subtitle: "${roteiro.poiIds.length} Paragens • ${roteiro.duracao}",
-              onDelete: () async {
-                await _favoritesService.removeFavoriteRoteiro(roteiro.id);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(backgroundColor: kPrimaryGreen, content: Text("${roteiro.titulo} removido dos favoritos."))
+        return RefreshIndicator(
+          color: kPrimaryGreen,
+          onRefresh: _cleanupInvalidFavorites,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+            itemCount: filteredRoteiros.length,
+            itemBuilder: (context, index) {
+              final favoriteRoteiro = filteredRoteiros[index];
+              return StreamBuilder<Roteiro?>(
+                stream: _roteirosService.getRoteiroStream(favoriteRoteiro.id),
+                builder: (context, streamSnapshot) {
+                  // Usa a versão atualizada se existir, senão usa a em cache
+                  final roteiro = streamSnapshot.data ?? favoriteRoteiro;
+                  
+                  return _buildCard(
+                    itemName: roteiro.titulo,
+                    coverImage: roteiro.imagemCapa.isNotEmpty ? roteiro.imagemCapa : null,
+                    title: roteiro.titulo,
+                    subtitle: "${roteiro.poiIds.length} Paragens • ${roteiro.duracao}",
+                    onDelete: () async {
+                      await _favoritesService.removeFavoriteRoteiro(roteiro.id);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(backgroundColor: kPrimaryGreen, content: Text("${roteiro.titulo} removido dos favoritos."))
+                        );
+                      }
+                    },
+                    onTap: () {
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => RoteiroDetailsScreen(roteiro: roteiro))
+                      );
+                    }
                   );
                 }
-              },
-              onTap: () {
-                Navigator.push(
-                  context, 
-                  MaterialPageRoute(builder: (context) => RoteiroDetailsScreen(roteiro: roteiro))
-                );
-              }
-            );
-          },
+              );
+            },
+          ),
         );
       }
     );

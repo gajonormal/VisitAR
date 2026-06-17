@@ -51,7 +51,7 @@ class _HomeMapState extends State<HomeMap> {
   late PageController _pageController;
   GoogleMapController? _mapController;
   final Color kPrimaryGreen = const Color(0xFF0F9D58);
-  final double _filterRadiusMeters = 50000.0; // 50km — mostra todos os POIs durante testes
+  final double _filterRadiusMeters = 5000.0; // 5km — alcance equilibrado para turismo e caminhadas
 
   // --- NAVEGAÇÃO ROTEIRO ---
   Timer? _roteiroTimer;
@@ -357,12 +357,6 @@ class _HomeMapState extends State<HomeMap> {
       double dist = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, poi.location.latitude, poi.location.longitude);
       return dist <= _filterRadiusMeters;
     }).toList();
-
-    // Fallback de teste: se o utilizador estiver em casa a testar a app (e portanto longe dos POIs),
-    // mostramos todos os POIs disponíveis para que o mapa e o carrossel não fiquem vazios.
-    if (nearby.isEmpty) {
-      nearby = List.from(_allPois);
-    }
 
     nearby.sort((a, b) {
       double distA = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, a.location.latitude, a.location.longitude);

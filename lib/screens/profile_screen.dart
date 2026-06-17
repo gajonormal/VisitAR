@@ -8,6 +8,8 @@ import 'offline_content_screen.dart';
 import 'admin_add_poi.dart'; 
 import 'settings_screen.dart';
 import 'favorites_screen.dart';
+import 'passport_screen.dart';
+import 'services/passport_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -141,7 +143,12 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 30), // Espaço antes da lista
+                const SizedBox(height: 25),
+
+                // ─── SECÇÃO BADGES ───
+                _buildBadgesSection(context, user.uid),
+
+                const SizedBox(height: 20),
                 
                 // LISTA DE OPÇÕES
                 _buildListOption(
@@ -149,6 +156,14 @@ class ProfileScreen extends StatelessWidget {
                   text: "Os meus roteiros",
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("A abrir...")));
+                  },
+                ),
+
+                _buildListOption(
+                  icon: Icons.book_outlined,
+                  text: "O meu Passaporte",
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const PassportScreen()));
                   },
                 ),
                 
@@ -176,8 +191,7 @@ class ProfileScreen extends StatelessWidget {
                   },
                 ),
 
-                // --- PAINEL DE ADMIN (Movido para aqui como opção de lista) ---
-                // Fica mais limpo do que ter um botão solto
+                // --- PAINEL DE ADMIN ---
                 _buildListOption(
                   icon: Icons.admin_panel_settings,
                   text: "Painel de Admin",
@@ -185,6 +199,41 @@ class ProfileScreen extends StatelessWidget {
                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminAddPoiScreen()));
                   },
                 ),
+                _buildListOption(
+                  icon: Icons.military_tech,
+                  text: "Criar Badges (Admin)",
+                  onTap: () async {
+                    await PassportService().seedBadges();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('✅ Badges criadas no Firestore!'), backgroundColor: Color(0xFF0F9D58))
+                      );
+                    }
+                  },
+                ),
+                _buildListOption(
+                  icon: Icons.delete_forever,
+                  text: "Reset Conquistas (Teste)",
+                  onTap: () async {
+                    final uid = FirebaseAuth.instance.currentUser?.uid;
+                    if (uid != null) {
+                      final snaps = await FirebaseFirestore.instance.collection('users').doc(uid).collection('badges').get();
+                      for (var doc in snaps.docs) {
+                        await doc.reference.delete();
+                      }
+                      final roteiros = await FirebaseFirestore.instance.collection('users').doc(uid).collection('completed_roteiros').get();
+                      for (var doc in roteiros.docs) {
+                        await doc.reference.delete();
+                      }
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('🗑️ Todas as tuas conquistas foram apagadas!'), backgroundColor: Colors.orange)
+                        );
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 100), // Espaço extra para scrollar além da NavigationBar
               ],
             ),
           ),
@@ -313,6 +362,93 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+Widget _buildBadgesSection(BuildContext context, String uid) {
+    // Icons para cada badge (mantém a coerência com a PassportScreen)
+    const Map<String, IconData> badgeIcons = {
+      'primeiro_carimbo': Icons.pin_drop_outlined,
+      'conhecedor': Icons.account_balance_outlined,
+      'colecionador': Icons.flag_circle_outlined,
+      'grande_explorador': Icons.public_outlined,
+      'primeiro_roteiro': Icons.map_outlined,
+      'aventureiro': Icons.emoji_events_outlined,
+      'viajante': Icons.flight_takeoff_outlined,
+      'criador': Icons.edit_outlined,
+      'guia_local': Icons.military_tech_outlined,
+    };
+
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('badges')
+          .orderBy('unlockedAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final earnedDocs = snapshot.data?.docs ?? [];
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Últimas Conquistas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+              ),
+              child: Row(
+                children: [
+                  // Mostra as últimas 4 conquistas
+                  ...earnedDocs.take(4).map((doc) {
+                    final icon = badgeIcons[doc.id] ?? Icons.star_border;
+                    return Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      width: 50, height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFDE7),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.5)),
+                      ),
+                      child: Center(child: Icon(icon, color: const Color(0xFFD4AF37), size: 26)),
+                    );
+                  }),
+                  // Placeholders cinzento se tiver menos de 4
+                  ...List.generate(earnedDocs.length < 4 ? 4 - earnedDocs.length : 0, (_) => Container(
+                    margin: const EdgeInsets.only(right: 10),
+                    width: 50, height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      border: Border.all(color: Colors.grey[200]!),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(child: Icon(Icons.lock_outline_rounded, color: Colors.grey[400], size: 22)),
+                  )),
+                  const Spacer(),
+                  // Botão "+"
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PassportScreen())),
+                    child: Container(
+                      width: 44, height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: const Icon(Icons.add, color: Colors.grey, size: 22),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

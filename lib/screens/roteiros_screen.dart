@@ -23,6 +23,15 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
   int _selectedFilter = 0; // 0: Sugeridos, 1: Meus, 2: Concluídos
   late Stream<List<Roteiro>> _roteirosStream;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -102,11 +111,72 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
     );
   }
 
+  // --- BARRA DE PESQUISA ---
+  Widget _buildSearchBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(25, 5, 25, 20),
+      padding: const EdgeInsets.only(left: 15, right: 5), 
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(30), 
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5))],
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.search, color: Colors.grey),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              decoration: const InputDecoration(
+                hintText: 'Pesquisar roteiros...', 
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: const TextStyle(fontSize: 15),
+            ),
+          ),
+          if (_searchQuery.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.close, color: kPrimaryGreen, size: 20),
+              onPressed: () {
+                setState(() {
+                  _searchQuery = "";
+                  _searchController.clear();
+                });
+              },
+              splashRadius: 20,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          Container(width: 1, height: 24, color: Colors.grey[300], margin: const EdgeInsets.symmetric(horizontal: 10)),
+          IconButton(
+            icon: Icon(Icons.tune, color: kPrimaryGreen),
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Filtros em breve!"))),
+            splashRadius: 24,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+          const SizedBox(width: 5),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBgColor,
       body: SafeArea(
+        bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -155,6 +225,8 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
               ),
             ),
 
+            _buildSearchBar(),
+
             // CHIPS DE FILTRO
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -182,15 +254,35 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                   
                   final roteiros = snapshot.data ?? [];
                   
-                  if (roteiros.isEmpty) {
+                  final filteredRoteiros = roteiros.where((roteiro) {
+                    return roteiro.titulo.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                           roteiro.descricao.toLowerCase().contains(_searchQuery.toLowerCase());
+                  }).toList();
+
+                  if (filteredRoteiros.isEmpty && _searchQuery.isNotEmpty) {
+                    return Center(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
+                            const SizedBox(height: 10),
+                            Text("Nenhum roteiro encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (filteredRoteiros.isEmpty) {
                     return _buildEmptyState();
                   }
 
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                    itemCount: roteiros.length,
+                    itemCount: filteredRoteiros.length,
                     itemBuilder: (context, index) {
-                      return _buildRoteiroCard(roteiros[index]);
+                      return _buildRoteiroCard(filteredRoteiros[index]);
                     },
                   );
                 },
@@ -236,38 +328,40 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
     }
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 56, color: Colors.grey[350]),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              style: TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.4),
-              textAlign: TextAlign.center,
-            ),
-            if (!isLoggedIn && _selectedFilter != 0) ...[
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryGreen,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                ),
-                child: const Text('Iniciar sessão'),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 56, color: Colors.grey[350]),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.4),
+                textAlign: TextAlign.center,
+              ),
+              if (!isLoggedIn && _selectedFilter != 0) ...[
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                  ),
+                  child: const Text('Iniciar sessão'),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

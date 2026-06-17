@@ -114,7 +114,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) return null;
       }
-      return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      
+      return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium)
+          .timeout(const Duration(seconds: 4), onTimeout: () {
+        throw Exception('Location timeout');
+      });
     } catch (e) {
       return null;
     }
@@ -124,12 +128,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
     List<POI> filtered = _selectedCategory == 'Tudo'
         ? List.from(_allPois)
         : _allPois.where((p) => p.category.toLowerCase() == _selectedCategory.toLowerCase()).toList();
+    
     if (_userPosition != null) {
+      // 1. Filter out POIs that are further than 50km (50,000 meters)
+      filtered = filtered.where((poi) {
+        double dist = Geolocator.distanceBetween(
+            _userPosition!.latitude, _userPosition!.longitude, 
+            poi.location.latitude, poi.location.longitude);
+        return dist <= 50000;
+      }).toList();
+
+      // 2. Sort the remaining nearby POIs by distance
       filtered.sort((a, b) {
         double dA = Geolocator.distanceBetween(_userPosition!.latitude, _userPosition!.longitude, a.location.latitude, a.location.longitude);
         double dB = Geolocator.distanceBetween(_userPosition!.latitude, _userPosition!.longitude, b.location.latitude, b.location.longitude);
         return dA.compareTo(dB);
       });
+    } else {
+      // If we don't have the user's location, there's nothing "near" them
+      filtered = [];
     }
     setState(() => _nearbyPois = filtered);
   }
@@ -646,9 +663,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
           children: [
             Icon(Icons.location_off_outlined, color: Colors.grey[300], size: 48),
             const SizedBox(height: 12),
-            Text('Nenhum local encontrado', style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.w600)),
+            Text(
+              _userPosition == null ? 'Localização não encontrada' : 'Nenhum local perto de ti (50km)', 
+              style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.w600)
+            ),
             const SizedBox(height: 4),
-            Text('Experimenta outro filtro', style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+            Text(
+              _userPosition == null ? 'Ativa o GPS ou aguarda um momento' : 'Experimenta explorar noutras zonas do mapa', 
+              style: TextStyle(color: Colors.grey[400], fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
