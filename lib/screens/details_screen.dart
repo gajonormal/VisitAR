@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
@@ -425,6 +426,19 @@ class _DetailsScreenState extends State<DetailsScreen> {
         if (localPath != null) localImagePaths.add(localPath);
       }
 
+      // 2.5 Baixar Áudios
+      Map<String, dynamic> localAudioMap = {};
+      for (String lang in widget.poi.audioMap.keys) {
+        String aUrl = widget.poi.audioMap[lang];
+        if (aUrl.isNotEmpty && aUrl.startsWith('http')) {
+          String audioName = "poi_${widget.poi.id}_audio_$lang.mp3";
+          String? localAudioPath = await downloadService.downloadFile(aUrl, audioName);
+          if (localAudioPath != null) localAudioMap[lang] = localAudioPath;
+        } else {
+          localAudioMap[lang] = aUrl;
+        }
+      }
+
       // 3. Criar Objeto Offline (com caminhos locais)
       POI offlinePoi = POI(
         id: widget.poi.id,
@@ -432,9 +446,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
         category: widget.poi.category,
         location: widget.poi.location,
         images: localImagePaths, // <--- Lista de caminhos no telemóvel
-        audioUrl: widget.poi.audioUrl,
         rating: widget.poi.rating,
         descriptionMap: widget.poi.descriptionMap,
+        audioMap: localAudioMap,
         arModelUrl: localModelPath ?? '', // <--- Caminho no telemóvel
         arScale: widget.poi.arScale,
       );
@@ -869,7 +883,86 @@ class _FullDescriptionSheet extends StatefulWidget {
 class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
   final Color kPrimaryGreen = const Color(0xFF0F9D58);
   bool isPlaying = false;
-  double _sliderValue = 0.0;
+  String _selectedLang = 'pt';
+  
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGlobalLanguage();
+  }
+
+  Future<void> _loadGlobalLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _selectedLang = prefs.getString('global_language') ?? 'pt';
+      });
+      _setupAudio();
+    }
+  }
+
+  void _setupAudio() {
+    _audioPlayer.onPlayerStateChanged.listen((state) {
+      if (mounted) setState(() => isPlaying = state == PlayerState.playing);
+    });
+    _audioPlayer.onDurationChanged.listen((d) {
+      if (mounted) setState(() => _duration = d);
+    });
+    _audioPlayer.onPositionChanged.listen((p) {
+      if (mounted) setState(() => _position = p);
+    });
+    _audioPlayer.onPlayerComplete.listen((_) {
+      if (mounted) setState(() {
+        isPlaying = false;
+        _position = Duration.zero;
+      });
+    });
+    _loadAudioForLang(_selectedLang);
+  }
+
+  Future<void> _loadAudioForLang(String lang) async {
+    await _audioPlayer.stop();
+    if (mounted) setState(() {
+      _position = Duration.zero;
+      _duration = Duration.zero;
+    });
+    String audioUrl = widget.poi.getAudioUrl(lang);
+    if (audioUrl.isNotEmpty) {
+      if (!audioUrl.startsWith('http')) {
+        await _audioPlayer.setSourceDeviceFile(audioUrl);
+      } else {
+        await _audioPlayer.setSourceUrl(audioUrl);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  void _togglePlayPause() async {
+    if (isPlaying) {
+      await _audioPlayer.pause();
+    } else {
+      String audioUrl = widget.poi.getAudioUrl(_selectedLang);
+      if (audioUrl.isNotEmpty) {
+        await _audioPlayer.resume();
+      }
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(d.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(d.inSeconds.remainder(60));
+    return "$twoDigitMinutes:$twoDigitSeconds";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -911,8 +1004,9 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+
                   // Player de Áudio
-                  if (widget.poi.audioUrl.isNotEmpty || true) 
+                  if (widget.poi.getAudioUrl(_selectedLang).isNotEmpty) 
                     Container(
                       margin: const EdgeInsets.only(bottom: 25),
                       padding: const EdgeInsets.all(15),
@@ -934,7 +1028,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                               const Text("Ouvir áudio guia", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                               const Spacer(),
                               GestureDetector(
-                                onTap: () => setState(() => isPlaying = !isPlaying),
+                                onTap: _togglePlayPause,
                                 child: Icon(
                                   isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
                                   size: 44,
@@ -943,7 +1037,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 15),
+                          const SizedBox(height: 5),
                           SliderTheme(
                             data: SliderTheme.of(context).copyWith(
                               activeTrackColor: kPrimaryGreen,
@@ -954,9 +1048,22 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                               overlayShape: SliderComponentShape.noOverlay,
                             ),
                             child: Slider(
-                              value: _sliderValue,
-                              onChanged: (v) => setState(() => _sliderValue = v),
+                              min: 0,
+                              max: _duration.inMilliseconds.toDouble() > 0 ? _duration.inMilliseconds.toDouble() : 1.0,
+                              value: _position.inMilliseconds.toDouble().clamp(0, _duration.inMilliseconds.toDouble() > 0 ? _duration.inMilliseconds.toDouble() : 1.0),
+                              onChanged: (v) async {
+                                final position = Duration(milliseconds: v.toInt());
+                                await _audioPlayer.seek(position);
+                              },
                             ),
+                          ),
+                          const SizedBox(height: 5),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(_formatDuration(_position), style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                              Text(_formatDuration(_duration), style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                            ],
                           ),
                         ],
                       ),
@@ -974,7 +1081,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                   const SizedBox(height: 10), // Espaçamento entre o título e o texto
                   // Texto da Descrição
                   Text(
-                    widget.poi.getDescription('pt'),
+                    widget.poi.getDescription(_selectedLang),
                     style: const TextStyle(fontSize: 16, height: 1.7, color: Colors.black87),
                     textAlign: TextAlign.justify,
                   ),

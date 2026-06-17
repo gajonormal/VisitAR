@@ -75,7 +75,7 @@ class FavoritesService {
         category: data['category'] ?? 'Outro',
         location: LatLng(data['latitude'] ?? 0.0, data['longitude'] ?? 0.0),
         images: data['image'] != null && data['image'].toString().isNotEmpty ? [data['image']] : [],
-        audioUrl: '', 
+        audioMap: {},
         rating: (data['rating'] ?? 0).toDouble(),
         descriptionMap: {}, 
         arModelUrl: '', 

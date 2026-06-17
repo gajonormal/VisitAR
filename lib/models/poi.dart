@@ -7,11 +7,11 @@ class POI {
   final String category;
   final LatLng location;
   final List<String> images;
-  final String audioUrl;
   final double rating;
   
-  // Guardamos o mapa de descrições
+  // Guardamos o mapa de descrições e o mapa de audios
   final Map<String, dynamic> descriptionMap; 
+  final Map<String, dynamic> audioMap; 
   
   final String arModelUrl;
   final double arScale;
@@ -22,9 +22,9 @@ class POI {
     required this.category,
     required this.location,
     required this.images,
-    required this.audioUrl,
     required this.rating,
     required this.descriptionMap,
+    required this.audioMap,
     required this.arModelUrl,
     this.arScale = 1.0,
   });
@@ -54,6 +54,13 @@ class POI {
       descMap = {'pt': 'Sem descrição.'};
     }
 
+    Map<String, dynamic> audMap = {};
+    if (data['audioMap'] is Map) {
+      audMap = data['audioMap'];
+    } else if (data['urlAudio'] != null && data['urlAudio'].toString().isNotEmpty) {
+      audMap = {'pt': data['urlAudio']};
+    }
+
     Map<String, dynamic> arMap = data['conteudoAr'] ?? {};
     
     return POI(
@@ -62,9 +69,9 @@ class POI {
       category: data['categoria'] ?? 'Geral',
       location: LatLng(geo.latitude, geo.longitude),
       images: listaImagens,
-      audioUrl: data['urlAudio'] ?? '',
       rating: (data['medAvaliacao'] ?? 0.0).toDouble(),
       descriptionMap: descMap,
+      audioMap: audMap,
       arModelUrl: arMap['modelUrl'] ?? '',
       arScale: (arMap['scale'] ?? 1.0).toDouble(),
     );
@@ -76,13 +83,12 @@ class POI {
       'id': id,
       'name': name,
       'category': category,
-      // O LatLng não pode ser guardado direto, separamos em lat e lng
       'lat': location.latitude,
       'lng': location.longitude,
-      'images': images, // Quando guardares offline, isto terá os caminhos locais
-      'audioUrl': audioUrl,
+      'images': images,
       'rating': rating,
       'descriptionMap': descriptionMap,
+      'audioMap': audioMap,
       'arModelUrl': arModelUrl,
       'arScale': arScale,
     };
@@ -94,12 +100,11 @@ class POI {
       id: map['id'],
       name: map['name'],
       category: map['category'],
-      // Reconstruímos o LatLng
       location: LatLng(map['lat'], map['lng']),
       images: List<String>.from(map['images']),
-      audioUrl: map['audioUrl'] ?? '',
       rating: (map['rating'] ?? 0.0).toDouble(),
-      descriptionMap: Map<String, dynamic>.from(map['descriptionMap']),
+      descriptionMap: Map<String, dynamic>.from(map['descriptionMap'] ?? {}),
+      audioMap: Map<String, dynamic>.from(map['audioMap'] ?? {}),
       arModelUrl: map['arModelUrl'] ?? '',
       arScale: (map['arScale'] ?? 1.0).toDouble(),
     );
@@ -111,4 +116,8 @@ class POI {
   }
 
   String get description => getDescription('pt');
+
+  String getAudioUrl(String langCode) {
+    return audioMap[langCode] ?? audioMap['pt'] ?? audioMap['en'] ?? '';
+  }
 }

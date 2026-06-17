@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -17,7 +18,8 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
 
   // Controladores
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descController = TextEditingController();
+  final TextEditingController _descPtController = TextEditingController();
+  final TextEditingController _descEnController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _latController = TextEditingController();
   final TextEditingController _lngController = TextEditingController();
@@ -25,6 +27,8 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
 
   final ImagePicker _picker = ImagePicker();
   final List<File> _selectedImages = [];
+  File? _audioPt;
+  File? _audioEn;
   bool _isUploading = false;
 
   // --- 1. ESCOLHER IMAGENS ---
@@ -40,6 +44,23 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
   void _removeImage(int index) {
     setState(() {
       _selectedImages.removeAt(index);
+    });
+  }
+
+  Future<void> _pickAudio(String lang) async {
+    FilePickerResult? result = await FilePicker.pickFiles(type: FileType.audio);
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        if (lang == 'pt') _audioPt = File(result.files.single.path!);
+        if (lang == 'en') _audioEn = File(result.files.single.path!);
+      });
+    }
+  }
+
+  void _removeAudio(String lang) {
+    setState(() {
+      if (lang == 'pt') _audioPt = null;
+      if (lang == 'en') _audioEn = null;
     });
   }
 
@@ -75,6 +96,20 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
         imageUrls.add(url);
       }
 
+      // 1.5 Upload Audios
+      String audioPtUrl = '';
+      if (_audioPt != null) {
+        Reference ref = FirebaseStorage.instance.ref().child('poi_audios').child("${DateTime.now().millisecondsSinceEpoch}_pt.mp3");
+        await ref.putFile(_audioPt!);
+        audioPtUrl = await ref.getDownloadURL();
+      }
+      String audioEnUrl = '';
+      if (_audioEn != null) {
+        Reference ref = FirebaseStorage.instance.ref().child('poi_audios').child("${DateTime.now().millisecondsSinceEpoch}_en.mp3");
+        await ref.putFile(_audioEn!);
+        audioEnUrl = await ref.getDownloadURL();
+      }
+
       // 2. Tratar Coordenadas (Substituir , por .)
       double lat = double.parse(_latController.text.replaceAll(',', '.').trim());
       double lng = double.parse(_lngController.text.replaceAll(',', '.').trim());
@@ -88,8 +123,8 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
         
         // Estrutura complexa de descrição (Map)
         'descricao': {
-          'pt': _descController.text.trim(),
-          'en': '', // Podes adicionar campo para inglês depois
+          'pt': _descPtController.text.trim(),
+          'en': _descEnController.text.trim(),
         },
 
         // Estrutura complexa de AR (Map)
@@ -99,7 +134,10 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
         },
 
         'imagens': imageUrls, // Campo correto: 'imagens'
-        'urlAudio': '', // Campo vazio por agora
+        'audioMap': {
+          'pt': audioPtUrl,
+          'en': audioEnUrl,
+        },
       });
 
       if (mounted) {
@@ -189,10 +227,37 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
               const SizedBox(height: 15),
 
               TextFormField(
-                controller: _descController,
+                controller: _descPtController,
                 maxLines: 3,
                 decoration: const InputDecoration(labelText: "Descrição (PT)", border: OutlineInputBorder()),
                 validator: (val) => val == null || val.trim().isEmpty ? "Obrigatório" : null,
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _audioPt == null 
+                      ? OutlinedButton.icon(onPressed: () => _pickAudio('pt'), icon: const Icon(Icons.audiotrack), label: const Text("Adicionar Áudio PT"))
+                      : OutlinedButton.icon(onPressed: () => _removeAudio('pt'), icon: const Icon(Icons.delete, color: Colors.red), label: Text("Remover ${_audioPt!.path.split(Platform.pathSeparator).last}", style: const TextStyle(color: Colors.red))),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+
+              TextFormField(
+                controller: _descEnController,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: "Descrição (EN) - Opcional", border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _audioEn == null 
+                      ? OutlinedButton.icon(onPressed: () => _pickAudio('en'), icon: const Icon(Icons.audiotrack), label: const Text("Adicionar Áudio EN"))
+                      : OutlinedButton.icon(onPressed: () => _removeAudio('en'), icon: const Icon(Icons.delete, color: Colors.red), label: Text("Remover ${_audioEn!.path.split(Platform.pathSeparator).last}", style: const TextStyle(color: Colors.red))),
+                  ),
+                ],
               ),
               const SizedBox(height: 15),
 

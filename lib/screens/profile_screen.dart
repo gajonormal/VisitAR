@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:visitar_teste/screens/services/auth_service.dart';
 import 'login_screen.dart';
 import 'edit_profile_screen.dart';
@@ -532,6 +533,9 @@ Widget _buildListOption({required IconData icon, required String text, required 
 
   // Função para alterar idioma
   void _changeLanguage(BuildContext context, String newLang, String? userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('global_language', newLang);
+
     if (userId != null) {
       // Utilizador autenticado: guarda no Firestore
       await FirebaseFirestore.instance.collection('users').doc(userId).update({
@@ -541,11 +545,10 @@ Widget _buildListOption({required IconData icon, required String text, required 
         SnackBar(content: Text("Idioma alterado para ${newLang.toUpperCase()}"))
       );
     } else {
-      // Visitante: guarda em SharedPreferences (implementar depois)
+      // Visitante: já guardado em SharedPreferences
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Idioma alterado para ${newLang.toUpperCase()} (local)"))
       );
-      // TODO: Implementar SharedPreferences para guardar preferência do visitante
     }
   }
 }

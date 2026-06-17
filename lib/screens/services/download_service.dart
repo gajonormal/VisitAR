@@ -188,12 +188,17 @@ class DownloadService {
           }
         }
 
-        // Download Audio
-        String localAudio = '';
-        if (poi.audioUrl.isNotEmpty) {
-          String audioName = 'poi_${poi.id}_audio.mp3';
-          String? lAudio = await downloadFile(poi.audioUrl, audioName);
-          if (lAudio != null) localAudio = lAudio;
+        // Download Audios
+        Map<String, dynamic> localAudioMap = {};
+        for (String lang in poi.audioMap.keys) {
+          String aUrl = poi.audioMap[lang];
+          if (aUrl.isNotEmpty && aUrl.startsWith('http')) {
+            String audioName = 'poi_${poi.id}_audio_$lang.mp3';
+            String? lAudio = await downloadFile(aUrl, audioName);
+            if (lAudio != null) localAudioMap[lang] = lAudio;
+          } else {
+            localAudioMap[lang] = aUrl;
+          }
         }
 
         // Save local POI copy
@@ -203,9 +208,9 @@ class DownloadService {
           category: poi.category,
           location: poi.location,
           images: localImages,
-          audioUrl: localAudio,
           rating: poi.rating,
           descriptionMap: poi.descriptionMap,
+          audioMap: localAudioMap,
           arModelUrl: poi.arModelUrl.isNotEmpty ? await getFullPath('poi_${poi.id}.glb') : '',
           arScale: poi.arScale,
         );
@@ -294,7 +299,10 @@ class DownloadService {
           for (int i = 0; i < poi.images.length; i++) {
             await deleteFile("poi_${poi.id}_img_$i.jpg");
           }
-          // Apagar áudio
+          // Apagar áudios
+          for (String lang in poi.audioMap.keys) {
+            await deleteFile("poi_${poi.id}_audio_$lang.mp3");
+          }
           await deleteFile("poi_${poi.id}_audio.mp3");
           // Remover dados offline
           await removeOfflinePoiData(poi.id);
