@@ -6,7 +6,10 @@ import 'package:geolocator/geolocator.dart';
 import '../models/poi.dart';
 import '../screens/services/database_services.dart';
 import '../screens/services/download_service.dart';
+import '../screens/services/roteiros_service.dart';
+import '../models/roteiro.dart';
 import 'details_screen.dart';
+import 'roteiro_details_screen.dart';
 import 'ar_screen.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -40,30 +43,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   bool _isSearching = false;
   bool _isSearchFocused = false;
 
-  // --- ROTEIROS DE EXEMPLO ---
-  final List<Map<String, String>> _sampleItineraries = [
-    {
-      'title': 'Trilho dos Gigantes de Granito',
-      'difficulty': 'Moderado',
-      'duration': '2h 30m',
-      'distance': '4.2 km',
-      'image': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600',
-    },
-    {
-      'title': 'Rota Histórica do Barrocal',
-      'difficulty': 'Fácil',
-      'duration': '1h 45m',
-      'distance': '2.8 km',
-      'image': 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=600',
-    },
-    {
-      'title': 'Percurso da Serra da Gardunha',
-      'difficulty': 'Difícil',
-      'duration': '3h 15m',
-      'distance': '6.1 km',
-      'image': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600',
-    },
-  ];
+  // --- ROTEIROS ---
+  final RoteirosService _roteirosService = RoteirosService();
 
   @override
   void initState() {
@@ -116,7 +97,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       }
       
       return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium)
-          .timeout(const Duration(seconds: 4), onTimeout: () {
+          .timeout(const Duration(seconds: 10), onTimeout: () {
         throw Exception('Location timeout');
       });
     } catch (e) {
@@ -741,22 +722,23 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   // ---------------------------------------------------------------
-  // SECÇÃO "ROTEIROS POPULARES"
+  // SECÇÃO "ROTEIROS SUGERIDOS"
   // ---------------------------------------------------------------
   Widget _buildItinerariesSection() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 28, 0, 0),
+      padding: const EdgeInsets.only(top: 20, bottom: 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(right: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text('Roteiros populares', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1A1A1A))),
+                const Text('Roteiros Sugeridos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                 GestureDetector(
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Roteiros em breve!'))),
+                  onTap: () => widget.onTabChange(1), // Assume que o separador de roteiros é o índice 1
                   child: Text('Ver todos', style: TextStyle(color: kPrimaryGreen, fontSize: 14, fontWeight: FontWeight.w700)),
                 ),
               ],
@@ -765,12 +747,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
           const SizedBox(height: 14),
           SizedBox(
             height: 200,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(right: 20),
-              itemCount: _sampleItineraries.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 14),
-              itemBuilder: (context, i) => _buildItineraryCard(_sampleItineraries[i]),
+            child: StreamBuilder<List<Roteiro>>(
+              stream: _roteirosService.getRoteiros(), // alterado para mostrar todos os roteiros
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final roteiros = snapshot.data ?? [];
+                if (roteiros.isEmpty) {
+                  return const Center(child: Text("Nenhum roteiro disponível no momento.", style: TextStyle(color: Colors.grey)));
+                }
+
+                return ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.only(left: 20, right: 20),
+                  itemCount: roteiros.length > 5 ? 5 : roteiros.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 14),
+                  itemBuilder: (context, i) => _buildItineraryCard(roteiros[i]),
+                );
+              },
             ),
           ),
         ],
@@ -778,9 +773,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  Widget _buildItineraryCard(Map<String, String> it) {
+  Widget _buildItineraryCard(Roteiro roteiro) {
     return GestureDetector(
-      onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Roteiros em breve!'))),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => RoteiroDetailsScreen(roteiro: roteiro)),
+        );
+      },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
         child: SizedBox(
@@ -788,7 +788,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(it['image']!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: const Color(0xFF2D6A4F))),
+              if (roteiro.imagemCapa.isNotEmpty)
+                Image.network(roteiro.imagemCapa, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: kPrimaryGreen))
+              else
+                Container(color: kPrimaryGreen),
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -802,7 +805,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(color: Colors.black.withOpacity(0.45), borderRadius: BorderRadius.circular(12)),
-                  child: Text(it['difficulty']!, style: TextStyle(color: _difficultyColor(it['difficulty']!), fontSize: 11, fontWeight: FontWeight.w700)),
+                  child: Text(roteiro.dificuldade, style: TextStyle(color: _difficultyColor(roteiro.dificuldade), fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
               ),
               Positioned(
@@ -810,17 +813,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(it['title']!, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700, height: 1.2), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(roteiro.titulo, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700, height: 1.2), maxLines: 2, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         Icon(Icons.access_time, color: Colors.white.withOpacity(0.75), size: 12),
                         const SizedBox(width: 4),
-                        Text(it['duration']!, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
+                        Text(roteiro.duracao, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
                         const SizedBox(width: 10),
                         Container(width: 3, height: 3, decoration: const BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
                         const SizedBox(width: 10),
-                        Text(it['distance']!, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
+                        Text('${roteiro.distancia.toStringAsFixed(1)} km', style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
                       ],
                     ),
                   ],

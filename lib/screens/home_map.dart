@@ -1387,7 +1387,9 @@ class _PoiMapCardState extends State<PoiMapCard> {
     String? imagePath = widget.poi.images.isNotEmpty ? widget.poi.images.first : null;
 
     if (imagePath == null || imagePath.isEmpty) {
-      imageWidget = Image.network('https://via.placeholder.com/300', fit: BoxFit.cover);
+      imageWidget = Container(
+        color: Colors.grey[200],
+      );
     } else if (imagePath.startsWith('http')) {
       imageWidget = Image.network(imagePath, fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.grey[200]));
     } else {
