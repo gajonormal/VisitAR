@@ -40,7 +40,9 @@ dependencies:
   shared_preferences: ^2.5.4
   url_launcher: ^6.3.1
   flutter_svg: ^2.2.3
-  wakelock_plus: ^1.6.1
+  wakelock_plus: ^1.5.2
+  audioplayers: ^6.7.1
+  file_picker: ^11.0.2
 
 dev_dependencies:
   flutter_test:

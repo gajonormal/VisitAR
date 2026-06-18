@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/roteiro.dart';
 import '../../models/poi.dart';
+import '../widgets/custom_button.dart';
 import 'services/database_services.dart';
 import 'services/favorites_service.dart';
 import 'services/download_service.dart';
@@ -131,27 +134,21 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
+                CustomButton(
                   onPressed: () => Navigator.pop(ctx),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
-                    foregroundColor: Colors.grey[700],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('Agora não'),
+                  text: 'Agora não',
+                  backgroundColor: Colors.grey[200]!,
+                  textColor: Colors.grey[700]!,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 const SizedBox(width: 10),
-                ElevatedButton(
+                CustomButton(
                   onPressed: () {
                     Navigator.pop(ctx);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kPrimaryGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('Iniciar sessão'),
+                  text: 'Iniciar sessão',
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ],
             ),
@@ -200,7 +197,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Column(
           children: [
-            const Icon(Icons.military_tech_outlined, color: Color(0xFFFFD700), size: 54),
+            Icon(Icons.military_tech_outlined, color: kPrimaryGreen, size: 54),
             const SizedBox(height: 8),
             const Text('Conquista Desbloqueada!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
@@ -328,14 +325,14 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             _buildCoverImage(),
             const SizedBox(height: 15),
 
-            // ESTATÍSTICAS EM CHIPS VERDES (ESTILO FILTROS)
+            // ESTATÍSTICAS EM BLOCOS (ESTILO HEADER VERDE)
             Row(
               children: [
-                Expanded(child: _buildStatChip("POIs - ${_currentRoteiro.poiIds.length}")),
+                Expanded(child: _buildStatBlock("POIs", "${_currentRoteiro.poiIds.length}")),
                 const SizedBox(width: 8),
-                Expanded(flex: 1, child: _buildStatChip("Duração - ${_currentRoteiro.duracao}")),
+                Expanded(child: _buildStatBlock("Duração", _currentRoteiro.duracao)),
                 const SizedBox(width: 8),
-                Expanded(flex: 1, child: _buildStatChip("Distância - ${_currentRoteiro.distancia.toStringAsFixed(1)}km")),
+                Expanded(child: _buildStatBlock("Distância", "${_currentRoteiro.distancia.toStringAsFixed(1)} km")),
               ],
             ),
             
@@ -383,37 +380,40 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
 
                 return _buildGreenSection(
                   title: "Progresso da Exploração",
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('${progress.visitedCount} de ${progress.total} locais visitados', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-                          Text('${(progress.percentage * 100).toInt()}%', style: TextStyle(fontWeight: FontWeight.bold, color: kPrimaryGreen)),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: progress.percentage,
-                          backgroundColor: Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation<Color>(progress.isCompleted ? const Color(0xFFFFD700) : kPrimaryGreen),
-                          minHeight: 10,
-                        ),
-                      ),
-                      if (progress.isCompleted) ...[
-                        const SizedBox(height: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    child: Column(
+                      children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Icon(Icons.verified, color: Color(0xFFFFD700), size: 18),
-                            const SizedBox(width: 6),
-                            const Text("Roteiro totalmente explorado!", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD4AF37))),
+                            Text('${progress.visitedCount} de ${progress.total} locais visitados', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                            Text('${(progress.percentage * 100).toInt()}%', style: TextStyle(fontWeight: FontWeight.bold, color: kPrimaryGreen)),
                           ],
                         ),
-                      ]
-                    ],
+                        const SizedBox(height: 10),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: progress.percentage,
+                            backgroundColor: Colors.grey[200],
+                            valueColor: AlwaysStoppedAnimation<Color>(kPrimaryGreen),
+                            minHeight: 10,
+                          ),
+                        ),
+                        if (progress.isCompleted) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.verified, color: kPrimaryGreen, size: 18),
+                              const SizedBox(width: 5),
+                              Text('Roteiro Concluído! Badge ganho.', style: TextStyle(color: kPrimaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
+                            ],
+                          ),
+                        ]
+                      ],
+                    ),
                   ),
                 );
               },
@@ -429,65 +429,6 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                   _isLoadingPois 
                       ? Padding(padding: const EdgeInsets.all(20.0), child: CircularProgressIndicator(color: kPrimaryGreen))
                       : _buildPoiTimeline(),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 30),
-            
-            // AVALIAÇÕES
-            const Text("Avaliações", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _currentRoteiro.avaliacao.toStringAsFixed(0),
-                        style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-                      ),
-                      Row(
-                        children: List.generate(5, (index) => const Icon(Icons.star, color: Colors.amber, size: 24)),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        height: 35,
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kPrimaryGreen,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          ),
-                          child: const Text("Avaliar", style: TextStyle(color: Colors.white)),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: 120,
-                        height: 35,
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kPrimaryGreen,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          ),
-                          child: const Text("Avaliações", style: TextStyle(color: Colors.white)),
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -529,25 +470,41 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
     );
   }
 
-  Widget _buildStatChip(String label) {
+  Widget _buildStatBlock(String title, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       decoration: BoxDecoration(
-        color: kPrimaryGreen,
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2)),
+        ],
       ),
-      child: Center(
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 11,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+            decoration: BoxDecoration(color: kPrimaryGreen),
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+              maxLines: 1,
+            ),
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-        ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+            child: Text(
+              value,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

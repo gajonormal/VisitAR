@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/poi.dart';
-import 'services/download_service.dart';
 import '../models/roteiro.dart';
+import '../models/filter_options.dart';
+import '../widgets/filter_bottom_sheet.dart';
+import 'services/download_service.dart';
 import 'details_screen.dart';
 import 'roteiro_details_screen.dart';
 
@@ -25,6 +27,9 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   List<POI> _offlinePois = [];
   List<Roteiro> _offlineRoteiros = [];
   bool _isLoading = true;
+  
+  POIFilter _poiFilter = POIFilter();
+  RoteiroFilter _roteiroFilter = RoteiroFilter();
 
   @override
   void initState() {
@@ -216,13 +221,29 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
           // --- NOVO: Botão Filtros ---
           IconButton(
-            icon: Icon(Icons.tune, color: kPrimaryGreen),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Filtros em breve!")));
-            },
+            icon: Icon(Icons.tune, color: (_poiFilter.isActive || _roteiroFilter.isActive) ? kPrimaryGreen : Colors.grey),
             splashRadius: 24,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => FilterBottomSheet(
+                  initialPoiFilter: _poiFilter,
+                  initialRoteiroFilter: _roteiroFilter,
+                  showPoiFilters: true,
+                  showRoteiroFilters: true,
+                  onApply: (poiF, rotF) {
+                    setState(() {
+                      if (poiF != null) _poiFilter = poiF;
+                      if (rotF != null) _roteiroFilter = rotF;
+                    });
+                  },
+                ),
+              );
+            },
           ),
           
           const SizedBox(width: 5), // Pequena margem final
@@ -248,6 +269,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     }
 
     final filteredPois = _offlinePois.where((poi) {
+      if (!_poiFilter.apply(poi)) return false;
       return poi.name.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
@@ -302,6 +324,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     }
 
     final filteredRoteiros = _offlineRoteiros.where((roteiro) {
+      if (!_roteiroFilter.apply(roteiro)) return false;
       return roteiro.titulo.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 

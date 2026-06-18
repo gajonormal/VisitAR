@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,6 +11,8 @@ import '../screens/services/passport_service.dart';
 import '../../models/badge_model.dart';
 import 'model_viewer_screen.dart'; 
 import 'login_screen.dart';
+import '../models/roteiro.dart';
+import '../screens/services/roteiro_state.dart';
 
 class DetailsScreen extends StatefulWidget {
   final POI poi;
@@ -113,9 +116,36 @@ class _DetailsScreenState extends State<DetailsScreen> {
             backgroundColor: kPrimaryGreen,
           ),
         );
-        if (newBadges.isNotEmpty) {
+        
+        List<BadgeModel> allNewBadges = List.from(newBadges);
+
+        // --- VERIFICAÇÃO DE ROTEIRO ATIVO ---
+        if (activeRoteiroNotifier.value != null) {
+          final roteiro = activeRoteiroNotifier.value!;
+          if (roteiro.poiIds.contains(widget.poi.id)) {
+            final progress = await _passportService.getRoteiroProgress(roteiro);
+            if (progress.isCompleted) {
+              final roteiroBadges = await _passportService.registerRoteiroCompletion(roteiro.id);
+              allNewBadges.addAll(roteiroBadges);
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('🎉 Parabéns! Concluíste o roteiro "${roteiro.titulo}"!'),
+                    backgroundColor: kPrimaryGreen,
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
+              }
+              // Fechar o roteiro automaticamente
+              activeRoteiroNotifier.value = null; 
+            }
+          }
+        }
+
+        if (allNewBadges.isNotEmpty) {
           await Future.delayed(const Duration(milliseconds: 500));
-          if (mounted) _showBadgeUnlockedDialog(newBadges);
+          if (mounted) _showBadgeUnlockedDialog(allNewBadges);
         }
       }
     } catch (e) {
@@ -135,7 +165,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Column(
           children: [
-            const Icon(Icons.military_tech_outlined, color: Color(0xFFFFD700), size: 54),
+            Icon(Icons.military_tech_outlined, color: kPrimaryGreen, size: 54),
             const SizedBox(height: 8),
             const Text('Conquista Desbloqueada!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
@@ -425,6 +455,19 @@ class _DetailsScreenState extends State<DetailsScreen> {
         if (localPath != null) localImagePaths.add(localPath);
       }
 
+      // 2.5 Baixar Áudios
+      Map<String, dynamic> localAudioMap = {};
+      for (String lang in widget.poi.audioMap.keys) {
+        String aUrl = widget.poi.audioMap[lang];
+        if (aUrl.isNotEmpty && aUrl.startsWith('http')) {
+          String audioName = "poi_${widget.poi.id}_audio_$lang.mp3";
+          String? localAudioPath = await downloadService.downloadFile(aUrl, audioName);
+          if (localAudioPath != null) localAudioMap[lang] = localAudioPath;
+        } else {
+          localAudioMap[lang] = aUrl;
+        }
+      }
+
       // 3. Criar Objeto Offline (com caminhos locais)
       POI offlinePoi = POI(
         id: widget.poi.id,
@@ -432,9 +475,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
         category: widget.poi.category,
         location: widget.poi.location,
         images: localImagePaths, // <--- Lista de caminhos no telemóvel
-        audioUrl: widget.poi.audioUrl,
-        rating: widget.poi.rating,
         descriptionMap: widget.poi.descriptionMap,
+        audioMap: localAudioMap,
         arModelUrl: localModelPath ?? '', // <--- Caminho no telemóvel
         arScale: widget.poi.arScale,
       );
@@ -558,9 +600,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
                       ),
 
                       const SizedBox(height: 25),
+                      _buildNavigationButton(),
+                      const SizedBox(height: 15),
                       _build3DButton(),
-                      const SizedBox(height: 25),
-                      _buildReviewSection(),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -781,6 +823,53 @@ if (isLoadingDownload)
     );
   }
 
+  void _startNavigation() {
+    final tempRoteiro = Roteiro(
+      id: 'single_poi_${_displayPoi.id}',
+      titulo: 'Destino: ${_displayPoi.name}',
+      descricao: _displayPoi.description,
+      imagemCapa: _displayPoi.images.isNotEmpty ? _displayPoi.images.first : '',
+      poiIds: [_displayPoi.id],
+      dificuldade: 'N/A',
+      duracao: 'N/A',
+      distancia: 0.0,
+      criadorId: 'app_navigation',
+    );
+    
+    // Inicia a navegação ativa global
+    activeRoteiroNotifier.value = tempRoteiro;
+    
+    // Fecha a página de detalhes para mostrar o mapa com a rota
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  Widget _buildNavigationButton() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: kPrimaryGreen,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [BoxShadow(color: kPrimaryGreen.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))],
+      ),
+      child: ElevatedButton(
+        onPressed: _startNavigation,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent, shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.navigation_rounded, color: Colors.white),
+            SizedBox(width: 10),
+            Text("Navegar para o Local", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _build3DButton() {
     bool hasModelUrl = _displayPoi.arModelUrl.isNotEmpty;
     bool isButtonEnabled = hasModelUrl && (isDownloaded || _hasInternet);
@@ -821,40 +910,6 @@ if (isLoadingDownload)
       ),
     );
   }
-
-  Widget _buildReviewSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("${_displayPoi.rating}", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-              Row(children: List.generate(5, (index) => Icon(index < _displayPoi.rating.round() ? Icons.star : Icons.star_border, color: Colors.amber, size: 20))),
-            ],
-          ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 0,
-              side: BorderSide(color: Colors.grey[300]!),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
-            child: const Text("Avaliar"),
-          ),
-        ],
-      ),
-    );
-  }
-  
 }
 // --- COLA ISTO NO FINAL DO FICHEIRO, FORA DA CLASSE DETAILSSCREEN ---
 
@@ -869,7 +924,86 @@ class _FullDescriptionSheet extends StatefulWidget {
 class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
   final Color kPrimaryGreen = const Color(0xFF0F9D58);
   bool isPlaying = false;
-  double _sliderValue = 0.0;
+  String _selectedLang = 'pt';
+  
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGlobalLanguage();
+  }
+
+  Future<void> _loadGlobalLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _selectedLang = prefs.getString('global_language') ?? 'pt';
+      });
+      _setupAudio();
+    }
+  }
+
+  void _setupAudio() {
+    _audioPlayer.onPlayerStateChanged.listen((state) {
+      if (mounted) setState(() => isPlaying = state == PlayerState.playing);
+    });
+    _audioPlayer.onDurationChanged.listen((d) {
+      if (mounted) setState(() => _duration = d);
+    });
+    _audioPlayer.onPositionChanged.listen((p) {
+      if (mounted) setState(() => _position = p);
+    });
+    _audioPlayer.onPlayerComplete.listen((_) {
+      if (mounted) setState(() {
+        isPlaying = false;
+        _position = Duration.zero;
+      });
+    });
+    _loadAudioForLang(_selectedLang);
+  }
+
+  Future<void> _loadAudioForLang(String lang) async {
+    await _audioPlayer.stop();
+    if (mounted) setState(() {
+      _position = Duration.zero;
+      _duration = Duration.zero;
+    });
+    String audioUrl = widget.poi.getAudioUrl(lang);
+    if (audioUrl.isNotEmpty) {
+      if (!audioUrl.startsWith('http')) {
+        await _audioPlayer.setSourceDeviceFile(audioUrl);
+      } else {
+        await _audioPlayer.setSourceUrl(audioUrl);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  void _togglePlayPause() async {
+    if (isPlaying) {
+      await _audioPlayer.pause();
+    } else {
+      String audioUrl = widget.poi.getAudioUrl(_selectedLang);
+      if (audioUrl.isNotEmpty) {
+        await _audioPlayer.resume();
+      }
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(d.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(d.inSeconds.remainder(60));
+    return "$twoDigitMinutes:$twoDigitSeconds";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -911,8 +1045,9 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+
                   // Player de Áudio
-                  if (widget.poi.audioUrl.isNotEmpty || true) 
+                  if (widget.poi.getAudioUrl(_selectedLang).isNotEmpty) 
                     Container(
                       margin: const EdgeInsets.only(bottom: 25),
                       padding: const EdgeInsets.all(15),
@@ -934,7 +1069,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                               const Text("Ouvir áudio guia", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                               const Spacer(),
                               GestureDetector(
-                                onTap: () => setState(() => isPlaying = !isPlaying),
+                                onTap: _togglePlayPause,
                                 child: Icon(
                                   isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
                                   size: 44,
@@ -943,7 +1078,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 15),
+                          const SizedBox(height: 5),
                           SliderTheme(
                             data: SliderTheme.of(context).copyWith(
                               activeTrackColor: kPrimaryGreen,
@@ -954,9 +1089,22 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                               overlayShape: SliderComponentShape.noOverlay,
                             ),
                             child: Slider(
-                              value: _sliderValue,
-                              onChanged: (v) => setState(() => _sliderValue = v),
+                              min: 0,
+                              max: _duration.inMilliseconds.toDouble() > 0 ? _duration.inMilliseconds.toDouble() : 1.0,
+                              value: _position.inMilliseconds.toDouble().clamp(0, _duration.inMilliseconds.toDouble() > 0 ? _duration.inMilliseconds.toDouble() : 1.0),
+                              onChanged: (v) async {
+                                final position = Duration(milliseconds: v.toInt());
+                                await _audioPlayer.seek(position);
+                              },
                             ),
+                          ),
+                          const SizedBox(height: 5),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(_formatDuration(_position), style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                              Text(_formatDuration(_duration), style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                            ],
                           ),
                         ],
                       ),
@@ -974,7 +1122,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                   const SizedBox(height: 10), // Espaçamento entre o título e o texto
                   // Texto da Descrição
                   Text(
-                    widget.poi.getDescription('pt'),
+                    widget.poi.getDescription(_selectedLang),
                     style: const TextStyle(fontSize: 16, height: 1.7, color: Colors.black87),
                     textAlign: TextAlign.justify,
                   ),

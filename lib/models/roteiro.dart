@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 class Roteiro {
   final String id;
   final String titulo;
@@ -9,9 +9,9 @@ class Roteiro {
   final String dificuldade; // "FÁCIL", "MODERADO", "DIFÍCIL"
   final String duracao; // ex: "2h 30m"
   final double distancia; // em km
-  final double avaliacao; // 0.0 a 5.0
   final String criadorId; // 'admin' ou ID do utilizador autenticado
   final DateTime? dataCriacao;
+  final List<LatLng>? routePoints; // Rota offline em cache
 
   Roteiro({
     required this.id,
@@ -22,9 +22,9 @@ class Roteiro {
     required this.dificuldade,
     required this.duracao,
     required this.distancia,
-    required this.avaliacao,
     required this.criadorId,
     this.dataCriacao,
+    this.routePoints,
   });
 
   factory Roteiro.fromFirestore(DocumentSnapshot doc) {
@@ -39,7 +39,6 @@ class Roteiro {
       dificuldade: data['dificuldade'] ?? 'FÁCIL',
       duracao: data['duracao'] ?? '0h 0m',
       distancia: (data['distancia'] ?? 0.0).toDouble(),
-      avaliacao: (data['avaliacao'] ?? 0.0).toDouble(),
       criadorId: data['criadorId'] ?? 'admin',
       dataCriacao: data['dataCriacao'] != null 
           ? (data['dataCriacao'] as Timestamp).toDate() 
@@ -57,9 +56,9 @@ class Roteiro {
       'dificuldade': dificuldade,
       'duracao': duracao,
       'distancia': distancia,
-      'avaliacao': avaliacao,
       'criadorId': criadorId,
       'dataCriacao': dataCriacao != null ? Timestamp.fromDate(dataCriacao!) : FieldValue.serverTimestamp(),
+      'routePoints': routePoints?.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
     };
   }
 
@@ -73,9 +72,11 @@ class Roteiro {
       dificuldade: data['dificuldade'] ?? 'FÁCIL',
       duracao: data['duracao'] ?? '0h 0m',
       distancia: (data['distancia'] ?? 0.0).toDouble(),
-      avaliacao: (data['avaliacao'] ?? 0.0).toDouble(),
       criadorId: data['criadorId'] ?? 'admin',
       dataCriacao: null, // Ignoramos dataCriacao offline para simplicidade
+      routePoints: data['routePoints'] != null
+          ? (data['routePoints'] as List).map((p) => LatLng((p['lat'] as num).toDouble(), (p['lng'] as num).toDouble())).toList()
+          : null,
     );
   }
 
@@ -90,9 +91,9 @@ class Roteiro {
       'dificuldade': dificuldade,
       'duracao': duracao,
       'distancia': distancia,
-      'avaliacao': avaliacao,
       'criadorId': criadorId,
       'dataCriacao': dataCriacao?.toIso8601String(),
+      'routePoints': routePoints?.map((p) => {'lat': p.latitude, 'lng': p.longitude}).toList(),
     };
   }
 }

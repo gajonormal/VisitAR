@@ -1,7 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../models/roteiro.dart';
+import '../models/roteiro.dart';
+import '../models/filter_options.dart';
+import '../widgets/filter_bottom_sheet.dart';
+import '../widgets/custom_button.dart';
 import 'services/roteiros_service.dart';
 import 'roteiro_details_screen.dart';
 import 'create_roteiro_screen.dart';
@@ -21,6 +24,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
   final RoteirosService _roteirosService = RoteirosService();
 
   int _selectedFilter = 0; // 0: Sugeridos, 1: Meus, 2: Concluídos
+  RoteiroFilter _roteiroFilter = RoteiroFilter();
   late Stream<List<Roteiro>> _roteirosStream;
 
   final TextEditingController _searchController = TextEditingController();
@@ -159,11 +163,29 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
             ),
           Container(width: 1, height: 24, color: Colors.grey[300], margin: const EdgeInsets.symmetric(horizontal: 10)),
           IconButton(
-            icon: Icon(Icons.tune, color: kPrimaryGreen),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Filtros em breve!"))),
+            icon: Icon(Icons.tune, color: _roteiroFilter.isActive ? kPrimaryGreen : Colors.grey),
             splashRadius: 24,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => FilterBottomSheet(
+                  initialRoteiroFilter: _roteiroFilter,
+                  showPoiFilters: false,
+                  showRoteiroFilters: true,
+                  onApply: (poiF, rotF) {
+                    if (rotF != null) {
+                      setState(() {
+                        _roteiroFilter = rotF;
+                      });
+                    }
+                  },
+                ),
+              );
+            },
           ),
           const SizedBox(width: 5),
         ],
@@ -255,6 +277,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                   final roteiros = snapshot.data ?? [];
                   
                   final filteredRoteiros = roteiros.where((roteiro) {
+                    if (!_roteiroFilter.apply(roteiro)) return false;
                     return roteiro.titulo.toLowerCase().contains(_searchQuery.toLowerCase()) ||
                            roteiro.descricao.toLowerCase().contains(_searchQuery.toLowerCase());
                   }).toList();
@@ -349,15 +372,9 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
               ),
               if (!isLoggedIn && _selectedFilter != 0) ...[
                 const SizedBox(height: 24),
-                ElevatedButton(
+                CustomButton(
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kPrimaryGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                  ),
-                  child: const Text('Iniciar sessão'),
+                  text: 'Iniciar sessão',
                 ),
               ],
             ],
@@ -378,17 +395,19 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
         decoration: BoxDecoration(
-          color: isActive ? kPrimaryGreen : Colors.grey[200],
+          color: isActive ? kPrimaryGreen : Colors.white,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isActive ? kPrimaryGreen : Colors.grey.shade300),
+          boxShadow: isActive ? [BoxShadow(color: kPrimaryGreen.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))] : [],
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isActive ? Colors.white : Colors.grey[800],
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
+            color: isActive ? Colors.white : Colors.grey[700],
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 13.5,
           ),
         ),
       ),
@@ -515,15 +534,6 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                   Text(
                     "${roteiro.distancia.toStringAsFixed(1)} km",
                     style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.w500),
-                  ),
-                  
-                  const Spacer(),
-                  
-                  const Icon(Icons.star, size: 16, color: Colors.amber),
-                  const SizedBox(width: 4),
-                  Text(
-                    roteiro.avaliacao.toStringAsFixed(1),
-                    style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),

@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/models/poi.dart';
 import '/models/roteiro.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'routing_service.dart';
 
 class DownloadService {
   final Dio _dio = Dio();
@@ -141,31 +143,36 @@ class DownloadService {
   /// Faz download de todos os recursos necessários para um Roteiro
   Future<bool> downloadRoteiroCompleto(Roteiro roteiro, List<POI> pois) async {
     try {
-      // 1. Guardar Roteiro JSON localmente (modificando caminhos de imagens de rede para locais, se aplicável, mas podemos simplificar guardando apenas os metadados)
-      await saveOfflineRoteiroData(roteiro);
+      // 1. Pré-calcular a rota entre todos os POIs
+      List<LatLng> waypoints = pois.map((p) => p.location).toList();
+      List<LatLng> fullRoute = await RoutingService.getFullRoteiroRoute(waypoints);
+      
+      String localCapa = roteiro.imagemCapa;
 
       // 2. Fazer download da capa do roteiro se existir
       if (roteiro.imagemCapa.startsWith('http')) {
         String fileName = 'roteiro_${roteiro.id}_capa.jpg';
         String? localPath = await downloadFile(roteiro.imagemCapa, fileName);
         if (localPath != null) {
-          // Atualiza o Roteiro offline com a imagem local
-          final localRoteiro = Roteiro(
-            id: roteiro.id,
-            titulo: roteiro.titulo,
-            descricao: roteiro.descricao,
-            imagemCapa: localPath,
-            poiIds: roteiro.poiIds,
-            dificuldade: roteiro.dificuldade,
-            duracao: roteiro.duracao,
-            distancia: roteiro.distancia,
-            avaliacao: roteiro.avaliacao,
-            criadorId: roteiro.criadorId,
-            dataCriacao: roteiro.dataCriacao,
-          );
-          await saveOfflineRoteiroData(localRoteiro);
+          localCapa = localPath;
         }
       }
+
+      // 3. Guardar o Roteiro offline com a imagem local e a rota pre-calculada
+      final localRoteiro = Roteiro(
+        id: roteiro.id,
+        titulo: roteiro.titulo,
+        descricao: roteiro.descricao,
+        imagemCapa: localCapa,
+        poiIds: roteiro.poiIds,
+        dificuldade: roteiro.dificuldade,
+        duracao: roteiro.duracao,
+        distancia: roteiro.distancia,
+        criadorId: roteiro.criadorId,
+        dataCriacao: roteiro.dataCriacao,
+        routePoints: fullRoute.isNotEmpty ? fullRoute : null,
+      );
+      await saveOfflineRoteiroData(localRoteiro);
 
       // 3. Fazer download de TODOS os POIs (Modelos 3D, imagens, etc.)
       for (var poi in pois) {
@@ -188,12 +195,17 @@ class DownloadService {
           }
         }
 
-        // Download Audio
-        String localAudio = '';
-        if (poi.audioUrl.isNotEmpty) {
-          String audioName = 'poi_${poi.id}_audio.mp3';
-          String? lAudio = await downloadFile(poi.audioUrl, audioName);
-          if (lAudio != null) localAudio = lAudio;
+        // Download Audios
+        Map<String, dynamic> localAudioMap = {};
+        for (String lang in poi.audioMap.keys) {
+          String aUrl = poi.audioMap[lang];
+          if (aUrl.isNotEmpty && aUrl.startsWith('http')) {
+            String audioName = 'poi_${poi.id}_audio_$lang.mp3';
+            String? lAudio = await downloadFile(aUrl, audioName);
+            if (lAudio != null) localAudioMap[lang] = lAudio;
+          } else {
+            localAudioMap[lang] = aUrl;
+          }
         }
 
         // Save local POI copy
@@ -203,9 +215,8 @@ class DownloadService {
           category: poi.category,
           location: poi.location,
           images: localImages,
-          audioUrl: localAudio,
-          rating: poi.rating,
           descriptionMap: poi.descriptionMap,
+          audioMap: localAudioMap,
           arModelUrl: poi.arModelUrl.isNotEmpty ? await getFullPath('poi_${poi.id}.glb') : '',
           arScale: poi.arScale,
         );
@@ -294,7 +305,10 @@ class DownloadService {
           for (int i = 0; i < poi.images.length; i++) {
             await deleteFile("poi_${poi.id}_img_$i.jpg");
           }
-          // Apagar áudio
+          // Apagar áudios
+          for (String lang in poi.audioMap.keys) {
+            await deleteFile("poi_${poi.id}_audio_$lang.mp3");
+          }
           await deleteFile("poi_${poi.id}_audio.mp3");
           // Remover dados offline
           await removeOfflinePoiData(poi.id);
