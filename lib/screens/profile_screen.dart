@@ -177,14 +177,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
 
                 _buildListOption(
-                  icon: Icons.star_rate_rounded,
-                  text: "As minhas avaliações",
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("A abrir...")));
-                  },
-                ),
-
-                _buildListOption(
                   icon: Icons.download_done_rounded,
                   text: "Downloads Offline",
                   onTap: () {

@@ -4,10 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/poi.dart';
+import '../models/filter_options.dart';
+import '../widgets/filter_bottom_sheet.dart';
 import '../screens/services/database_services.dart';
 import '../screens/services/download_service.dart';
 import '../screens/services/roteiros_service.dart';
 import '../models/roteiro.dart';
+import '../widgets/poi_card.dart';
 import 'details_screen.dart';
 import 'roteiro_details_screen.dart';
 import 'ar_screen.dart';
@@ -34,7 +37,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   // --- FILTROS ---
   final List<String> _categories = ['Tudo', 'Histórico', 'Natureza', 'Geológico', 'Trilho', 'Gastronomia'];
-  String _selectedCategory = 'Tudo';
+  POIFilter _poiFilter = POIFilter();
 
   // --- PESQUISA ---
   final TextEditingController _searchController = TextEditingController();
@@ -45,6 +48,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   // --- ROTEIROS ---
   final RoteirosService _roteirosService = RoteirosService();
+
+  // --- LAYOUT ---
+  final GlobalKey _headerKey = GlobalKey();
+  double _headerHeight = 220.0;
 
   @override
   void initState() {
@@ -62,6 +69,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _measureHeaderHeight() {
+    final RenderBox? renderBox = _headerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox != null) {
+      final newHeight = renderBox.size.height;
+      if (newHeight != _headerHeight && newHeight > 0) {
+        setState(() => _headerHeight = newHeight);
+      }
+    }
   }
 
   Future<void> _loadData() async {
@@ -106,9 +123,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   void _applyFilter() {
-    List<POI> filtered = _selectedCategory == 'Tudo'
-        ? List.from(_allPois)
-        : _allPois.where((p) => p.category.toLowerCase() == _selectedCategory.toLowerCase()).toList();
+    List<POI> filtered = _allPois.where((p) => _poiFilter.apply(p)).toList();
     
     if (_userPosition != null) {
       // 1. Filter out POIs that are further than 50km (50,000 meters)
@@ -140,6 +155,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       return;
     }
     final results = _allPois.where((poi) {
+      if (!_poiFilter.apply(poi)) return false;
       return poi.name.toLowerCase().contains(query) ||
              poi.category.toLowerCase().contains(query);
     }).toList();
@@ -159,25 +175,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     setState(() { _searchResults = []; _isSearching = false; });
   }
 
-  String _formatDistance(POI poi) {
-    if (_userPosition == null) return '— km';
-    double dist = Geolocator.distanceBetween(
-        _userPosition!.latitude, _userPosition!.longitude,
-        poi.location.latitude, poi.location.longitude);
-    if (dist < 1000) return '${dist.toStringAsFixed(0)} m';
-    return '${(dist / 1000).toStringAsFixed(1)} km';
-  }
 
-  Color _categoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'geológico':   return const Color(0xFFE67E22);
-      case 'histórico':   return const Color(0xFF8B4513);
-      case 'natureza':    return const Color(0xFF27AE60);
-      case 'trilho':      return const Color(0xFF2980B9);
-      case 'gastronomia': return const Color(0xFFC0392B);
-      default:            return const Color(0xFF7F8C8D);
-    }
-  }
 
   Color _difficultyColor(String difficulty) {
     switch (difficulty) {
@@ -201,35 +199,58 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final double availableDropdownHeight =
         (screenHeight - keyboardHeight - headerH - 12).clamp(100, 300);
 
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeaderHeight());
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F5F0), // Fundo principal
       resizeToAvoidBottomInset: false,
       body: GestureDetector(
         onTap: _clearSearch,
         behavior: HitTestBehavior.translucent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
           children: [
-
-          // ── CAIXA VERDE (header + barra de pesquisa) ──
-          Container(
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [kPrimaryGreen, kPrimaryGreen.withOpacity(0.82)],
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(36),
-                bottomRight: Radius.circular(36),
+            // ── CONTEÚDO SCROLLÁVEL (Por baixo) ──
+            RefreshIndicator(
+              color: kPrimaryGreen,
+              onRefresh: _loadData,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(top: _headerHeight + 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildArBanner(),
+                    _buildCategoryFilters(),
+                    _buildNearbySection(),
+                    _buildItinerariesSection(),
+                    const SizedBox(height: 100),
+                  ],
+                ),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header saudão
-                _buildHeader(),
+
+            // ── CAIXA VERDE (Header + Pesquisa, Fixa no Topo) ──
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: Material(
+                key: _headerKey,
+                elevation: 10,
+                shadowColor: Colors.black.withOpacity(0.3),
+                color: Colors.transparent,
+                child: Container(
+                  clipBehavior: Clip.hardEdge,
+                  decoration: BoxDecoration(
+                    color: kPrimaryGreen,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(36),
+                      bottomRight: Radius.circular(36),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header saudão
+                      _buildHeader(),
 
                 // Barra de pesquisa + dropdown
                 Padding(
@@ -279,11 +300,27 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               Container(width: 1, height: 24, color: Colors.grey[300]),
                               const SizedBox(width: 5),
                               IconButton(
-                                icon: Icon(Icons.tune, color: kPrimaryGreen),
+                                icon: Icon(Icons.tune, color: _poiFilter.isActive ? kPrimaryGreen : Colors.grey),
                                 splashRadius: 24,
-                                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Filtros em breve!')),
-                                ),
+                                onPressed: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) => FilterBottomSheet(
+                                      initialPoiFilter: _poiFilter,
+                                      showPoiFilters: true,
+                                      showRoteiroFilters: false,
+                                      onApply: (poiF, rotF) {
+                                        if (poiF != null) {
+                                          setState(() => _poiFilter = poiF);
+                                          _applyFilter();
+                                          if (_searchController.text.isNotEmpty) _onSearchChanged();
+                                        }
+                                      },
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ],
@@ -326,37 +363,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // ── CONTEÚDO SCROLLÁVEL ──
-          Expanded(
-            child: Container(
-              color: const Color(0xFFF5F5F0),
-              child: RefreshIndicator(
-                color: kPrimaryGreen,
-                onRefresh: _loadData,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildArBanner(),
-                      _buildCategoryFilters(),
-                      _buildNearbySection(),
-                      _buildItinerariesSection(),
-                      const SizedBox(height: 100),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-        ),
-      ),
-    );
-  }
+            ), // fim Column
+          ), // fim Container
+        ), // fim Material
+      ), // fim Positioned
+    ], // fim Stack children
+  ), // fim Stack
+  ), // fim GestureDetector
+); // fim Scaffold
+}
 
   Widget _buildDropdownContainer({required Widget child, required double maxHeight}) {
     return Container(
@@ -389,23 +404,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ),
         Divider(height: 1, color: Colors.grey[200]),
         Flexible(
-          child: ListView.separated(
-            padding: EdgeInsets.zero,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             shrinkWrap: true,
             itemCount: nearby.length,
-            separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey[200]),
             itemBuilder: (context, index) {
-              final poi = nearby[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: kPrimaryGreen.withOpacity(0.12),
-                  child: Icon(Icons.location_on, color: kPrimaryGreen, size: 20),
-                ),
-                title: Text(poi.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Text(poi.category, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-                trailing: Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey[400]),
-                onTap: () => _selectSearchResult(poi),
-              );
+              return PoiCard(poi: nearby[index], userPosition: _userPosition);
             },
           ),
         ),
@@ -414,23 +418,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _buildResultsList(List<POI> pois) {
-    return ListView.separated(
-      padding: EdgeInsets.zero,
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shrinkWrap: true,
       itemCount: pois.length,
-      separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey[200]),
       itemBuilder: (context, index) {
-        final poi = pois[index];
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: kPrimaryGreen.withOpacity(0.12),
-            child: Icon(Icons.location_on, color: kPrimaryGreen, size: 20),
-          ),
-          title: Text(poi.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: Text(poi.category, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-          trailing: Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey[400]),
-          onTap: () => _selectSearchResult(poi),
-        );
+        return PoiCard(poi: pois[index], userPosition: _userPosition);
       },
     );
   }
@@ -574,9 +567,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
           separatorBuilder: (_, __) => const SizedBox(width: 8),
           itemBuilder: (context, i) {
             final cat = _categories[i];
-            final isSelected = cat == _selectedCategory;
+            final isSelected = cat == _poiFilter.categoria;
             return GestureDetector(
-              onTap: () { setState(() => _selectedCategory = cat); _applyFilter(); },
+              onTap: () { setState(() => _poiFilter = _poiFilter.copyWith(categoria: cat)); _applyFilter(); },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
@@ -628,7 +621,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           else if (_nearbyPois.isEmpty)
             _buildEmptyState()
           else
-            ...List.generate(_nearbyPois.length, (i) => _buildPoiCard(_nearbyPois[i])),
+            ...List.generate(_nearbyPois.length, (i) => PoiCard(poi: _nearbyPois[i], userPosition: _userPosition)),
         ],
       ),
     );
@@ -660,66 +653,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  Widget _buildPoiCard(POI poi) {
-    final catColor = _categoryColor(poi.category);
-    final distStr = _formatDistance(poi);
-    final String? imagePath = poi.images.isNotEmpty ? poi.images.first : null;
 
-    return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DetailsScreen(poi: poi))),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                width: 80, height: 80,
-                child: imagePath == null || imagePath.isEmpty
-                    ? Container(color: Colors.grey[200], child: Icon(Icons.landscape, color: Colors.grey[400]))
-                    : imagePath.startsWith('http')
-                        ? Image.network(imagePath, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.grey[200]))
-                        : Image.file(File(imagePath), fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.grey[200])),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(poi.category.toUpperCase(), style: TextStyle(color: catColor, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
-                  const SizedBox(height: 3),
-                  Text(poi.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  Text(poi.description, style: TextStyle(fontSize: 12.5, color: Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 7),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on_outlined, size: 13, color: Colors.grey[400]),
-                      const SizedBox(width: 3),
-                      Text(distStr, style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.w600)),
-                      const SizedBox(width: 12),
-                      Icon(Icons.star_rounded, size: 14, color: Colors.amber[600]),
-                      const SizedBox(width: 3),
-                      Text(poi.rating.toStringAsFixed(1), style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey[300]),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ---------------------------------------------------------------
   // SECÇÃO "ROTEIROS SUGERIDOS"
@@ -738,7 +672,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               children: [
                 const Text('Roteiros Sugeridos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                 GestureDetector(
-                  onTap: () => widget.onTabChange(1), // Assume que o separador de roteiros é o índice 1
+                  onTap: () => widget.onTabChange(2), // Roteiros é o índice 2
                   child: Text('Ver todos', style: TextStyle(color: kPrimaryGreen, fontSize: 14, fontWeight: FontWeight.w700)),
                 ),
               ],
@@ -748,7 +682,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           SizedBox(
             height: 200,
             child: StreamBuilder<List<Roteiro>>(
-              stream: _roteirosService.getRoteiros(), // alterado para mostrar todos os roteiros
+              stream: _roteirosService.getExploreRoteiros(), // Mostra apenas os do utilizador + admin
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

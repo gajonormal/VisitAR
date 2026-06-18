@@ -4,6 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/poi.dart';
 import '../models/roteiro.dart';
+import '../widgets/poi_card.dart';
+import '../widgets/custom_button.dart';
+import '../models/filter_options.dart';
+import '../widgets/filter_bottom_sheet.dart';
 import 'services/favorites_service.dart';
 import 'services/roteiros_service.dart';
 import 'details_screen.dart';
@@ -24,6 +28,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
+  bool _isLoading = false;
+  
+  POIFilter _poiFilter = POIFilter();
+  RoteiroFilter _roteiroFilter = RoteiroFilter();
 
   @override
   void initState() {
@@ -97,10 +105,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           return Scaffold(
             backgroundColor: Colors.white,
             appBar: AppBar(
-              title: const Text("Favoritos", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              title: const Text("Favoritos", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black)),
               backgroundColor: Colors.white,
               elevation: 0,
-              centerTitle: true,
+              centerTitle: false,
             ),
             body: Center(
               child: Padding(
@@ -122,15 +130,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       style: TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.4),
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton(
+                    CustomButton(
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryGreen,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                      ),
-                      child: const Text('Iniciar sessão'),
+                      text: 'Iniciar sessão',
                     ),
                   ],
                 ),
@@ -145,10 +147,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           child: Scaffold(
             backgroundColor: Colors.white,
             appBar: AppBar(
-              title: const Text("Favoritos", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              title: const Text("Favoritos", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black)),
               backgroundColor: Colors.white,
               elevation: 0,
-              centerTitle: true,
+              centerTitle: false,
               bottom: TabBar(
                 labelColor: kPrimaryGreen,
                 unselectedLabelColor: Colors.grey,
@@ -229,11 +231,29 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             ),
           Container(width: 1, height: 24, color: Colors.grey[300], margin: const EdgeInsets.symmetric(horizontal: 10)),
           IconButton(
-            icon: Icon(Icons.tune, color: kPrimaryGreen),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Filtros em breve!"))),
+            icon: Icon(Icons.tune, color: (_poiFilter.isActive || _roteiroFilter.isActive) ? kPrimaryGreen : Colors.grey),
             splashRadius: 24,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => FilterBottomSheet(
+                  initialPoiFilter: _poiFilter,
+                  initialRoteiroFilter: _roteiroFilter,
+                  showPoiFilters: true,
+                  showRoteiroFilters: true,
+                  onApply: (poiF, rotF) {
+                    setState(() {
+                      if (poiF != null) _poiFilter = poiF;
+                      if (rotF != null) _roteiroFilter = rotF;
+                    });
+                  },
+                ),
+              );
+            },
           ),
           const SizedBox(width: 5),
         ],
@@ -283,6 +303,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         }
 
         final filteredPois = allFavorites.where((poi) {
+          if (!_poiFilter.apply(poi)) return false;
           return poi.name.toLowerCase().contains(_searchQuery.toLowerCase());
         }).toList();
 
@@ -303,22 +324,30 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           color: kPrimaryGreen,
           onRefresh: _cleanupInvalidFavorites,
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             itemCount: filteredPois.length,
             itemBuilder: (context, index) {
               final poi = filteredPois[index];
-              return _buildCard(
-                itemName: poi.name,
-                coverImage: poi.images.isNotEmpty ? poi.images.first : null,
-                title: poi.name,
-                subtitle: poi.category,
-                onDelete: () => _removeFavorite(poi),
-                onTap: () {
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(builder: (context) => DetailsScreen(poi: poi))
-                  );
-                }
+              return Dismissible(
+                key: Key('poi_${poi.id}'),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(18)),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                onDismissed: (direction) async {
+                  await _favoritesService.removeFavorite(poi.id);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      backgroundColor: kPrimaryGreen,
+                      content: Text("${poi.name} removido dos favoritos.")
+                    ));
+                  }
+                },
+                child: PoiCard(poi: poi),
               );
             },
           ),
@@ -369,6 +398,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         }
 
         final filteredRoteiros = allFavorites.where((roteiro) {
+          if (!_roteiroFilter.apply(roteiro)) return false;
           return roteiro.titulo.toLowerCase().contains(_searchQuery.toLowerCase());
         }).toList();
 
