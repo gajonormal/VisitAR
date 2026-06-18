@@ -22,8 +22,8 @@ class FavoritesService {
       'category': poi.category,
       'latitude': poi.location.latitude,
       'longitude': poi.location.longitude,
-      'image': poi.images.isNotEmpty ? poi.images.first : '',
-      'rating': poi.rating,
+      'images': poi.images,
+      'descriptionMap': poi.descriptionMap,
       'timestamp': FieldValue.serverTimestamp(),
     };
 
@@ -74,10 +74,9 @@ class FavoritesService {
         name: data['name'] ?? 'Desconhecido',
         category: data['category'] ?? 'Outro',
         location: LatLng(data['latitude'] ?? 0.0, data['longitude'] ?? 0.0),
-        images: data['image'] != null && data['image'].toString().isNotEmpty ? [data['image']] : [],
+        images: List<String>.from(data['images'] ?? []),
         audioMap: {},
-        rating: (data['rating'] ?? 0).toDouble(),
-        descriptionMap: {}, 
+        descriptionMap: Map<String, dynamic>.from(data['descriptionMap'] ?? {}),
         arModelUrl: '', 
         arScale: 1.0,
       );
@@ -141,7 +140,6 @@ class FavoritesService {
         dificuldade: data['dificuldade'] ?? 'FÁCIL',
         duracao: data['duracao'] ?? '0h',
         distancia: (data['distancia'] ?? 0.0).toDouble(),
-        avaliacao: (data['avaliacao'] ?? 0.0).toDouble(),
         criadorId: data['criadorId'] ?? '',
       );
     }).toList();

@@ -134,7 +134,7 @@ class PassportService {
     final ref = _firestore
         .collection('users')
         .doc(_uid)
-        .collection('completed_roteiros')
+        .collection('concluidos')
         .doc(roteiroId);
 
     if ((await ref.get()).exists) return [];
@@ -208,7 +208,7 @@ class PassportService {
     final completedSnap = await _firestore
         .collection('users')
         .doc(_uid)
-        .collection('completed_roteiros')
+        .collection('concluidos')
         .get();
     final completedCount = completedSnap.docs.length;
 

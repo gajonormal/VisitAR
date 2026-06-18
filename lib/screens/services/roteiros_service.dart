@@ -55,6 +55,21 @@ class RoteirosService {
         });
   }
 
+  /// Retorna os roteiros do Explorar (criados pelo utilizador atual + admin)
+  Stream<List<Roteiro>> getExploreRoteiros() {
+    if (_uid == null) return getSuggestedRoteiros();
+
+    return _firestore
+        .collection('roteiros')
+        .where('criadorId', whereIn: ['admin', _uid])
+        .snapshots()
+        .map((snapshot) {
+          final list = snapshot.docs.map((doc) => Roteiro.fromFirestore(doc)).toList();
+          list.sort((a, b) => (b.dataCriacao ?? DateTime.now()).compareTo(a.dataCriacao ?? DateTime.now()));
+          return list;
+        });
+  }
+
   Future<void> createRoteiro(Roteiro roteiro) async {
     if (_uid == null) throw Exception("Utilizador não autenticado");
     
@@ -68,7 +83,6 @@ class RoteirosService {
       dificuldade: roteiro.dificuldade,
       duracao: roteiro.duracao,
       distancia: roteiro.distancia,
-      avaliacao: roteiro.avaliacao,
       criadorId: _uid!,
       dataCriacao: DateTime.now(),
     );

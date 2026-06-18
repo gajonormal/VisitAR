@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/models/poi.dart';
 import '/models/roteiro.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'routing_service.dart';
 
 class DownloadService {
   final Dio _dio = Dio();
@@ -141,31 +143,36 @@ class DownloadService {
   /// Faz download de todos os recursos necessários para um Roteiro
   Future<bool> downloadRoteiroCompleto(Roteiro roteiro, List<POI> pois) async {
     try {
-      // 1. Guardar Roteiro JSON localmente (modificando caminhos de imagens de rede para locais, se aplicável, mas podemos simplificar guardando apenas os metadados)
-      await saveOfflineRoteiroData(roteiro);
+      // 1. Pré-calcular a rota entre todos os POIs
+      List<LatLng> waypoints = pois.map((p) => p.location).toList();
+      List<LatLng> fullRoute = await RoutingService.getFullRoteiroRoute(waypoints);
+      
+      String localCapa = roteiro.imagemCapa;
 
       // 2. Fazer download da capa do roteiro se existir
       if (roteiro.imagemCapa.startsWith('http')) {
         String fileName = 'roteiro_${roteiro.id}_capa.jpg';
         String? localPath = await downloadFile(roteiro.imagemCapa, fileName);
         if (localPath != null) {
-          // Atualiza o Roteiro offline com a imagem local
-          final localRoteiro = Roteiro(
-            id: roteiro.id,
-            titulo: roteiro.titulo,
-            descricao: roteiro.descricao,
-            imagemCapa: localPath,
-            poiIds: roteiro.poiIds,
-            dificuldade: roteiro.dificuldade,
-            duracao: roteiro.duracao,
-            distancia: roteiro.distancia,
-            avaliacao: roteiro.avaliacao,
-            criadorId: roteiro.criadorId,
-            dataCriacao: roteiro.dataCriacao,
-          );
-          await saveOfflineRoteiroData(localRoteiro);
+          localCapa = localPath;
         }
       }
+
+      // 3. Guardar o Roteiro offline com a imagem local e a rota pre-calculada
+      final localRoteiro = Roteiro(
+        id: roteiro.id,
+        titulo: roteiro.titulo,
+        descricao: roteiro.descricao,
+        imagemCapa: localCapa,
+        poiIds: roteiro.poiIds,
+        dificuldade: roteiro.dificuldade,
+        duracao: roteiro.duracao,
+        distancia: roteiro.distancia,
+        criadorId: roteiro.criadorId,
+        dataCriacao: roteiro.dataCriacao,
+        routePoints: fullRoute.isNotEmpty ? fullRoute : null,
+      );
+      await saveOfflineRoteiroData(localRoteiro);
 
       // 3. Fazer download de TODOS os POIs (Modelos 3D, imagens, etc.)
       for (var poi in pois) {
@@ -208,7 +215,6 @@ class DownloadService {
           category: poi.category,
           location: poi.location,
           images: localImages,
-          rating: poi.rating,
           descriptionMap: poi.descriptionMap,
           audioMap: localAudioMap,
           arModelUrl: poi.arModelUrl.isNotEmpty ? await getFullPath('poi_${poi.id}.glb') : '',

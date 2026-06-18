@@ -7,7 +7,6 @@ class POI {
   final String category;
   final LatLng location;
   final List<String> images;
-  final double rating;
   
   // Guardamos o mapa de descrições e o mapa de audios
   final Map<String, dynamic> descriptionMap; 
@@ -22,7 +21,6 @@ class POI {
     required this.category,
     required this.location,
     required this.images,
-    required this.rating,
     required this.descriptionMap,
     required this.audioMap,
     required this.arModelUrl,
@@ -69,7 +67,6 @@ class POI {
       category: data['categoria'] ?? 'Geral',
       location: LatLng(geo.latitude, geo.longitude),
       images: listaImagens,
-      rating: (data['medAvaliacao'] ?? 0.0).toDouble(),
       descriptionMap: descMap,
       audioMap: audMap,
       arModelUrl: arMap['modelUrl'] ?? '',
@@ -86,7 +83,6 @@ class POI {
       'lat': location.latitude,
       'lng': location.longitude,
       'images': images,
-      'rating': rating,
       'descriptionMap': descriptionMap,
       'audioMap': audioMap,
       'arModelUrl': arModelUrl,
@@ -102,7 +98,6 @@ class POI {
       category: map['category'],
       location: LatLng(map['lat'], map['lng']),
       images: List<String>.from(map['images']),
-      rating: (map['rating'] ?? 0.0).toDouble(),
       descriptionMap: Map<String, dynamic>.from(map['descriptionMap'] ?? {}),
       audioMap: Map<String, dynamic>.from(map['audioMap'] ?? {}),
       arModelUrl: map['arModelUrl'] ?? '',

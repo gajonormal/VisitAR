@@ -103,6 +103,15 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
     }).toList();
   }
 
+  Future<bool> _hasInternet() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _guardarRoteiro() async {
     if (!_formKey.currentState!.validate()) return;
     
@@ -112,8 +121,26 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
       );
       return;
     }
+    
+    if (_tituloController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Dá um título ao teu roteiro!"), backgroundColor: Colors.red),
+      );
+      return;
+    }
 
     setState(() => _isSaving = true);
+
+    bool hasNet = await _hasInternet();
+    if (!hasNet) {
+      setState(() => _isSaving = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Precisas de internet para criar um roteiro, para que a app possa calcular a rota entre os pontos!"), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
 
     try {
       double distTotal = 0;
@@ -156,7 +183,6 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
         dificuldade: _dificuldade,
         duracao: duracaoFinal,
         distancia: distKm,
-        avaliacao: widget.roteiroToEdit?.avaliacao ?? 0.0,
         criadorId: widget.roteiroToEdit?.criadorId ?? '', // Vai ser substituído no service
       );
       
@@ -205,7 +231,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Column(
           children: [
-            const Icon(Icons.military_tech_outlined, color: Color(0xFFFFD700), size: 54),
+            Icon(Icons.military_tech_outlined, color: kPrimaryGreen, size: 54),
             const SizedBox(height: 8),
             const Text('Conquista Desbloqueada!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],

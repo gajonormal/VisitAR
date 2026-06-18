@@ -11,6 +11,8 @@ import '../screens/services/passport_service.dart';
 import '../../models/badge_model.dart';
 import 'model_viewer_screen.dart'; 
 import 'login_screen.dart';
+import '../models/roteiro.dart';
+import '../screens/services/roteiro_state.dart';
 
 class DetailsScreen extends StatefulWidget {
   final POI poi;
@@ -114,9 +116,36 @@ class _DetailsScreenState extends State<DetailsScreen> {
             backgroundColor: kPrimaryGreen,
           ),
         );
-        if (newBadges.isNotEmpty) {
+        
+        List<BadgeModel> allNewBadges = List.from(newBadges);
+
+        // --- VERIFICAÇÃO DE ROTEIRO ATIVO ---
+        if (activeRoteiroNotifier.value != null) {
+          final roteiro = activeRoteiroNotifier.value!;
+          if (roteiro.poiIds.contains(widget.poi.id)) {
+            final progress = await _passportService.getRoteiroProgress(roteiro);
+            if (progress.isCompleted) {
+              final roteiroBadges = await _passportService.registerRoteiroCompletion(roteiro.id);
+              allNewBadges.addAll(roteiroBadges);
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('🎉 Parabéns! Concluíste o roteiro "${roteiro.titulo}"!'),
+                    backgroundColor: kPrimaryGreen,
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
+              }
+              // Fechar o roteiro automaticamente
+              activeRoteiroNotifier.value = null; 
+            }
+          }
+        }
+
+        if (allNewBadges.isNotEmpty) {
           await Future.delayed(const Duration(milliseconds: 500));
-          if (mounted) _showBadgeUnlockedDialog(newBadges);
+          if (mounted) _showBadgeUnlockedDialog(allNewBadges);
         }
       }
     } catch (e) {
@@ -136,7 +165,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Column(
           children: [
-            const Icon(Icons.military_tech_outlined, color: Color(0xFFFFD700), size: 54),
+            Icon(Icons.military_tech_outlined, color: kPrimaryGreen, size: 54),
             const SizedBox(height: 8),
             const Text('Conquista Desbloqueada!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
@@ -446,7 +475,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
         category: widget.poi.category,
         location: widget.poi.location,
         images: localImagePaths, // <--- Lista de caminhos no telemóvel
-        rating: widget.poi.rating,
         descriptionMap: widget.poi.descriptionMap,
         audioMap: localAudioMap,
         arModelUrl: localModelPath ?? '', // <--- Caminho no telemóvel
@@ -572,9 +600,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
                       ),
 
                       const SizedBox(height: 25),
+                      _buildNavigationButton(),
+                      const SizedBox(height: 15),
                       _build3DButton(),
-                      const SizedBox(height: 25),
-                      _buildReviewSection(),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -795,6 +823,53 @@ if (isLoadingDownload)
     );
   }
 
+  void _startNavigation() {
+    final tempRoteiro = Roteiro(
+      id: 'single_poi_${_displayPoi.id}',
+      titulo: 'Destino: ${_displayPoi.name}',
+      descricao: _displayPoi.description,
+      imagemCapa: _displayPoi.images.isNotEmpty ? _displayPoi.images.first : '',
+      poiIds: [_displayPoi.id],
+      dificuldade: 'N/A',
+      duracao: 'N/A',
+      distancia: 0.0,
+      criadorId: 'app_navigation',
+    );
+    
+    // Inicia a navegação ativa global
+    activeRoteiroNotifier.value = tempRoteiro;
+    
+    // Fecha a página de detalhes para mostrar o mapa com a rota
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  Widget _buildNavigationButton() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: kPrimaryGreen,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [BoxShadow(color: kPrimaryGreen.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))],
+      ),
+      child: ElevatedButton(
+        onPressed: _startNavigation,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent, shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.navigation_rounded, color: Colors.white),
+            SizedBox(width: 10),
+            Text("Navegar para o Local", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _build3DButton() {
     bool hasModelUrl = _displayPoi.arModelUrl.isNotEmpty;
     bool isButtonEnabled = hasModelUrl && (isDownloaded || _hasInternet);
@@ -835,40 +910,6 @@ if (isLoadingDownload)
       ),
     );
   }
-
-  Widget _buildReviewSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("${_displayPoi.rating}", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-              Row(children: List.generate(5, (index) => Icon(index < _displayPoi.rating.round() ? Icons.star : Icons.star_border, color: Colors.amber, size: 20))),
-            ],
-          ),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 0,
-              side: BorderSide(color: Colors.grey[300]!),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            ),
-            child: const Text("Avaliar"),
-          ),
-        ],
-      ),
-    );
-  }
-  
 }
 // --- COLA ISTO NO FINAL DO FICHEIRO, FORA DA CLASSE DETAILSSCREEN ---
 

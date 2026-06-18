@@ -12,6 +12,9 @@ import '../screens/services/download_service.dart';
 import '../screens/services/roteiro_state.dart';
 import '../models/poi.dart';
 import '../models/roteiro.dart';
+import '../models/filter_options.dart';
+import '../widgets/filter_bottom_sheet.dart';
+import 'services/database_services.dart';
 import '../screens/services/roteiros_service.dart';
 import '../screens/services/routing_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -76,6 +79,10 @@ class _HomeMapState extends State<HomeMap> {
   final FocusNode _searchFocusNode = FocusNode();
   List<POI> _searchResults = [];
   bool _isSearching = false;
+  
+  // --- FILTROS ---
+  POIFilter _poiFilter = POIFilter();
+  // --- AR ---
   bool _isSearchFocused = false;
 
   final String _mapStyle = '''
@@ -119,6 +126,45 @@ class _HomeMapState extends State<HomeMap> {
     super.dispose();
   }
 
+  Future<bool> _hasInternet() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  List<POI> _optimizeRouteOrder(List<POI> pois, Position startPosition) {
+    List<POI> unvisited = List.from(pois);
+    List<POI> optimized = [];
+    LatLng currentLoc = LatLng(startPosition.latitude, startPosition.longitude);
+
+    while (unvisited.isNotEmpty) {
+      POI closest = unvisited.first;
+      double minDistance = Geolocator.distanceBetween(
+        currentLoc.latitude, currentLoc.longitude,
+        closest.location.latitude, closest.location.longitude,
+      );
+
+      for (int i = 1; i < unvisited.length; i++) {
+        double dist = Geolocator.distanceBetween(
+          currentLoc.latitude, currentLoc.longitude,
+          unvisited[i].location.latitude, unvisited[i].location.longitude,
+        );
+        if (dist < minDistance) {
+          closest = unvisited[i];
+          minDistance = dist;
+        }
+      }
+
+      optimized.add(closest);
+      unvisited.remove(closest);
+      currentLoc = closest.location;
+    }
+    return optimized;
+  }
+
   Future<void> _onActiveRoteiroChanged() async {
     Roteiro? roteiro = activeRoteiroNotifier.value;
     if (roteiro == null) {
@@ -143,8 +189,33 @@ class _HomeMapState extends State<HomeMap> {
     List<POI> roteiroPois = await DatabaseService().getPOIsByIds(roteiro.poiIds);
     if (roteiroPois.isEmpty) return;
 
-    List<LatLng> waypoints = roteiroPois.map((p) => p.location).toList();
-    List<LatLng> points = await RoutingService.getFullRoteiroRoute(waypoints);
+    // 1. Obter a localização atual do utilizador para reordenar
+    Position? currentPos;
+    try {
+      currentPos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    } catch (e) {
+      print("Erro ao obter posição atual para ordenar roteiro: $e");
+    }
+
+    // 2. Verificar se temos internet para calcular a rota da nova ordem
+    bool hasNet = await _hasInternet();
+    
+    List<LatLng> points = [];
+
+    if (hasNet && currentPos != null) {
+      // Temos internet e posição: reordenar de forma inteligente!
+      roteiroPois = _optimizeRouteOrder(roteiroPois, currentPos);
+      List<LatLng> waypoints = roteiroPois.map((p) => p.location).toList();
+      points = await RoutingService.getFullRoteiroRoute(waypoints);
+    } else {
+      // Offline ou sem GPS: Usar ordem original e carregar rota cache (se houver)
+      List<LatLng> waypoints = roteiroPois.map((p) => p.location).toList();
+      if (roteiro.routePoints != null && roteiro.routePoints!.isNotEmpty) {
+        points = roteiro.routePoints!;
+      } else {
+        points = await RoutingService.getFullRoteiroRoute(waypoints);
+      }
+    }
 
     setState(() {
       _polylines = {
@@ -354,6 +425,7 @@ class _HomeMapState extends State<HomeMap> {
 
   void _updateCardsContext(LatLng centerPoint) {
     List<POI> nearby = _allPois.where((poi) {
+      if (!_poiFilter.apply(poi)) return false;
       double dist = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, poi.location.latitude, poi.location.longitude);
       return dist <= _filterRadiusMeters;
     }).toList();
@@ -454,92 +526,30 @@ class _HomeMapState extends State<HomeMap> {
 
   void _onItemTapped(int index) { setState(() { _selectedIndex = index; }); }
 
-  // --- NAVEGAR: Abre Google Maps com seleção de modo de transporte ---
   void _startNavigation(POI poi) {
-    final lat = poi.location.latitude;
-    final lng = poi.location.longitude;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: kPrimaryGreen.withOpacity(0.1), shape: BoxShape.circle),
-                  child: Icon(Icons.navigation_rounded, color: kPrimaryGreen, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Navegar para', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                      Text(poi.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            const Text('Escolhe o modo de transporte', style: TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _buildTransportOption(ctx, icon: Icons.directions_walk, label: 'A Pé', mode: 'w', lat: lat, lng: lng),
-                const SizedBox(width: 10),
-                _buildTransportOption(ctx, icon: Icons.directions_car, label: 'Carro', mode: 'd', lat: lat, lng: lng),
-                const SizedBox(width: 10),
-                _buildTransportOption(ctx, icon: Icons.directions_bike, label: 'Bicicleta', mode: 'b', lat: lat, lng: lng),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
+    // Fecha qualquer cartão selecionado e limpa o mapa
+    setState(() {
+      _selectedPoiIndex = -1;
+      _selectedTopPoi = null;
+      _visiblePois.clear();
+      _polylines.clear();
+    });
 
-  Widget _buildTransportOption(BuildContext ctx, {required IconData icon, required String label, required String mode, required double lat, required double lng}) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () async {
-          Navigator.pop(ctx);
-          final uri = Uri.parse('google.navigation:q=$lat,$lng&mode=$mode');
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri);
-          } else {
-            // Fallback para browser
-            final fallback = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=${mode == 'w' ? 'walking' : mode == 'b' ? 'bicycling' : 'driving'}');
-            await launchUrl(fallback, mode: LaunchMode.externalApplication);
-          }
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: kPrimaryGreen, size: 26),
-              const SizedBox(height: 6),
-              Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-            ],
-          ),
-        ),
-      ),
+    // Cria um roteiro temporário apenas com este destino para ativar o Tracking
+    final tempRoteiro = Roteiro(
+      id: 'single_poi_${poi.id}',
+      titulo: 'Destino: ${poi.name}',
+      descricao: poi.description,
+      imagemCapa: poi.images.isNotEmpty ? poi.images.first : '',
+      poiIds: [poi.id],
+      dificuldade: 'N/A',
+      duracao: 'N/A',
+      distancia: 0.0,
+      criadorId: 'app_navigation',
     );
+    
+    // Atualiza o estado global que gere a navegação
+    activeRoteiroNotifier.value = tempRoteiro;
   }
 
   // --- LÓGICA DE PESQUISA ---
@@ -553,6 +563,7 @@ class _HomeMapState extends State<HomeMap> {
       return;
     }
     final results = _allPois.where((poi) {
+      if (!_poiFilter.apply(poi)) return false;
       return poi.name.toLowerCase().contains(query) ||
              poi.category.toLowerCase().contains(query);
     }).toList();
@@ -649,10 +660,10 @@ class _HomeMapState extends State<HomeMap> {
               if (activeRoteiroNotifier.value == null)
                 _buildSearchBar(),
               
-              // BOTÃO GPS — esconde quando a pesquisa está ativa
+              // BOTÃO GPS — esconde quando a pesquisa está ativa ou move para baixo se o mini cartão estiver visível
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 250), curve: Curves.easeInOut,
-                top: 110,
+                top: (_selectedTopPoi != null && activeRoteiroNotifier.value != null) ? 160 : 110,
                 right: (_isSearchFocused || _isSearching) ? -80 : 20,
                 child: FloatingActionButton.small(
                   heroTag: "gps_btn", backgroundColor: Colors.white, onPressed: _locateUser,
@@ -664,8 +675,8 @@ class _HomeMapState extends State<HomeMap> {
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,
                 bottom: activeRoteiroNotifier.value != null ? 220 : 100, 
-                // Se teclado aberto OU cartões visíveis, esconde botão AR
-                right: (areCardsVisible || isKeyboardOpen) ? -200 : 20, 
+                // Se teclado aberto, cartões visíveis OU em modo navegação, esconde botão AR
+                right: (areCardsVisible || isKeyboardOpen || activeRoteiroNotifier.value != null) ? -200 : 20, 
                 child: FloatingActionButton.extended(
                   heroTag: "ar_btn", backgroundColor: kPrimaryGreen,
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ArScreen())),
@@ -677,19 +688,27 @@ class _HomeMapState extends State<HomeMap> {
               // BOTÃO NAVEGAR — aparece quando há POI selecionado
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,
-                bottom: 100,
+                bottom: areCardsVisible ? (visibleBottom + cardHeight + 15) : 100,
                 left: (areCardsVisible && !isKeyboardOpen) ? 20 : -200,
-                child: FloatingActionButton.extended(
-                  heroTag: "nav_btn",
-                  backgroundColor: Colors.white,
-                  onPressed: () {
-                    if (_selectedPoiIndex != -1 && _selectedPoiIndex < _visiblePois.length) {
-                      _startNavigation(_visiblePois[_selectedPoiIndex]);
-                    }
-                  },
-                  icon: Icon(Icons.navigation_rounded, color: kPrimaryGreen),
-                  label: Text("Navegar", style: TextStyle(color: kPrimaryGreen, fontWeight: FontWeight.w700)),
-                  elevation: 2,
+                child: SizedBox(
+                  height: 42,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: kPrimaryGreen,
+                      elevation: 3,
+                      shadowColor: Colors.black26,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
+                    ),
+                    onPressed: () {
+                      if (_selectedPoiIndex != -1 && _selectedPoiIndex < _visiblePois.length) {
+                        _startNavigation(_visiblePois[_selectedPoiIndex]);
+                      }
+                    },
+                    icon: const Icon(Icons.navigation_rounded, size: 18),
+                    label: const Text("Navegar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
                 ),
               ),
 
@@ -697,9 +716,8 @@ class _HomeMapState extends State<HomeMap> {
               if (activeRoteiroNotifier.value != null)
                 _buildActiveNavigationPanel(),
 
-              // MINI CARTÃO DE TOPO (Apenas na Navegação Ativa)
-              if (activeRoteiroNotifier.value != null && _selectedTopPoi != null)
-                _buildTopMiniCard(),
+              // MINI CARTÃO DE TOPO (Sempre na árvore, animado para fora do ecrã quando invisível)
+              _buildTopMiniCard(),
 
               // CARROSSEL
               AnimatedPositioned(
@@ -821,7 +839,7 @@ class _HomeMapState extends State<HomeMap> {
                       });
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isRoteiroPaused ? Colors.orange : kPrimaryGreen,
+                      backgroundColor: _isRoteiroPaused ? kPrimaryGreen.withValues(alpha: 0.7) : kPrimaryGreen,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -834,12 +852,12 @@ class _HomeMapState extends State<HomeMap> {
                   child: ElevatedButton(
                     onPressed: _showEndRoteiroDialog,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red[600],
+                      backgroundColor: Colors.grey[600],
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     ),
-                    child: const Text("Terminar", style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text("Parar", style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -860,11 +878,11 @@ class _HomeMapState extends State<HomeMap> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Terminar Roteiro", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Parar Navegação", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Tens a certeza que queres terminar este roteiro?", textAlign: TextAlign.center),
+            const Text("Queres parar de seguir as indicações deste roteiro?", textAlign: TextAlign.center),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(15),
@@ -921,17 +939,7 @@ class _HomeMapState extends State<HomeMap> {
   }
 
   void _finishRoteiro() {
-    final roteiroId = activeRoteiroNotifier.value!.id;
-    // Marcar como concluído
-    RoteirosService().markRoteiroAsCompleted(roteiroId); 
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: kPrimaryGreen,
-        content: const Text("Parabéns! Roteiro concluído com sucesso."),
-      )
-    );
-    activeRoteiroNotifier.value = null; // Isto chama o _onActiveRoteiroChanged que limpa a UI
+    activeRoteiroNotifier.value = null; // Isto chama o _onActiveRoteiroChanged que limpa a UI e para o tracking
   }
 
   // --- BARRA DE PESQUISA FUNCIONAL ---
@@ -996,15 +1004,35 @@ class _HomeMapState extends State<HomeMap> {
                     onPressed: _clearSearch,
                   )
                 else ...([
-                  // Divisória e botão filtros quando não está a pesquisar
                   Container(width: 1, height: 24, color: Colors.grey[300]),
                   const SizedBox(width: 5),
                   IconButton(
-                    icon: Icon(Icons.tune, color: kPrimaryGreen),
+                    icon: Icon(Icons.tune, color: _poiFilter.isActive ? kPrimaryGreen : Colors.grey),
                     splashRadius: 24,
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Filtros em breve!")),
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => FilterBottomSheet(
+                          initialPoiFilter: _poiFilter,
+                          showPoiFilters: true,
+                          showRoteiroFilters: false,
+                          onApply: (poiF, rotF) {
+                            if (poiF != null) {
+                              setState(() {
+                                _poiFilter = poiF;
+                              });
+                              // Se tivermos um POI selecionado, o centro é ele. Senão procuramos na zona atual ou inicial.
+                              LatLng center = _selectedPoiIndex != -1 && _visiblePois.isNotEmpty && _selectedPoiIndex < _visiblePois.length 
+                                  ? _visiblePois[_selectedPoiIndex].location 
+                                  : _initialPosition;
+                              
+                              _updateCardsContext(center);
+                              if (_searchController.text.isNotEmpty) _onSearchChanged();
+                            }
+                          },
+                        ),
                       );
                     },
                   ),
@@ -1189,46 +1217,61 @@ class _HomeMapState extends State<HomeMap> {
       top: 60.0,
       left: 20, 
       right: 20,
-      child: GestureDetector(
-        onTap: () {
-           Navigator.push(context, MaterialPageRoute(builder: (_) => DetailsScreen(poi: _selectedTopPoi!)));
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(begin: const Offset(0, -0.5), end: Offset.zero).animate(animation),
+              child: child,
+            ),
+          );
         },
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
-          ),
-          child: Row(
-            children: [
-               ClipRRect(
-                 borderRadius: BorderRadius.circular(10),
-                 child: Image.network(
-                   _selectedTopPoi!.images.isNotEmpty ? _selectedTopPoi!.images.first : '', 
-                   width: 50, 
-                   height: 50, 
-                   fit: BoxFit.cover, 
-                   errorBuilder: (_,__,___) => Container(
-                     width: 50, height: 50, color: Colors.grey.shade200,
-                     child: const Icon(Icons.image_not_supported, color: Colors.grey),
-                   )
-                 ),
-               ),
-               const SizedBox(width: 12),
-               Expanded(
-                 child: Column(
-                   crossAxisAlignment: CrossAxisAlignment.start,
-                   children: [
-                     Text(_selectedTopPoi!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
-                     Text(_selectedTopPoi!.category, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                   ],
-                 ),
-               ),
-               const Icon(Icons.chevron_right, color: Colors.grey),
-            ],
-          ),
-        ),
+        child: (activeRoteiroNotifier.value != null && _selectedTopPoi != null)
+            ? GestureDetector(
+                key: ValueKey(_selectedTopPoi!.id),
+                onTap: () {
+                   Navigator.push(context, MaterialPageRoute(builder: (_) => DetailsScreen(poi: _selectedTopPoi!)));
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
+                  ),
+                  child: Row(
+                    children: [
+                       ClipRRect(
+                         borderRadius: BorderRadius.circular(10),
+                         child: Image.network(
+                           _selectedTopPoi!.images.isNotEmpty ? _selectedTopPoi!.images.first : '', 
+                           width: 50, 
+                           height: 50, 
+                           fit: BoxFit.cover, 
+                           errorBuilder: (_,__,___) => Container(
+                             width: 50, height: 50, color: Colors.grey.shade200,
+                             child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                           )
+                         ),
+                       ),
+                       const SizedBox(width: 12),
+                       Expanded(
+                         child: Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             Text(_selectedTopPoi!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                             Text(_selectedTopPoi!.category, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                           ],
+                         ),
+                       ),
+                       const Icon(Icons.chevron_right, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ) 
+            : const SizedBox.shrink(key: ValueKey('empty_card')),
       ),
     );
   }
@@ -1429,11 +1472,6 @@ class _PoiMapCardState extends State<PoiMapCard> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(child: Text(widget.poi.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(12)),
-                              child: Row(children: [Text(widget.poi.rating.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)), const SizedBox(width: 4), const Icon(Icons.star, size: 14, color: Colors.amber)]),
-                            )
                           ],
                         ),
                         Text("${widget.poi.category} • Aprox. ${_formatDistance()}", style: TextStyle(color: Colors.grey[600], fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
