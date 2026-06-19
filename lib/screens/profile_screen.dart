@@ -226,6 +226,24 @@ class ProfileScreen extends StatelessWidget {
                     }
                   },
                 ),
+                _buildListOption(
+                  icon: Icons.restore_page_outlined,
+                  text: "Reset Carimbos (Teste)",
+                  onTap: () async {
+                    final uid = FirebaseAuth.instance.currentUser?.uid;
+                    if (uid != null) {
+                      final snaps = await FirebaseFirestore.instance.collection('users').doc(uid).collection('visits').get();
+                      for (var doc in snaps.docs) {
+                        await doc.reference.delete();
+                      }
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('🗑️ Todos os teus carimbos de visitas foram apagados!'), backgroundColor: Colors.orange)
+                        );
+                      }
+                    }
+                  },
+                ),
                 const SizedBox(height: 100), // Espaço extra para scrollar além da NavigationBar
               ],
             ),

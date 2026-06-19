@@ -302,7 +302,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                    padding: const EdgeInsets.only(left: 25, right: 25, top: 10, bottom: 100),
                     itemCount: filteredRoteiros.length,
                     itemBuilder: (context, index) {
                       return _buildRoteiroCard(filteredRoteiros[index]);

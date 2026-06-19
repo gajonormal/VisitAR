@@ -144,7 +144,7 @@ class DownloadService {
   Future<bool> downloadRoteiroCompleto(Roteiro roteiro, List<POI> pois) async {
     try {
       // 1. Pré-calcular a rota entre todos os POIs
-      List<LatLng> waypoints = pois.map((p) => p.location).toList();
+      List<LatLng> waypoints = pois.map((p) => p.localizacao).toList();
       List<LatLng> fullRoute = await RoutingService.getFullRoteiroRoute(waypoints);
       
       String localCapa = roteiro.imagemCapa;
@@ -177,15 +177,15 @@ class DownloadService {
       // 3. Fazer download de TODOS os POIs (Modelos 3D, imagens, etc.)
       for (var poi in pois) {
         // Download 3D Model
-        if (poi.arModelUrl.isNotEmpty) {
+        if (poi.urlModeloAr.isNotEmpty) {
           String modelName = 'poi_${poi.id}.glb';
-          await downloadFile(poi.arModelUrl, modelName);
+          await downloadFile(poi.urlModeloAr, modelName);
         }
 
         // Download Images
         List<String> localImages = [];
-        for (int i = 0; i < poi.images.length; i++) {
-          String url = poi.images[i];
+        for (int i = 0; i < poi.imagens.length; i++) {
+          String url = poi.imagens[i];
           if (url.startsWith('http')) {
             String imgName = 'poi_${poi.id}_img_$i.jpg';
             String? localImg = await downloadFile(url, imgName);
@@ -197,8 +197,8 @@ class DownloadService {
 
         // Download Audios
         Map<String, dynamic> localAudioMap = {};
-        for (String lang in poi.audioMap.keys) {
-          String aUrl = poi.audioMap[lang];
+        for (String lang in poi.mapaAudio.keys) {
+          String aUrl = poi.mapaAudio[lang];
           if (aUrl.isNotEmpty && aUrl.startsWith('http')) {
             String audioName = 'poi_${poi.id}_audio_$lang.mp3';
             String? lAudio = await downloadFile(aUrl, audioName);
@@ -211,14 +211,14 @@ class DownloadService {
         // Save local POI copy
         final offlinePoi = POI(
           id: poi.id,
-          name: poi.name,
-          category: poi.category,
-          location: poi.location,
-          images: localImages,
-          descriptionMap: poi.descriptionMap,
-          audioMap: localAudioMap,
-          arModelUrl: poi.arModelUrl.isNotEmpty ? await getFullPath('poi_${poi.id}.glb') : '',
-          arScale: poi.arScale,
+          nome: poi.nome,
+          categoria: poi.categoria,
+          localizacao: poi.localizacao,
+          imagens: localImages,
+          mapaDescricao: poi.mapaDescricao,
+          mapaAudio: localAudioMap,
+          urlModeloAr: poi.urlModeloAr.isNotEmpty ? await getFullPath('poi_${poi.id}.glb') : '',
+          escalaAr: poi.escalaAr,
         );
         await saveOfflinePoiData(offlinePoi);
       }
@@ -302,11 +302,11 @@ class DownloadService {
           // Apagar Modelo 3D
           await deleteFile("poi_${poi.id}.glb");
           // Apagar Imagens
-          for (int i = 0; i < poi.images.length; i++) {
+          for (int i = 0; i < poi.imagens.length; i++) {
             await deleteFile("poi_${poi.id}_img_$i.jpg");
           }
           // Apagar áudios
-          for (String lang in poi.audioMap.keys) {
+          for (String lang in poi.mapaAudio.keys) {
             await deleteFile("poi_${poi.id}_audio_$lang.mp3");
           }
           await deleteFile("poi_${poi.id}_audio.mp3");

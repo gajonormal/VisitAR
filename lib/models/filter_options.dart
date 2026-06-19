@@ -26,9 +26,9 @@ class POIFilter {
   // Novo método para verificar se um POI passa no filtro
   bool apply(dynamic poi) {
     if (!isActive) return true;
-    if (categoria != 'Tudo' && poi.category.toLowerCase() != categoria.toLowerCase()) return false;
-    if (temModelo3D && (poi.arModelUrl == null || poi.arModelUrl.isEmpty)) return false;
-    if (temAudio && (poi.audioMap == null || poi.audioMap.isEmpty)) return false;
+    if (categoria != 'Tudo' && poi.categoria.toLowerCase() != categoria.toLowerCase()) return false;
+    if (temModelo3D && (poi.urlModeloAr == null || poi.urlModeloAr.isEmpty)) return false;
+    if (temAudio && (poi.mapaAudio == null || poi.mapaAudio.isEmpty)) return false;
     return true;
   }
 }

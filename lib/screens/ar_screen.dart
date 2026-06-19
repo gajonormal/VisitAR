@@ -106,14 +106,14 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
 
     double distanciaReal = Geolocator.distanceBetween(
       userPos.latitude, userPos.longitude,
-      targetPoi.location.latitude, targetPoi.location.longitude
+      targetPoi.localizacao.latitude, targetPoi.localizacao.longitude
     );
 
     if (distanciaReal > 100) return null; 
 
     double bearing = Geolocator.bearingBetween(
       userPos.latitude, userPos.longitude,
-      targetPoi.location.latitude, targetPoi.location.longitude
+      targetPoi.localizacao.latitude, targetPoi.localizacao.longitude
     );
 
     double angleFinal = (bearing - _currentHeading!);
@@ -152,7 +152,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
       int encontradosAgora = 0;
       
       for (var poi in _poisDoFirebase) {
-        String id = poi.name;
+        String id = poi.nome;
         vector.Vector3? posicaoCalculada = _calcularPosicaoAr(position, poi);
 
         if (posicaoCalculada != null) {
@@ -373,7 +373,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
                 Icon(Icons.location_on, color: kPrimaryGreen, size: 20),
                 const SizedBox(width: 10),
                 Text(
-                  poiSelecionado!.category.toUpperCase(), 
+                  poiSelecionado!.categoria.toUpperCase(), 
                   style: TextStyle(fontWeight: FontWeight.bold, color: kPrimaryGreen, fontSize: 12, letterSpacing: 1.0)
                 ),
                 const Spacer(),
@@ -388,7 +388,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  poiSelecionado!.name, 
+                  poiSelecionado!.nome, 
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, height: 1.1), 
                   maxLines: 2, 
                   overflow: TextOverflow.ellipsis

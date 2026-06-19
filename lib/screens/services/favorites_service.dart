@@ -18,12 +18,12 @@ class FavoritesService {
     // Guardamos um subconjunto dos dados do POI nos favoritos para facilitar a listagem
     final data = {
       'id': poi.id,
-      'name': poi.name,
-      'category': poi.category,
-      'latitude': poi.location.latitude,
-      'longitude': poi.location.longitude,
-      'images': poi.images,
-      'descriptionMap': poi.descriptionMap,
+      'name': poi.nome,
+      'category': poi.categoria,
+      'latitude': poi.localizacao.latitude,
+      'longitude': poi.localizacao.longitude,
+      'images': poi.imagens,
+      'descriptionMap': poi.mapaDescricao,
       'timestamp': FieldValue.serverTimestamp(),
     };
 
@@ -71,14 +71,14 @@ class FavoritesService {
       final data = doc.data();
       return POI(
         id: data['id'] ?? doc.id,
-        name: data['name'] ?? 'Desconhecido',
-        category: data['category'] ?? 'Outro',
-        location: LatLng(data['latitude'] ?? 0.0, data['longitude'] ?? 0.0),
-        images: List<String>.from(data['images'] ?? []),
-        audioMap: {},
-        descriptionMap: Map<String, dynamic>.from(data['descriptionMap'] ?? {}),
-        arModelUrl: '', 
-        arScale: 1.0,
+        nome: data['name'] ?? 'Desconhecido',
+        categoria: data['category'] ?? 'Outro',
+        localizacao: LatLng(data['latitude'] ?? 0.0, data['longitude'] ?? 0.0),
+        imagens: List<String>.from(data['images'] ?? []),
+        mapaAudio: {},
+        mapaDescricao: Map<String, dynamic>.from(data['descriptionMap'] ?? {}),
+        urlModeloAr: '', 
+        escalaAr: 1.0,
       );
     }).toList();
   }

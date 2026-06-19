@@ -12,6 +12,8 @@ import '../screens/services/download_service.dart';
 import '../screens/services/roteiro_state.dart';
 import '../models/poi.dart';
 import '../models/roteiro.dart';
+import '../models/panorama.dart';
+import 'panorama_screen.dart';
 import '../models/filter_options.dart';
 import '../widgets/filter_bottom_sheet.dart';
 import 'services/database_services.dart';
@@ -85,6 +87,10 @@ class _HomeMapState extends State<HomeMap> {
   // --- AR ---
   bool _isSearchFocused = false;
 
+  // --- PANORAMA CACHE ---
+  Panorama? _selectedPanorama;
+  final Map<String, Panorama?> _panoramasCache = {};
+
   final String _mapStyle = '''
     [
       {
@@ -144,13 +150,13 @@ class _HomeMapState extends State<HomeMap> {
       POI closest = unvisited.first;
       double minDistance = Geolocator.distanceBetween(
         currentLoc.latitude, currentLoc.longitude,
-        closest.location.latitude, closest.location.longitude,
+        closest.localizacao.latitude, closest.localizacao.longitude,
       );
 
       for (int i = 1; i < unvisited.length; i++) {
         double dist = Geolocator.distanceBetween(
           currentLoc.latitude, currentLoc.longitude,
-          unvisited[i].location.latitude, unvisited[i].location.longitude,
+          unvisited[i].localizacao.latitude, unvisited[i].localizacao.longitude,
         );
         if (dist < minDistance) {
           closest = unvisited[i];
@@ -160,7 +166,7 @@ class _HomeMapState extends State<HomeMap> {
 
       optimized.add(closest);
       unvisited.remove(closest);
-      currentLoc = closest.location;
+      currentLoc = closest.localizacao;
     }
     return optimized;
   }
@@ -205,11 +211,11 @@ class _HomeMapState extends State<HomeMap> {
     if (hasNet && currentPos != null) {
       // Temos internet e posição: reordenar de forma inteligente!
       roteiroPois = _optimizeRouteOrder(roteiroPois, currentPos);
-      List<LatLng> waypoints = roteiroPois.map((p) => p.location).toList();
+      List<LatLng> waypoints = roteiroPois.map((p) => p.localizacao).toList();
       points = await RoutingService.getFullRoteiroRoute(waypoints);
     } else {
       // Offline ou sem GPS: Usar ordem original e carregar rota cache (se houver)
-      List<LatLng> waypoints = roteiroPois.map((p) => p.location).toList();
+      List<LatLng> waypoints = roteiroPois.map((p) => p.localizacao).toList();
       if (roteiro.routePoints != null && roteiro.routePoints!.isNotEmpty) {
         points = roteiro.routePoints!;
       } else {
@@ -289,7 +295,7 @@ class _HomeMapState extends State<HomeMap> {
       POI nextPoi = _currentRoteiroPois[_nextPoiIndex];
       double dist = Geolocator.distanceBetween(
         position.latitude, position.longitude,
-        nextPoi.location.latitude, nextPoi.location.longitude,
+        nextPoi.localizacao.latitude, nextPoi.localizacao.longitude,
       );
       
       // Se estiver muito perto (ex: 20 metros), avança para o próximo POI
@@ -299,7 +305,7 @@ class _HomeMapState extends State<HomeMap> {
           nextPoi = _currentRoteiroPois[_nextPoiIndex];
           dist = Geolocator.distanceBetween(
             position.latitude, position.longitude,
-            nextPoi.location.latitude, nextPoi.location.longitude,
+            nextPoi.localizacao.latitude, nextPoi.localizacao.longitude,
           );
         } else {
           dist = 0.0; // Chegou ao fim
@@ -319,7 +325,7 @@ class _HomeMapState extends State<HomeMap> {
             _lastRouteFetch = DateTime.now();
             RoutingService.getPedestrianRoute(
               LatLng(position.latitude, position.longitude), 
-              nextPoi.location
+              nextPoi.localizacao
             ).then((route) {
               if (mounted) {
                 setState(() {
@@ -350,7 +356,7 @@ class _HomeMapState extends State<HomeMap> {
               polylineId: const PolylineId('user_to_next'),
               points: _currentDynamicRoute.isNotEmpty ? _currentDynamicRoute : [
                 LatLng(position.latitude, position.longitude),
-                nextPoi.location,
+                nextPoi.localizacao,
               ],
               color: Colors.blueAccent,
               width: 4,
@@ -426,13 +432,13 @@ class _HomeMapState extends State<HomeMap> {
   void _updateCardsContext(LatLng centerPoint) {
     List<POI> nearby = _allPois.where((poi) {
       if (!_poiFilter.apply(poi)) return false;
-      double dist = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, poi.location.latitude, poi.location.longitude);
+      double dist = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, poi.localizacao.latitude, poi.localizacao.longitude);
       return dist <= _filterRadiusMeters;
     }).toList();
 
     nearby.sort((a, b) {
-      double distA = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, a.location.latitude, a.location.longitude);
-      double distB = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, b.location.latitude, b.location.longitude);
+      double distA = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, a.localizacao.latitude, a.localizacao.longitude);
+      double distB = Geolocator.distanceBetween(centerPoint.latitude, centerPoint.longitude, b.localizacao.latitude, b.localizacao.longitude);
       return distA.compareTo(distB);
     });
     setState(() {
@@ -440,8 +446,10 @@ class _HomeMapState extends State<HomeMap> {
       if (_visiblePois.isNotEmpty) {
         _selectedPoiIndex = 0;
         if (_pageController.hasClients) _pageController.jumpToPage(0);
+        _checkPanoramaForPoi(_visiblePois[0]);
       } else {
         _selectedPoiIndex = -1;
+        _selectedPanorama = null;
       }
       _updateMarkers(); 
     });
@@ -458,7 +466,7 @@ class _HomeMapState extends State<HomeMap> {
         var poi = _currentRoteiroPois[i];
         newMarkers.add(Marker(
           markerId: MarkerId(poi.id),
-          position: poi.location,
+          position: poi.localizacao,
           icon: _numberedMarkersNormal[i + 1] ?? _markerIconNormal!,
           zIndex: 1,
           anchor: const Offset(0.5, 0.5),
@@ -467,7 +475,7 @@ class _HomeMapState extends State<HomeMap> {
               _selectedTopPoi = poi;
             });
             if (_mapController != null) {
-               _mapController!.animateCamera(CameraUpdate.newLatLng(poi.location));
+               _mapController!.animateCamera(CameraUpdate.newLatLng(poi.localizacao));
             }
           }
         ));
@@ -480,13 +488,13 @@ class _HomeMapState extends State<HomeMap> {
         }
         newMarkers.add(Marker(
           markerId: MarkerId(poi.id),
-          position: poi.location,
+          position: poi.localizacao,
           icon: isSelected ? _markerIconSelected! : _markerIconNormal!,
           zIndex: isSelected ? 2 : 1,
           anchor: const Offset(0.5, 0.5),
           onTap: () { 
             if (activeRoteiroNotifier.value == null) {
-              _updateCardsContext(poi.location); 
+              _updateCardsContext(poi.localizacao); 
             }
           },
         ));
@@ -495,11 +503,35 @@ class _HomeMapState extends State<HomeMap> {
     setState(() { _markers = newMarkers; });
   }
 
+  Future<void> _checkPanoramaForPoi(POI poi) async {
+    if (_panoramasCache.containsKey(poi.id)) {
+      setState(() {
+        _selectedPanorama = _panoramasCache[poi.id];
+      });
+      return;
+    }
+    
+    try {
+      var pano = await DatabaseService().getPanoramaForPoi(poi.id);
+      _panoramasCache[poi.id] = pano;
+      if (_selectedPoiIndex != -1 && _selectedPoiIndex < _visiblePois.length && _visiblePois[_selectedPoiIndex].id == poi.id) {
+        if (mounted) {
+          setState(() {
+            _selectedPanorama = pano;
+          });
+        }
+      }
+    } catch (e) {
+      _panoramasCache[poi.id] = null;
+    }
+  }
+
   void _onPageChanged(int index) {
     setState(() { _selectedPoiIndex = index; });
     _updateMarkers();
     if (_mapController != null && index < _visiblePois.length) {
-      _mapController!.animateCamera(CameraUpdate.newLatLng(_visiblePois[index].location));
+      _mapController!.animateCamera(CameraUpdate.newLatLng(_visiblePois[index].localizacao));
+      _checkPanoramaForPoi(_visiblePois[index]);
     }
   }
 
@@ -538,9 +570,9 @@ class _HomeMapState extends State<HomeMap> {
     // Cria um roteiro temporário apenas com este destino para ativar o Tracking
     final tempRoteiro = Roteiro(
       id: 'single_poi_${poi.id}',
-      titulo: 'Destino: ${poi.name}',
+      titulo: 'Destino: ${poi.nome}',
       descricao: poi.description,
-      imagemCapa: poi.images.isNotEmpty ? poi.images.first : '',
+      imagemCapa: poi.imagens.isNotEmpty ? poi.imagens.first : '',
       poiIds: [poi.id],
       dificuldade: 'N/A',
       duracao: 'N/A',
@@ -564,8 +596,8 @@ class _HomeMapState extends State<HomeMap> {
     }
     final results = _allPois.where((poi) {
       if (!_poiFilter.apply(poi)) return false;
-      return poi.name.toLowerCase().contains(query) ||
-             poi.category.toLowerCase().contains(query);
+      return poi.nome.toLowerCase().contains(query) ||
+             poi.categoria.toLowerCase().contains(query);
     }).toList();
     setState(() {
       _searchResults = results;
@@ -585,12 +617,12 @@ class _HomeMapState extends State<HomeMap> {
     if (_mapController != null) {
       _mapController!.animateCamera(
         CameraUpdate.newCameraPosition(
-          CameraPosition(target: poi.location, zoom: 18),
+          CameraPosition(target: poi.localizacao, zoom: 18),
         ),
       );
     }
     // Mostrar os cartões em torno desse POI
-    _updateCardsContext(poi.location);
+    _updateCardsContext(poi.localizacao);
   }
 
   void _clearSearch() {
@@ -690,25 +722,60 @@ class _HomeMapState extends State<HomeMap> {
                 duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,
                 bottom: areCardsVisible ? (visibleBottom + cardHeight + 15) : 100,
                 left: (areCardsVisible && !isKeyboardOpen) ? 20 : -200,
-                child: SizedBox(
-                  height: 42,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: kPrimaryGreen,
-                      elevation: 3,
-                      shadowColor: Colors.black26,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_selectedPanorama != null && _selectedPoiIndex != -1 && _selectedPoiIndex < _visiblePois.length) ...[
+                      SizedBox(
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: kPrimaryGreen,
+                            elevation: 3,
+                            shadowColor: Colors.black26,
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PanoramaScreen(
+                                  panorama: _selectedPanorama!,
+                                  initialPoiId: _visiblePois[_selectedPoiIndex].id,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.threesixty, size: 18),
+                          label: const Text("Ver 360º", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    SizedBox(
+                      height: 42,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: kPrimaryGreen,
+                          elevation: 3,
+                          shadowColor: Colors.black26,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
+                        ),
+                        onPressed: () {
+                          if (_selectedPoiIndex != -1 && _selectedPoiIndex < _visiblePois.length) {
+                            _startNavigation(_visiblePois[_selectedPoiIndex]);
+                          }
+                        },
+                        icon: const Icon(Icons.navigation_rounded, size: 18),
+                        label: const Text("Navegar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
                     ),
-                    onPressed: () {
-                      if (_selectedPoiIndex != -1 && _selectedPoiIndex < _visiblePois.length) {
-                        _startNavigation(_visiblePois[_selectedPoiIndex]);
-                      }
-                    },
-                    icon: const Icon(Icons.navigation_rounded, size: 18),
-                    label: const Text("Navegar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  ),
+                  ],
                 ),
               ),
 
@@ -809,7 +876,7 @@ class _HomeMapState extends State<HomeMap> {
                       children: [
                         Text(activeRoteiroNotifier.value!.titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                         if (_nextPoiIndex < _currentRoteiroPois.length)
-                          Text("A ${formatDistance(_distanceToNextPoi)} de ${_currentRoteiroPois[_nextPoiIndex].name}", style: TextStyle(color: kPrimaryGreen, fontSize: 12, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text("A ${formatDistance(_distanceToNextPoi)} de ${_currentRoteiroPois[_nextPoiIndex].nome}", style: TextStyle(color: kPrimaryGreen, fontSize: 12, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),
@@ -1025,7 +1092,7 @@ class _HomeMapState extends State<HomeMap> {
                               });
                               // Se tivermos um POI selecionado, o centro é ele. Senão procuramos na zona atual ou inicial.
                               LatLng center = _selectedPoiIndex != -1 && _visiblePois.isNotEmpty && _selectedPoiIndex < _visiblePois.length 
-                                  ? _visiblePois[_selectedPoiIndex].location 
+                                  ? _visiblePois[_selectedPoiIndex].localizacao 
                                   : _initialPosition;
                               
                               _updateCardsContext(center);
@@ -1123,13 +1190,13 @@ class _HomeMapState extends State<HomeMap> {
                       child: Icon(Icons.location_on, color: kPrimaryGreen, size: 20),
                     ),
                     title: Text(
-                      poi.name,
+                      poi.nome,
                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Text(
-                      poi.category,
+                      poi.categoria,
                       style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     ),
                     trailing: Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey[400]),
@@ -1169,13 +1236,13 @@ class _HomeMapState extends State<HomeMap> {
                 child: Icon(Icons.location_on, color: kPrimaryGreen, size: 20),
               ),
               title: Text(
-                poi.name,
+                poi.nome,
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               subtitle: Text(
-                poi.category,
+                poi.categoria,
                 style: TextStyle(color: Colors.grey[500], fontSize: 12),
               ),
               trailing: Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey[400]),
@@ -1246,7 +1313,7 @@ class _HomeMapState extends State<HomeMap> {
                        ClipRRect(
                          borderRadius: BorderRadius.circular(10),
                          child: Image.network(
-                           _selectedTopPoi!.images.isNotEmpty ? _selectedTopPoi!.images.first : '', 
+                           _selectedTopPoi!.imagens.isNotEmpty ? _selectedTopPoi!.imagens.first : '', 
                            width: 50, 
                            height: 50, 
                            fit: BoxFit.cover, 
@@ -1261,8 +1328,8 @@ class _HomeMapState extends State<HomeMap> {
                          child: Column(
                            crossAxisAlignment: CrossAxisAlignment.start,
                            children: [
-                             Text(_selectedTopPoi!.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
-                             Text(_selectedTopPoi!.category, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                             Text(_selectedTopPoi!.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                             Text(_selectedTopPoi!.categoria, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
                            ],
                          ),
                        ),
@@ -1419,7 +1486,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
     if (_userPosition == null) return '— km';
     double dist = Geolocator.distanceBetween(
         _userPosition!.latitude, _userPosition!.longitude,
-        widget.poi.location.latitude, widget.poi.location.longitude);
+        widget.poi.localizacao.latitude, widget.poi.localizacao.longitude);
     if (dist < 1000) return '${dist.toStringAsFixed(0)} m';
     return '${(dist / 1000).toStringAsFixed(1)} km';
   }
@@ -1427,7 +1494,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
   @override
   Widget build(BuildContext context) {
     Widget imageWidget;
-    String? imagePath = widget.poi.images.isNotEmpty ? widget.poi.images.first : null;
+    String? imagePath = widget.poi.imagens.isNotEmpty ? widget.poi.imagens.first : null;
 
     if (imagePath == null || imagePath.isEmpty) {
       imageWidget = Container(
@@ -1471,10 +1538,10 @@ class _PoiMapCardState extends State<PoiMapCard> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(child: Text(widget.poi.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            Expanded(child: Text(widget.poi.nome, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis)),
                           ],
                         ),
-                        Text("${widget.poi.category} • Aprox. ${_formatDistance()}", style: TextStyle(color: Colors.grey[600], fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text("${widget.poi.categoria} • Aprox. ${_formatDistance()}", style: TextStyle(color: Colors.grey[600], fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                         Row(
                           children: [
                             // Botão Detalhes (Stadium)

@@ -5,12 +5,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/poi.dart';
+import '../models/panorama.dart';
+import 'services/database_services.dart';
 import '../screens/services/download_service.dart';
 import '../screens/services/favorites_service.dart';
 import '../screens/services/passport_service.dart';
 import '../../models/badge_model.dart';
 import 'model_viewer_screen.dart'; 
 import 'login_screen.dart';
+import 'panorama_screen.dart';
 import '../models/roteiro.dart';
 import '../screens/services/roteiro_state.dart';
 
@@ -55,10 +58,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
   bool _isRegisteringVisit = false;
   double? _distanceToPoi;
 
+  // --- PANORAMA ---
+  Panorama? _panorama;
+
   @override
   void initState() {
     super.initState();
-    // Inicializa com os dados que vêm da lista anterior
     _displayPoi = widget.poi;
 
     _checkInternet();
@@ -67,6 +72,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
     _checkFavoriteStatus();
     _checkItineraryStatus();
     _checkVisitStatus();
+    _checkPanorama();
+
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _measureHeaderHeight();
@@ -77,6 +84,25 @@ class _DetailsScreenState extends State<DetailsScreen> {
     if (FirebaseAuth.instance.currentUser == null) return;
     final visited = await _passportService.hasVisited(widget.poi.id);
     if (mounted) setState(() => _isVisited = visited);
+  }
+
+  Future<void> _checkPanorama() async {
+    try {
+      var pano = await DatabaseService().getPanoramaForPoi(widget.poi.id);
+      
+      if (pano == null) {
+        await DatabaseService().seedTestPanorama(widget.poi.id);
+        pano = await DatabaseService().getPanoramaForPoi(widget.poi.id);
+      }
+      
+      if (mounted && pano != null) {
+        setState(() => _panorama = pano);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro 360: $e")));
+      }
+    }
   }
 
   Future<void> _registerVisit() async {
@@ -276,7 +302,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
     if (_userPosition == null) return '— km';
     double dist = Geolocator.distanceBetween(
         _userPosition!.latitude, _userPosition!.longitude,
-        _displayPoi.location.latitude, _displayPoi.location.longitude);
+        _displayPoi.localizacao.latitude, _displayPoi.localizacao.longitude);
     if (dist < 1000) return '${dist.toStringAsFixed(0)} m';
     return '${(dist / 1000).toStringAsFixed(1)} km';
   }
@@ -410,7 +436,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
       await downloadService.deleteFile("poi_${widget.poi.id}.glb");
       
       // Apagar Imagens (baseado no índice)
-      for (int i = 0; i < widget.poi.images.length; i++) {
+      for (int i = 0; i < widget.poi.imagens.length; i++) {
         await downloadService.deleteFile("poi_${widget.poi.id}_img_$i.jpg");
       }
       
@@ -430,10 +456,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
     }
 
     // MODO BAIXAR
-    if (widget.poi.arModelUrl.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Conteúdo indisponível.")));
-      return;
-    }
     if (!_hasInternet) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sem conexão para baixar.")));
       return;
@@ -443,13 +465,16 @@ class _DetailsScreenState extends State<DetailsScreen> {
     
     try {
       // 1. Baixar Modelo 3D
-      String modelFileName = "poi_${widget.poi.id}.glb";
-      String? localModelPath = await downloadService.downloadFile(widget.poi.arModelUrl, modelFileName);
+      String? localModelPath;
+      if (widget.poi.urlModeloAr.isNotEmpty) {
+        String modelFileName = "poi_${widget.poi.id}.glb";
+        localModelPath = await downloadService.downloadFile(widget.poi.urlModeloAr, modelFileName);
+      }
 
       // 2. Baixar Imagens
       List<String> localImagePaths = [];
-      for (int i = 0; i < widget.poi.images.length; i++) {
-        String imgUrl = widget.poi.images[i];
+      for (int i = 0; i < widget.poi.imagens.length; i++) {
+        String imgUrl = widget.poi.imagens[i];
         String imgName = "poi_${widget.poi.id}_img_$i.jpg";
         String? localPath = await downloadService.downloadFile(imgUrl, imgName);
         if (localPath != null) localImagePaths.add(localPath);
@@ -457,8 +482,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
       // 2.5 Baixar Áudios
       Map<String, dynamic> localAudioMap = {};
-      for (String lang in widget.poi.audioMap.keys) {
-        String aUrl = widget.poi.audioMap[lang];
+      for (String lang in widget.poi.mapaAudio.keys) {
+        String aUrl = widget.poi.mapaAudio[lang];
         if (aUrl.isNotEmpty && aUrl.startsWith('http')) {
           String audioName = "poi_${widget.poi.id}_audio_$lang.mp3";
           String? localAudioPath = await downloadService.downloadFile(aUrl, audioName);
@@ -471,14 +496,14 @@ class _DetailsScreenState extends State<DetailsScreen> {
       // 3. Criar Objeto Offline (com caminhos locais)
       POI offlinePoi = POI(
         id: widget.poi.id,
-        name: widget.poi.name,
-        category: widget.poi.category,
-        location: widget.poi.location,
-        images: localImagePaths, // <--- Lista de caminhos no telemóvel
-        descriptionMap: widget.poi.descriptionMap,
-        audioMap: localAudioMap,
-        arModelUrl: localModelPath ?? '', // <--- Caminho no telemóvel
-        arScale: widget.poi.arScale,
+        nome: widget.poi.nome,
+        categoria: widget.poi.categoria,
+        localizacao: widget.poi.localizacao,
+        imagens: localImagePaths, // <--- Lista de caminhos no telemóvel
+        mapaDescricao: widget.poi.mapaDescricao,
+        mapaAudio: localAudioMap,
+        urlModeloAr: localModelPath ?? '', // <--- Caminho no telemóvel
+        escalaAr: widget.poi.escalaAr,
       );
 
       // 4. Guardar JSON
@@ -503,7 +528,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
   Future<void> _savePoiNameLocally() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('nome_${widget.poi.id}', widget.poi.name);
+    await prefs.setString('nome_${widget.poi.id}', widget.poi.nome);
   }
   
   Future<void> _removePoiNameLocally() async {
@@ -515,12 +540,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
     String sourcePath;
     
     // Verifica se é caminho local (não começa por http) ou online
-    bool isLocalFile = !_displayPoi.arModelUrl.startsWith('http');
+    bool isLocalFile = !_displayPoi.urlModeloAr.startsWith('http');
 
     if (isDownloaded && isLocalFile) {
-      sourcePath = _displayPoi.arModelUrl;
-    } else if (_hasInternet && _displayPoi.arModelUrl.isNotEmpty) {
-      sourcePath = _displayPoi.arModelUrl; 
+      sourcePath = _displayPoi.urlModeloAr;
+    } else if (_hasInternet && _displayPoi.urlModeloAr.isNotEmpty) {
+      sourcePath = _displayPoi.urlModeloAr; 
     } else {
       return;
     }
@@ -530,7 +555,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
       MaterialPageRoute(
         builder: (context) => ModelViewerScreen(
           filePath: sourcePath,
-          title: _displayPoi.name,
+          title: _displayPoi.nome,
         ),
       ),
     );
@@ -561,6 +586,48 @@ class _DetailsScreenState extends State<DetailsScreen> {
                 
                 // CARROSSEL (Usa _displayPoi)
                 _buildFullWidthCarousel(),
+
+                if (_panorama != null) ...[
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PanoramaScreen(
+                                panorama: _panorama!,
+                                initialPoiId: widget.poi.id,
+                              ),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.threesixty, color: kPrimaryGreen),
+                            const SizedBox(width: 10),
+                            Text("Explorar em 360º", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: kPrimaryGreen)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                ],
 
                 const SizedBox(height: 25),
 
@@ -661,7 +728,7 @@ Widget _buildHeaderContent() {
             children: [
               // 1. NOME
               Text(
-                _displayPoi.name,
+                _displayPoi.nome,
                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, height: 1.1),
               ),
               
@@ -669,7 +736,7 @@ Widget _buildHeaderContent() {
 
               // 2. CATEGORIA (NOVO)
               Text(
-                _displayPoi.category, 
+                _displayPoi.categoria, 
                 style: TextStyle(
                   fontSize: 14, 
                   color: Colors.grey[700], 
@@ -713,10 +780,10 @@ Widget _buildHeaderContent() {
                 ? const SizedBox(width: 35, height: 35, child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))
                 : _buildCircleButton(
                     icon: _isVisited ? Icons.verified : Icons.approval,
-                    color: _isVisited ? const Color(0xFFFFD700) : Colors.grey,
+                    color: _isVisited ? kPrimaryGreen : Colors.grey,
                     onTap: _isVisited ? () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Já visitaste este local! ✅'), backgroundColor: Colors.green),
+                        const SnackBar(content: Text('Já visitaste este local!'), backgroundColor: Colors.green),
                       );
                     } : _registerVisit,
                   ),
@@ -760,7 +827,7 @@ if (isLoadingDownload)
   // --- CARROSSEL HÍBRIDO (LOCAL / NETWORK) ---
   Widget _buildFullWidthCarousel() {
     // Usa as imagens do _displayPoi (que podem ser locais ou online)
-    final images = _displayPoi.images;
+    final images = _displayPoi.imagens;
     
     if (images.isEmpty) {
       return Container(
@@ -826,9 +893,9 @@ if (isLoadingDownload)
   void _startNavigation() {
     final tempRoteiro = Roteiro(
       id: 'single_poi_${_displayPoi.id}',
-      titulo: 'Destino: ${_displayPoi.name}',
+      titulo: 'Destino: ${_displayPoi.nome}',
       descricao: _displayPoi.description,
-      imagemCapa: _displayPoi.images.isNotEmpty ? _displayPoi.images.first : '',
+      imagemCapa: _displayPoi.imagens.isNotEmpty ? _displayPoi.imagens.first : '',
       poiIds: [_displayPoi.id],
       dificuldade: 'N/A',
       duracao: 'N/A',
@@ -871,7 +938,7 @@ if (isLoadingDownload)
   }
 
   Widget _build3DButton() {
-    bool hasModelUrl = _displayPoi.arModelUrl.isNotEmpty;
+    bool hasModelUrl = _displayPoi.urlModeloAr.isNotEmpty;
     bool isButtonEnabled = hasModelUrl && (isDownloaded || _hasInternet);
 
     String buttonText;
