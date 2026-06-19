@@ -130,14 +130,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
       filtered = filtered.where((poi) {
         double dist = Geolocator.distanceBetween(
             _userPosition!.latitude, _userPosition!.longitude, 
-            poi.location.latitude, poi.location.longitude);
+            poi.localizacao.latitude, poi.localizacao.longitude);
         return dist <= 50000;
       }).toList();
 
       // 2. Sort the remaining nearby POIs by distance
       filtered.sort((a, b) {
-        double dA = Geolocator.distanceBetween(_userPosition!.latitude, _userPosition!.longitude, a.location.latitude, a.location.longitude);
-        double dB = Geolocator.distanceBetween(_userPosition!.latitude, _userPosition!.longitude, b.location.latitude, b.location.longitude);
+        double dA = Geolocator.distanceBetween(_userPosition!.latitude, _userPosition!.longitude, a.localizacao.latitude, a.localizacao.longitude);
+        double dB = Geolocator.distanceBetween(_userPosition!.latitude, _userPosition!.longitude, b.localizacao.latitude, b.localizacao.longitude);
         return dA.compareTo(dB);
       });
     } else {
@@ -156,8 +156,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
     final results = _allPois.where((poi) {
       if (!_poiFilter.apply(poi)) return false;
-      return poi.name.toLowerCase().contains(query) ||
-             poi.category.toLowerCase().contains(query);
+      return poi.nome.toLowerCase().contains(query) ||
+             poi.categoria.toLowerCase().contains(query);
     }).toList();
     setState(() { _searchResults = results; _isSearching = true; });
   }

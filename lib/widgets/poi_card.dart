@@ -18,7 +18,7 @@ class PoiCard extends StatelessWidget {
     if (userPosition == null) return '— km';
     double dist = Geolocator.distanceBetween(
         userPosition!.latitude, userPosition!.longitude,
-        poi.location.latitude, poi.location.longitude);
+        poi.localizacao.latitude, poi.localizacao.longitude);
     if (dist < 1000) return '${dist.toStringAsFixed(0)} m';
     return '${(dist / 1000).toStringAsFixed(1)} km';
   }
@@ -36,9 +36,9 @@ class PoiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final catColor = _categoryColor(poi.category);
+    final catColor = _categoryColor(poi.categoria);
     final distStr = _formatDistance(poi);
-    final String? imagePath = poi.images.isNotEmpty ? poi.images.first : null;
+    final String? imagePath = poi.imagens.isNotEmpty ? poi.imagens.first : null;
 
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DetailsScreen(poi: poi))),
@@ -68,9 +68,9 @@ class PoiCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(poi.category.toUpperCase(), style: TextStyle(color: catColor, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
+                  Text(poi.categoria.toUpperCase(), style: TextStyle(color: catColor, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
                   const SizedBox(height: 3),
-                  Text(poi.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(poi.nome, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
                   Text(poi.description, style: TextStyle(fontSize: 12.5, color: Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 7),

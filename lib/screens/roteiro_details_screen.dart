@@ -271,8 +271,21 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             _buildCircleButton(
               Icons.edit,
               color: Colors.grey[700]!,
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => CreateRoteiroScreen(roteiroToEdit: _currentRoteiro)));
+              onTap: () async {
+                await Navigator.push(context, MaterialPageRoute(builder: (_) => CreateRoteiroScreen(roteiroToEdit: _currentRoteiro)));
+                if (!mounted) return;
+                
+                try {
+                  final doc = await FirebaseFirestore.instance.collection('roteiros').doc(_currentRoteiro.id).get();
+                  if (doc.exists && mounted) {
+                    setState(() {
+                      // Fetch updated POI list from Firestore to refresh progress calculation
+                      _currentRoteiro = Roteiro.fromFirestore(doc);
+                    });
+                  }
+                } catch(e) {
+                  debugPrint("Erro ao atualizar roteiro: $e");
+                }
               },
             ),
             const SizedBox(width: 8),
@@ -580,7 +593,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
       itemBuilder: (context, index) {
         final poi = _poisDoRoteiro[index];
         final isLast = index == _poisDoRoteiro.length - 1;
-        String? img = poi.images.isNotEmpty ? poi.images.first : null;
+        String? img = poi.imagens.isNotEmpty ? poi.imagens.first : null;
         
         return IntrinsicHeight(
           child: Row(
@@ -644,8 +657,8 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                               : Container(color: Colors.grey[200]),
                           ),
                         ),
-                        title: Text(poi.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        subtitle: Text(poi.category, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                        title: Text(poi.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        subtitle: Text(poi.categoria, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
                       ),
                     ),

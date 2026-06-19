@@ -81,7 +81,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: kPrimaryGreen, content: Text("${poi.name} removido dos favoritos.")),
+          SnackBar(backgroundColor: kPrimaryGreen, content: Text("${poi.nome} removido dos favoritos.")),
         );
       }
     } catch (e) {
@@ -103,39 +103,61 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         // SE NÃO ESTÁ AUTENTICADO → ecrã de sessão necessária (igual aos Roteiros)
         if (authSnapshot.connectionState != ConnectionState.waiting && user == null) {
           return Scaffold(
-            backgroundColor: Colors.white,
-            appBar: AppBar(
-              title: const Text("Favoritos", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black)),
-              backgroundColor: Colors.white,
-              elevation: 0,
-              centerTitle: false,
-            ),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.lock_outline_rounded, size: 56, color: Colors.grey[350]),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Sessão necessária',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                      textAlign: TextAlign.center,
+            backgroundColor: Colors.grey[50],
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // HEADER
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(25, 20, 25, 15),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: const [
+                        Text(
+                          "Favoritos",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Inicia sessão para guardares e veres os teus favoritos.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.4),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.lock_outline_rounded, size: 56, color: Colors.grey[350]),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Sessão necessária',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Inicia sessão para guardares e veres os teus favoritos.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.4),
+                            ),
+                            const SizedBox(height: 24),
+                            CustomButton(
+                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+                              text: 'Iniciar sessão',
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 24),
-                    CustomButton(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-                      text: 'Iniciar sessão',
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           );
@@ -145,37 +167,53 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         return DefaultTabController(
           length: 2, 
           child: Scaffold(
-            backgroundColor: Colors.white,
-            appBar: AppBar(
-              title: const Text("Favoritos", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black)),
-              backgroundColor: Colors.white,
-              elevation: 0,
-              centerTitle: false,
-              bottom: TabBar(
-                labelColor: kPrimaryGreen,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: kPrimaryGreen,
-                indicatorWeight: 3,
-                indicatorSize: TabBarIndicatorSize.label,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                tabs: const [
-                  Tab(text: "Locais (POIs)"),
-                  Tab(text: "Roteiros"),
-                ],
-              ),
-            ),
-            body: Column(
-              children: [
-                _buildSearchBar(),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      _buildPoiTab(),
-                      _buildRoteirosTab(),
+            backgroundColor: Colors.grey[50],
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // HEADER
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(25, 20, 25, 15),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: const [
+                        Text(
+                          "Favoritos",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TabBar(
+                    labelColor: kPrimaryGreen,
+                    unselectedLabelColor: Colors.grey[600],
+                    indicatorColor: kPrimaryGreen,
+                    indicatorWeight: 3,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    tabs: const [
+                      Tab(text: "Locais (POIs)"),
+                      Tab(text: "Roteiros"),
                     ],
                   ),
-                ),
-              ],
+                  _buildSearchBar(),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        _buildPoiTab(),
+                        _buildRoteirosTab(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -304,7 +342,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
         final filteredPois = allFavorites.where((poi) {
           if (!_poiFilter.apply(poi)) return false;
-          return poi.name.toLowerCase().contains(_searchQuery.toLowerCase());
+          return poi.nome.toLowerCase().contains(_searchQuery.toLowerCase());
         }).toList();
 
         if (filteredPois.isEmpty) {
@@ -324,7 +362,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           color: kPrimaryGreen,
           onRefresh: _cleanupInvalidFavorites,
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 15, bottom: 100),
             itemCount: filteredPois.length,
             itemBuilder: (context, index) {
               final poi = filteredPois[index];
@@ -343,7 +381,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       backgroundColor: kPrimaryGreen,
-                      content: Text("${poi.name} removido dos favoritos.")
+                      content: Text("${poi.nome} removido dos favoritos.")
                     ));
                   }
                 },
@@ -419,7 +457,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           color: kPrimaryGreen,
           onRefresh: _cleanupInvalidFavorites,
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+            padding: const EdgeInsets.only(left: 25, right: 25, top: 10, bottom: 100),
             itemCount: filteredRoteiros.length,
             itemBuilder: (context, index) {
               final favoriteRoteiro = filteredRoteiros[index];

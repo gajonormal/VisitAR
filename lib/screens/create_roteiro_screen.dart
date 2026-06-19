@@ -97,7 +97,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
 
   List<POI> get _availablePois {
     return _allPois.where((poi) {
-      final matchesSearch = poi.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesSearch = poi.nome.toLowerCase().contains(_searchQuery.toLowerCase());
       final isNotSelected = !_selectedPois.contains(poi);
       return matchesSearch && isNotSelected;
     }).toList();
@@ -146,8 +146,8 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
       double distTotal = 0;
       for (int i = 0; i < _selectedPois.length - 1; i++) {
         double d = Geolocator.distanceBetween(
-          _selectedPois[i].location.latitude, _selectedPois[i].location.longitude,
-          _selectedPois[i+1].location.latitude, _selectedPois[i+1].location.longitude
+          _selectedPois[i].localizacao.latitude, _selectedPois[i].localizacao.longitude,
+          _selectedPois[i+1].localizacao.latitude, _selectedPois[i+1].localizacao.longitude
         );
         distTotal += d;
       }
@@ -171,7 +171,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
       } else if (widget.roteiroToEdit != null) {
         capa = widget.roteiroToEdit!.imagemCapa;
       } else {
-        capa = _selectedPois.isNotEmpty && _selectedPois.first.images.isNotEmpty ? _selectedPois.first.images.first : '';
+        capa = _selectedPois.isNotEmpty && _selectedPois.first.imagens.isNotEmpty ? _selectedPois.first.imagens.first : '';
       }
 
       final novoRoteiro = Roteiro(
@@ -374,7 +374,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                               itemBuilder: (context, index) {
                                 final poi = _selectedPois[index];
                                 return ListTile(
-                                  title: Text("${index + 1}. ${poi.name}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  title: Text("${index + 1}. ${poi.nome}", style: const TextStyle(fontWeight: FontWeight.bold)),
                                   trailing: IconButton(
                                     icon: const Icon(Icons.remove, color: Colors.black),
                                     onPressed: () async {
@@ -464,7 +464,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                               itemBuilder: (context, index) {
                                 final poi = _availablePois[index];
                                 return ListTile(
-                                  title: Text(poi.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  title: Text(poi.nome, style: const TextStyle(fontWeight: FontWeight.bold)),
                                   trailing: IconButton(
                                     icon: const Icon(Icons.add, color: Colors.black),
                                     onPressed: () async {

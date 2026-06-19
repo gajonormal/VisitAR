@@ -3,28 +3,27 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class POI {
   final String id;
-  final String name;
-  final String category;
-  final LatLng location;
-  final List<String> images;
+  final String nome;
+  final String categoria;
+  final LatLng localizacao;
+  final List<String> imagens;
   
-  // Guardamos o mapa de descrições e o mapa de audios
-  final Map<String, dynamic> descriptionMap; 
-  final Map<String, dynamic> audioMap; 
+  final Map<String, dynamic> mapaDescricao; 
+  final Map<String, dynamic> mapaAudio; 
   
-  final String arModelUrl;
-  final double arScale;
+  final String urlModeloAr;
+  final double escalaAr;
 
   POI({
     required this.id,
-    required this.name,
-    required this.category,
-    required this.location,
-    required this.images,
-    required this.descriptionMap,
-    required this.audioMap,
-    required this.arModelUrl,
-    this.arScale = 1.0,
+    required this.nome,
+    required this.categoria,
+    required this.localizacao,
+    required this.imagens,
+    required this.mapaDescricao,
+    required this.mapaAudio,
+    required this.urlModeloAr,
+    this.escalaAr = 1.0,
   });
 
   // --- 1. LER DO FIREBASE (Já tinhas isto) ---
@@ -63,14 +62,14 @@ class POI {
     
     return POI(
       id: doc.id,
-      name: data['nome'] ?? 'Sem nome',
-      category: data['categoria'] ?? 'Geral',
-      location: LatLng(geo.latitude, geo.longitude),
-      images: listaImagens,
-      descriptionMap: descMap,
-      audioMap: audMap,
-      arModelUrl: arMap['modelUrl'] ?? '',
-      arScale: (arMap['scale'] ?? 1.0).toDouble(),
+      nome: data['nome'] ?? 'Sem nome',
+      categoria: data['categoria'] ?? 'Geral',
+      localizacao: LatLng(geo.latitude, geo.longitude),
+      imagens: listaImagens,
+      mapaDescricao: descMap,
+      mapaAudio: audMap,
+      urlModeloAr: arMap['modelUrl'] ?? '',
+      escalaAr: (arMap['scale'] ?? 1.0).toDouble(),
     );
   }
 
@@ -78,15 +77,15 @@ class POI {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'name': name,
-      'category': category,
-      'lat': location.latitude,
-      'lng': location.longitude,
-      'images': images,
-      'descriptionMap': descriptionMap,
-      'audioMap': audioMap,
-      'arModelUrl': arModelUrl,
-      'arScale': arScale,
+      'nome': nome,
+      'categoria': categoria,
+      'lat': localizacao.latitude,
+      'lng': localizacao.longitude,
+      'imagens': imagens,
+      'mapaDescricao': mapaDescricao,
+      'mapaAudio': mapaAudio,
+      'urlModeloAr': urlModeloAr,
+      'escalaAr': escalaAr,
     };
   }
 
@@ -94,25 +93,31 @@ class POI {
   factory POI.fromMap(Map<String, dynamic> map) {
     return POI(
       id: map['id'],
-      name: map['name'],
-      category: map['category'],
-      location: LatLng(map['lat'], map['lng']),
-      images: List<String>.from(map['images']),
-      descriptionMap: Map<String, dynamic>.from(map['descriptionMap'] ?? {}),
-      audioMap: Map<String, dynamic>.from(map['audioMap'] ?? {}),
-      arModelUrl: map['arModelUrl'] ?? '',
-      arScale: (map['arScale'] ?? 1.0).toDouble(),
+      nome: map['nome'],
+      categoria: map['categoria'],
+      localizacao: LatLng(map['lat'], map['lng']),
+      imagens: List<String>.from(map['imagens']),
+      mapaDescricao: Map<String, dynamic>.from(map['mapaDescricao'] ?? {}),
+      mapaAudio: Map<String, dynamic>.from(map['mapaAudio'] ?? {}),
+      urlModeloAr: map['urlModeloAr'] ?? '',
+      escalaAr: (map['escalaAr'] ?? 1.0).toDouble(),
     );
   }
 
   // --- Helpers ---
   String getDescription(String langCode) {
-    return descriptionMap[langCode] ?? descriptionMap['pt'] ?? descriptionMap['en'] ?? 'Sem descrição disponível.';
+    if (mapaDescricao.containsKey(langCode)) return mapaDescricao[langCode];
+    if (mapaDescricao.containsKey('pt')) return mapaDescricao['pt']; // fallback
+    if (mapaDescricao.isNotEmpty) return mapaDescricao.values.first; // qualquer uma
+    return 'Descrição indisponível.';
   }
 
   String get description => getDescription('pt');
 
   String getAudioUrl(String langCode) {
-    return audioMap[langCode] ?? audioMap['pt'] ?? audioMap['en'] ?? '';
+    if (mapaAudio.containsKey(langCode)) return mapaAudio[langCode];
+    if (mapaAudio.containsKey('pt')) return mapaAudio['pt'];
+    if (mapaAudio.isNotEmpty) return mapaAudio.values.first;
+    return '';
   }
 }

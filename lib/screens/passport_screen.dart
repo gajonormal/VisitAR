@@ -196,8 +196,8 @@ class _StampsTab extends StatelessWidget {
                         : '';
 
                     return _StampCard(
-                      name: name,
-                      category: category,
+                      nome: name,
+                      categoria: category,
                       image: image,
                       date: date,
                     );
@@ -213,8 +213,8 @@ class _StampsTab extends StatelessWidget {
 }
 
 class _StampCard extends StatelessWidget {
-  final String name, category, image, date;
-  const _StampCard({required this.name, required this.category, required this.image, required this.date});
+  final String nome, categoria, image, date;
+  const _StampCard({required this.nome, required this.categoria, required this.image, required this.date});
 
   @override
   Widget build(BuildContext context) {
@@ -262,13 +262,13 @@ class _StampCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name,
+                Text(nome,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
-                if (category.isNotEmpty)
-                  Text(category, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                if (categoria.isNotEmpty)
+                  Text(categoria, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                 if (date.isNotEmpty)
                   Text(date, style: TextStyle(color: PassportScreen.kPrimaryGreen, fontSize: 11, fontWeight: FontWeight.w500)),
               ],

@@ -43,6 +43,7 @@ dependencies:
   wakelock_plus: ^1.5.2
   audioplayers: ^6.7.1
   file_picker: ^11.0.2
+  panorama_viewer: ^2.0.7
 
 dev_dependencies:
   flutter_test:

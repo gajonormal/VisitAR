@@ -78,7 +78,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   Future<void> _deletePoi(POI poi) async {
     try {
       await _downloadService.deleteFile("poi_${poi.id}.glb");
-      for (int i = 0; i < poi.images.length; i++) {
+      for (int i = 0; i < poi.imagens.length; i++) {
         String imgName = "poi_${poi.id}_img_$i.jpg";
         await _downloadService.deleteFile(imgName);
       }
@@ -88,7 +88,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
       setState(() => _offlinePois.removeWhere((p) => p.id == poi.id));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: Text("${poi.name} removido.")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: Text("${poi.nome} removido.")));
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Colors.red, content: Text("Erro ao remover.")));
@@ -270,7 +270,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
     final filteredPois = _offlinePois.where((poi) {
       if (!_poiFilter.apply(poi)) return false;
-      return poi.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      return poi.nome.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
     return filteredPois.isEmpty
@@ -291,9 +291,9 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                   itemBuilder: (context, index) {
                     final poi = filteredPois[index];
                     return _buildCard(
-                      itemName: poi.name,
-                      coverImagePath: poi.images.isNotEmpty ? poi.images[0] : null,
-                      title: poi.name,
+                      itemName: poi.nome,
+                      coverImagePath: poi.imagens.isNotEmpty ? poi.imagens[0] : null,
+                      title: poi.nome,
                       subtitle: "Disponível offline",
                       onDelete: () => _deletePoi(poi),
                       onTap: () {

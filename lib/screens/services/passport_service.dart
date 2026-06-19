@@ -59,8 +59,8 @@ class PassportService {
       return Geolocator.distanceBetween(
         pos.latitude,
         pos.longitude,
-        poi.location.latitude,
-        poi.location.longitude,
+        poi.localizacao.latitude,
+        poi.localizacao.longitude,
       );
     } catch (_) {
       return null;
@@ -82,9 +82,9 @@ class PassportService {
 
     await visitRef.set({
       'poiId': poi.id,
-      'poiName': poi.name,
-      'poiCategory': poi.category,
-      'poiImage': poi.images.isNotEmpty ? poi.images.first : '',
+      'poiName': poi.nome,
+      'poiCategory': poi.categoria,
+      'poiImage': poi.imagens.isNotEmpty ? poi.imagens.first : '',
       'timestamp': FieldValue.serverTimestamp(),
     });
 
