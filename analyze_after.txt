@@ -1,0 +1,165 @@
+﻿Resolving dependencies...
+Downloading packages...
+  _flutterfire_internals 1.3.67 (1.3.73 available)
+  async 2.13.0 (2.13.1 available)
+  audioplayers 6.7.1 (6.8.0 available)
+  audioplayers_android 5.2.1 (5.3.0 available)
+  audioplayers_darwin 6.4.0 (6.5.0 available)
+  audioplayers_linux 4.2.1 (4.3.0 available)
+  audioplayers_platform_interface 7.1.1 (7.2.0 available)
+  audioplayers_web 5.2.1 (5.3.0 available)
+  audioplayers_windows 4.3.1 (4.4.0 available)
+  cli_util 0.4.2 (0.5.1 available)
+  cloud_firestore 6.1.3 (6.6.0 available)
+  cloud_firestore_platform_interface 7.0.7 (8.0.3 available)
+  cloud_firestore_web 5.1.3 (5.6.0 available)
+  code_assets 1.0.0 (1.2.1 available)
+  cupertino_icons 1.0.8 (1.0.9 available)
+  firebase_auth 6.2.0 (6.5.4 available)
+  firebase_auth_platform_interface 8.1.7 (9.0.3 available)
+  firebase_auth_web 6.1.3 (6.2.3 available)
+  firebase_core 4.5.0 (4.11.0 available)
+  firebase_core_platform_interface 6.0.2 (7.1.0 available)
+  firebase_core_web 3.5.0 (3.9.0 available)
+  firebase_storage 13.1.0 (13.4.3 available)
+  firebase_storage_platform_interface 5.2.18 (6.0.3 available)
+  firebase_storage_web 3.11.3 (3.11.9 available)
+  flutter_launcher_icons 0.13.1 (0.14.4 available)
+  flutter_native_splash 2.4.7 (2.4.8 available)
+  flutter_plugin_android_lifecycle 2.0.33 (2.0.35 available)
+  flutter_svg 2.2.4 (2.3.0 available)
+  geolocator 13.0.4 (14.0.3 available)
+  geolocator_android 4.6.2 (5.0.3 available)
+  geolocator_apple 2.3.13 (2.3.14 available)
+  geolocator_platform_interface 4.2.6 (4.2.8 available)
+  geolocator_web 4.1.3 (4.1.4 available)
+  google_maps_flutter 2.15.0 (2.17.1 available)
+  google_maps_flutter_android 2.19.2 (2.19.12 available)
+  google_maps_flutter_ios 2.18.0 (2.18.3 available)
+  google_maps_flutter_platform_interface 2.14.2 (2.15.0 available)
+  google_maps_flutter_web 0.6.1 (0.6.2+3 available)
+  hooks 1.0.2 (2.0.2 available)
+  image 4.8.0 (4.9.1 available)
+  image_picker 1.2.1 (1.2.2 available)
+  image_picker_android 0.8.13+14 (0.8.13+19 available)
+  json_annotation 4.11.0 (4.12.0 available)
+  matcher 0.12.19 (0.12.20 available)
+  meta 1.17.0 (1.18.3 available)
+  native_toolchain_c 0.17.5 (0.19.1 available)
+  objective_c 9.3.0 (9.4.1 available)
+  package_info_plus 9.0.1 (10.1.0 available)
+  package_info_plus_platform_interface 3.2.1 (4.1.0 available)
+  path_provider 2.1.5 (2.1.6 available)
+  path_provider_android 2.2.22 (2.3.1 available)
+  path_provider_platform_interface 2.1.2 (2.1.3 available)
+  permission_handler 11.4.0 (12.0.3 available)
+  permission_handler_android 12.1.0 (13.0.1 available)
+  permission_handler_apple 9.4.7 (9.4.10 available)
+  shared_preferences 2.5.4 (2.5.5 available)
+  shared_preferences_android 2.4.21 (2.4.26 available)
+  shared_preferences_platform_interface 2.4.1 (2.4.2 available)
+  synchronized 3.4.0+1 (3.4.1 available)
+  test_api 0.7.10 (0.7.12 available)
+  url_launcher_android 6.3.28 (6.3.32 available)
+  url_launcher_web 2.4.2 (2.4.3 available)
+  vector_graphics 1.1.19 (1.2.2 available)
+  vector_graphics_compiler 1.2.0 (1.2.6 available)
+  vector_math 2.2.0 (2.4.0 available)
+  vm_service 15.0.2 (15.2.0 available)
+  wakelock_plus 1.5.2 (1.6.1 available)
+  webview_flutter 4.13.1 (4.14.0 available)
+  webview_flutter_android 4.10.13 (4.13.0 available)
+  webview_flutter_platform_interface 2.14.0 (2.15.1 available)
+  webview_flutter_wkwebview 3.23.8 (3.26.0 available)
+  win32 5.15.0 (6.3.0 available)
+  xml 6.6.1 (7.0.1 available)
+Got dependencies!
+73 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing visitar_teste...                                      
+
+   info - Don't use 'BuildContext's across async gaps - lib\screens\create_roteiro_screen.dart:213:25 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\create_roteiro_screen.dart:347:23 - deprecated_member_use
+warning - The value of the field '_distanceToPoi' isn't used - lib\screens\details_screen.dart:60:11 - unused_field
+   info - Statements in an if should be enclosed in a block - lib\screens\details_screen.dart:124:22 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\details_screen.dart:134:22 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\details_screen.dart:185:20 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps - lib\screens\details_screen.dart:251:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\details_screen.dart:251:93 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\details_screen.dart:254:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\details_screen.dart:254:93 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\details_screen.dart:531:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\details_screen.dart:531:122 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block - lib\screens\details_screen.dart:1040:20 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\details_screen.dart:1050:18 - curly_braces_in_flow_control_structures
+   info - Unnecessary use of multiple underscores - lib\screens\explore_screen.dart:505:37 - unnecessary_underscores
+   info - The local variable '_unused' starts with an underscore - lib\screens\explore_screen.dart:505:41 - no_leading_underscores_for_local_identifiers
+   info - Unnecessary use of multiple underscores - lib\screens\explore_screen.dart:570:33 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\explore_screen.dart:702:41 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\explore_screen.dart:729:88 - unnecessary_underscores
+   info - The local variable '_unused' starts with an underscore - lib\screens\explore_screen.dart:729:92 - no_leading_underscores_for_local_identifiers
+warning - The declaration '_removeFavorite' isn't referenced - lib\screens\favorites_screen.dart:77:16 - unused_element
+  error - Expected to find ';' - lib\screens\favorites_screen.dart:308:23 - expected_token
+  error - Unterminated string literal - lib\screens\favorites_screen.dart:308:48 - unterminated_string_literal
+  error - Expected to find ')' - lib\screens\favorites_screen.dart:309:12 - expected_token
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\favorites_screen.dart:380:42 - use_build_context_synchronously
+  error - Expected to find ';' - lib\screens\favorites_screen.dart:403:22 - expected_token
+  error - Unterminated string literal - lib\screens\favorites_screen.dart:403:51 - unterminated_string_literal
+  error - Expected to find ')' - lib\screens\favorites_screen.dart:404:11 - expected_token
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\favorites_screen.dart:476:46 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\screens\favorites_screen.dart:530:85 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\favorites_screen.dart:530:88 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\favorites_screen.dart:531:88 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\favorites_screen.dart:531:91 - unnecessary_underscores
+warning - The value of the field '_numberedMarkersSelected' isn't used - lib\screens\home_map.dart:48:30 - unused_field
+   info - Unnecessary use of multiple underscores - lib\screens\home_map.dart:1181:39 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\home_map.dart:1227:33 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\home_map.dart:1317:45 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\home_map.dart:1317:48 - unnecessary_underscores
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\login_screen.dart:373:7 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\screens\panorama_screen.dart:213:40 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\screens\passport_screen.dart:258:45 - unnecessary_underscores
+   info - The local variable '_unused' starts with an underscore - lib\screens\passport_screen.dart:258:49 - no_leading_underscores_for_local_identifiers
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\screens\profile_screen.dart:524:17 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\screens\profile_screen.dart:525:17 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\screens\roteiro_details_screen.dart:99:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\roteiro_details_screen.dart:99:93 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\roteiro_details_screen.dart:310:44 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\roteiro_details_screen.dart:310:109 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\roteiro_details_screen.dart:311:37 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\roteiro_details_screen.dart:314:55 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\roteiro_details_screen.dart:314:120 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\screens\roteiro_details_screen.dart:653:92 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\roteiro_details_screen.dart:653:95 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\roteiro_details_screen.dart:654:95 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\roteiro_details_screen.dart:654:98 - unnecessary_underscores
+  error - The method 'debugPrint' isn't defined for the type 'DatabaseService' - lib\screens\services\database_services.dart:92:11 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DatabaseService' - lib\screens\services\database_services.dart:96:7 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DatabaseService' - lib\screens\services\database_services.dart:133:15 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DatabaseService' - lib\screens\services\database_services.dart:142:9 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DatabaseService' - lib\screens\services\database_services.dart:168:7 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DownloadService' - lib\screens\services\download_service.dart:25:9 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DownloadService' - lib\screens\services\download_service.dart:30:7 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DownloadService' - lib\screens\services\download_service.dart:42:7 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DownloadService' - lib\screens\services\download_service.dart:46:7 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DownloadService' - lib\screens\services\download_service.dart:76:9 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DownloadService' - lib\screens\services\download_service.dart:81:7 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DownloadService' - lib\screens\services\download_service.dart:122:7 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DownloadService' - lib\screens\services\download_service.dart:227:7 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'DownloadService' - lib\screens\services\download_service.dart:256:7 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'RoutingService' - lib\screens\services\routing_service.dart:36:13 - undefined_method
+  error - The method 'debugPrint' isn't defined for the type 'RoutingService' - lib\screens\services\routing_service.dart:55:7 - undefined_method
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\screens\settings_screen.dart:273:17 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\screens\settings_screen.dart:274:17 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\widgets\poi_card.dart:62:89 - unnecessary_underscores
+   info - The local variable '_unused' starts with an underscore - lib\widgets\poi_card.dart:62:93 - no_leading_underscores_for_local_identifiers
+   info - Unnecessary use of multiple underscores - lib\widgets\poi_card.dart:63:92 - unnecessary_underscores
+   info - The local variable '_unused' starts with an underscore - lib\widgets\poi_card.dart:63:96 - no_leading_underscores_for_local_identifiers
+
+flutter : 77 issues found. (ran in 6.6s)
+At line:1 char:1
++ flutter analyze 2>&1 | Out-File -FilePath "analyze_after.txt" -Encodi ...
++ ~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (77 issues found. (ran in 6.6s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

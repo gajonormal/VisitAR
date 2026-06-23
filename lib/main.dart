@@ -22,9 +22,9 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print("Firebase ligado à nova base de dados!");
+    debugPrint("Firebase ligado à nova base de dados!");
   } catch (e) {
-    print("Erro Firebase: $e");
+    debugPrint("Erro Firebase: $e");
   }
 
   runApp(
@@ -59,7 +59,12 @@ class MyApp extends StatelessWidget {
               backgroundColor: Colors.white,
               elevation: 0,
               iconTheme: IconThemeData(color: Colors.black),
-              titleTextStyle: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+              titleTextStyle: TextStyle(
+                color: Colors.black, 
+                fontSize: 20, 
+                fontWeight: FontWeight.bold,
+                fontFamily: 'GoogleSans',
+              ),
             ),
           ),
           // A App começa no nosso mapa

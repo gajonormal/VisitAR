@@ -10,7 +10,6 @@ import '../models/filter_options.dart';
 import '../widgets/filter_bottom_sheet.dart';
 import 'services/favorites_service.dart';
 import 'services/roteiros_service.dart';
-import 'details_screen.dart';
 import 'roteiro_details_screen.dart';
 import 'login_screen.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
@@ -307,7 +306,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
            return Center(child: CircularProgressIndicator(color: kPrimaryGreen));
         }
         if (snapshot.hasError) {
-           print('ERRO favorites POIs: ${snapshot.error}');
+           debugPrint('ERRO favorites POIs: ${snapshot.error}');
            return Center(
              child: Padding(
                padding: const EdgeInsets.all(20),
@@ -402,7 +401,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           return Center(child: CircularProgressIndicator(color: kPrimaryGreen));
         }
         if (snapshot.hasError) {
-          print('ERRO favorites Roteiros: ${snapshot.error}');
+          debugPrint('ERRO favorites Roteiros: ${snapshot.error}');
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -513,7 +512,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: Colors.grey[200]!),
           boxShadow: [
-            BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))
+            BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5))
           ],
         ),
         child: ListTile(
@@ -523,7 +522,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             width: 60, height: 60,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              color: kPrimaryGreen.withOpacity(0.1),
+              color: kPrimaryGreen.withValues(alpha: 0.1),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),

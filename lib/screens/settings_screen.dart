@@ -146,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.cleaning_services_rounded,
                   text: AppLocalizations.of(context)!.clearCache,
                   iconColor: Colors.orange, // Cor personalizada
-                  iconBgColor: Colors.orange.withOpacity(0.1),
+                  iconBgColor: Colors.orange.withValues(alpha: 0.1),
                   onTap: _clearCache,
                 ),
 
@@ -161,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.delete_forever_rounded,
                     text: AppLocalizations.of(context)!.deleteAccount,
                     iconColor: Colors.red,
-                    iconBgColor: Colors.red.withOpacity(0.1),
+                    iconBgColor: Colors.red.withValues(alpha: 0.1),
                     textColor: Colors.red, // Texto vermelho para destaque
                     onTap: _deleteAccount,
                   ),
@@ -180,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: Center(child: CircularProgressIndicator()),
             ),
         ],
@@ -212,7 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     // Cores padrão (Verde) se não forem especificadas
     final Color finalIconColor = iconColor ?? kPrimaryGreen;
-    final Color finalBgColor = iconBgColor ?? kPrimaryGreen.withOpacity(0.1);
+    final Color finalBgColor = iconBgColor ?? kPrimaryGreen.withValues(alpha: 0.1);
     final Color finalTextColor = textColor ?? Colors.black;
 
     return Container(
@@ -222,7 +222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5)),
         ],
       ),
       child: ListTile(
@@ -271,7 +271,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: Radio<String>(
                 value: entry.value,
                 groupValue: currentLang,
-                activeColor: kPrimaryGreen,
                 onChanged: (val) {
                   Navigator.pop(context);
                   _changeLanguage(context, val!, userId);

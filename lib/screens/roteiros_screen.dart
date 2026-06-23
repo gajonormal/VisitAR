@@ -66,7 +66,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: kPrimaryGreen.withOpacity(0.1),
+                color: kPrimaryGreen.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.lock_outline_rounded, color: kPrimaryGreen, size: 32),
@@ -233,7 +233,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: kPrimaryGreen.withOpacity(0.3),
+                            color: kPrimaryGreen.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           )
@@ -399,7 +399,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
           color: isActive ? kPrimaryGreen : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: isActive ? kPrimaryGreen : Colors.grey.shade300),
-          boxShadow: isActive ? [BoxShadow(color: kPrimaryGreen.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))] : [],
+          boxShadow: isActive ? [BoxShadow(color: kPrimaryGreen.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))] : [],
         ),
         child: Text(
           label,
@@ -426,7 +426,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -467,7 +467,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withOpacity(0.8),
+                          Colors.black.withValues(alpha: 0.8),
                           Colors.transparent,
                         ],
                       ),
@@ -481,7 +481,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white.withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

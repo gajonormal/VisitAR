@@ -800,12 +800,6 @@ abstract class AppLocalizations {
   /// **'Sem favoritos'**
   String get noFavorites;
 
-  /// No description provided for @noLocationFoundFor.
-  ///
-  /// In pt, this message translates to:
-  /// **'Nenhum local encontrado para \'{query}\''**
-  String noLocationFoundFor(String query);
-
   /// No description provided for @removedFromFavorites.
   ///
   /// In pt, this message translates to:
@@ -1219,6 +1213,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Sem downloads offline'**
   String get noDownloadsOffline;
+
+  /// No description provided for @noLocationFoundFor.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum local encontrado para \'{query}\''**
+  String noLocationFoundFor(String query);
 
   /// No description provided for @availableOffline.
   ///

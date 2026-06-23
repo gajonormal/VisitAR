@@ -140,7 +140,7 @@ Future<void> _submit() async {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [kPrimaryGreen, kPrimaryGreen.withOpacity(0.8)],
+                  colors: [kPrimaryGreen, kPrimaryGreen.withValues(alpha: 0.8)],
                 ),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(40), // Curva mais pequena
@@ -190,7 +190,7 @@ Future<void> _submit() async {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 8)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 15, offset: const Offset(0, 8)),
                       ],
                     ),
                     child: Form(

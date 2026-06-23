@@ -12,19 +12,19 @@ class FilterBottomSheet extends StatefulWidget {
   final Function(POIFilter? poiFilter, RoteiroFilter? roteiroFilter) onApply;
 
   const FilterBottomSheet({
-    Key? key,
+    super.key,
     this.initialPoiFilter,
     this.initialRoteiroFilter,
     this.showPoiFilters = true,
     this.showRoteiroFilters = false,
     required this.onApply,
-  }) : super(key: key);
+  });
 
   @override
-  _FilterBottomSheetState createState() => _FilterBottomSheetState();
+  State<FilterBottomSheet> createState() => FilterBottomSheetState();
 }
 
-class _FilterBottomSheetState extends State<FilterBottomSheet> {
+class FilterBottomSheetState extends State<FilterBottomSheet> {
   late POIFilter _poiFilter;
   late RoteiroFilter _roteiroFilter;
   
@@ -141,7 +141,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               label: Text(_getCategoryTranslation(context, cat)),
               selected: isSelected,
               showCheckmark: false,
-              selectedColor: kPrimaryGreen.withOpacity(0.2),
+              selectedColor: kPrimaryGreen.withValues(alpha: 0.2),
               labelStyle: TextStyle(color: isSelected ? kPrimaryGreen : Colors.black87),
               onSelected: (selected) {
                 if (selected) setState(() => _poiFilter = _poiFilter.copyWith(categoria: cat));
@@ -153,14 +153,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         SwitchListTile(
           title: Text(AppLocalizations.of(context)!.onlyWith3d),
           value: _poiFilter.temModelo3D,
-          activeColor: kPrimaryGreen,
+          activeThumbColor: kPrimaryGreen,
           contentPadding: EdgeInsets.zero,
           onChanged: (val) => setState(() => _poiFilter = _poiFilter.copyWith(temModelo3D: val)),
         ),
         SwitchListTile(
           title: Text(AppLocalizations.of(context)!.onlyWithAudio),
           value: _poiFilter.temAudio,
-          activeColor: kPrimaryGreen,
+          activeThumbColor: kPrimaryGreen,
           contentPadding: EdgeInsets.zero,
           onChanged: (val) => setState(() => _poiFilter = _poiFilter.copyWith(temAudio: val)),
         ),
@@ -183,7 +183,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               label: Text(_getDifficultyTranslation(context, dif)),
               selected: isSelected,
               showCheckmark: false,
-              selectedColor: kPrimaryGreen.withOpacity(0.2),
+              selectedColor: kPrimaryGreen.withValues(alpha: 0.2),
               labelStyle: TextStyle(color: isSelected ? kPrimaryGreen : Colors.black87),
               onSelected: (selected) {
                 if (selected) setState(() => _roteiroFilter = _roteiroFilter.copyWith(dificuldade: dif));

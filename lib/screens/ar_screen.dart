@@ -76,7 +76,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
       var lista = await DatabaseService().getPOIs();
       if (mounted) setState(() => _poisDoFirebase = lista);
     } catch (e) {
-      print("Erro DB: $e");
+      debugPrint("Erro DB: $e");
     }
   }
 
@@ -92,10 +92,10 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
     _positionStreamSubscription?.cancel();
     if (arObjectManager != null) {
       for (var node in _activeNodes.values) {
-        try { arObjectManager!.removeNode(node); } catch (e) {}
+        try { arObjectManager!.removeNode(node); } catch (_) {}
       }
     }
-    try { arSessionManager?.dispose(); } catch (e) {}
+    try { arSessionManager?.dispose(); } catch (_) {}
     _activeNodes.clear();
     _activePois.clear();
     _poisLoading.clear();
@@ -210,7 +210,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
         }
       }
     } catch (e) {
-      print("Erro AR: $e");
+      debugPrint("Erro AR: $e");
     } finally {
       _poisLoading.remove(id);
     }
@@ -223,7 +223,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
       try {
         final data = await rootBundle.load("assets/models/$filename");
         await file.writeAsBytes(data.buffer.asUint8List(), flush: true);
-      } catch (e) { print(e); }
+      } catch (e) { debugPrint('$e'); }
     }
   }
 
@@ -291,7 +291,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
                         child: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             shape: BoxShape.circle,
                             boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, 2))]
                           ),
@@ -306,9 +306,9 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
+                            color: Colors.black.withValues(alpha: 0.7),
                             borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: Colors.white.withOpacity(0.2))
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.2))
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min, // Não estica a pílula desnecessariamente
@@ -358,7 +358,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
       decoration: BoxDecoration(
         color: Colors.white, 
         borderRadius: BorderRadius.circular(20), 
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))]
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))]
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -367,7 +367,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
           // Header Verde
           Container(
             height: 50,
-            decoration: BoxDecoration(color: kPrimaryGreen.withOpacity(0.1), borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
+            decoration: BoxDecoration(color: kPrimaryGreen.withValues(alpha: 0.1), borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
             child: Row(
               children: [
                 SizedBox(width: 20),

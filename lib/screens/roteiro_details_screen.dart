@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/roteiro.dart';
 import '../../models/poi.dart';
@@ -63,7 +61,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
           });
         }
       } catch (e) {
-        print("Erro ao tentar buscar roteiro completo: $e");
+        debugPrint("Erro ao tentar buscar roteiro completo: $e");
       }
     }
   }
@@ -115,7 +113,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: kPrimaryGreen.withOpacity(0.1),
+                color: kPrimaryGreen.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.lock_outline_rounded, color: kPrimaryGreen, size: 32),
@@ -490,7 +488,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey[300]!),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5, offset: const Offset(0, 2)),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -622,7 +620,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                       Expanded(
                         child: Container(
                           width: 2,
-                          color: kPrimaryGreen.withOpacity(0.3),
+                          color: kPrimaryGreen.withValues(alpha: 0.3),
                         ),
                       ),
                   ],
@@ -642,7 +640,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade200),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))],
                       ),
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
