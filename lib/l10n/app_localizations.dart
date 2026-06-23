@@ -1795,6 +1795,72 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Campo obrigatório'**
   String get fieldRequired;
+
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Bem-vindo!'**
+  String get welcomeTitle;
+
+  /// No description provided for @createAccountTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar Conta'**
+  String get createAccountTitle;
+
+  /// No description provided for @emailInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Email inválido'**
+  String get emailInvalid;
+
+  /// No description provided for @minPasswordLength.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mín. 6 carateres'**
+  String get minPasswordLength;
+
+  /// No description provided for @loginButton.
+  ///
+  /// In pt, this message translates to:
+  /// **'ENTRAR'**
+  String get loginButton;
+
+  /// No description provided for @signUpButton.
+  ///
+  /// In pt, this message translates to:
+  /// **'CRIAR CONTA'**
+  String get signUpButton;
+
+  /// No description provided for @dontHaveAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não tens conta?'**
+  String get dontHaveAccount;
+
+  /// No description provided for @alreadyHaveAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já tens conta?'**
+  String get alreadyHaveAccount;
+
+  /// No description provided for @registerNow.
+  ///
+  /// In pt, this message translates to:
+  /// **'Regista-te'**
+  String get registerNow;
+
+  /// No description provided for @loginHere.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entra aqui'**
+  String get loginHere;
+
+  /// No description provided for @invalidCredentialError.
+  ///
+  /// In pt, this message translates to:
+  /// **'E-mail ou palavra-passe incorretos.'**
+  String get invalidCredentialError;
 }
 
 class _AppLocalizationsDelegate

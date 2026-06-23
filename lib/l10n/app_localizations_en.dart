@@ -903,4 +903,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fieldRequired => 'Required field';
+
+  @override
+  String get welcomeTitle => 'Welcome!';
+
+  @override
+  String get createAccountTitle => 'Create Account';
+
+  @override
+  String get emailInvalid => 'Invalid email';
+
+  @override
+  String get minPasswordLength => 'Min. 6 characters';
+
+  @override
+  String get loginButton => 'LOG IN';
+
+  @override
+  String get signUpButton => 'CREATE ACCOUNT';
+
+  @override
+  String get dontHaveAccount => 'Don\'t have an account?';
+
+  @override
+  String get alreadyHaveAccount => 'Already have an account?';
+
+  @override
+  String get registerNow => 'Register';
+
+  @override
+  String get loginHere => 'Log in here';
+
+  @override
+  String get invalidCredentialError => 'Incorrect email or password.';
 }

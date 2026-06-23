@@ -374,5 +374,16 @@
   "noLocationsAvailable": "No locations available.",
   "createRoteiroButton": "Create Itinerary",
   "saveRoteiroButton": "Save Itinerary",
-  "fieldRequired": "Required field"
+  "fieldRequired": "Required field",
+  "welcomeTitle": "Welcome!",
+  "createAccountTitle": "Create Account",
+  "emailInvalid": "Invalid email",
+  "minPasswordLength": "Min. 6 characters",
+  "loginButton": "LOG IN",
+  "signUpButton": "CREATE ACCOUNT",
+  "dontHaveAccount": "Don't have an account?",
+  "alreadyHaveAccount": "Already have an account?",
+  "registerNow": "Register",
+  "loginHere": "Log in here",
+  "invalidCredentialError": "Incorrect email or password."
 }

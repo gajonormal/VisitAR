@@ -374,5 +374,16 @@
   "noLocationsAvailable": "Nenhum local disponível.",
   "createRoteiroButton": "Criar Roteiro",
   "saveRoteiroButton": "Guardar Roteiro",
-  "fieldRequired": "Campo obrigatório"
+  "fieldRequired": "Campo obrigatório",
+  "welcomeTitle": "Bem-vindo!",
+  "createAccountTitle": "Criar Conta",
+  "emailInvalid": "Email inválido",
+  "minPasswordLength": "Mín. 6 carateres",
+  "loginButton": "ENTRAR",
+  "signUpButton": "CRIAR CONTA",
+  "dontHaveAccount": "Não tens conta?",
+  "alreadyHaveAccount": "Já tens conta?",
+  "registerNow": "Regista-te",
+  "loginHere": "Entra aqui",
+  "invalidCredentialError": "E-mail ou palavra-passe incorretos."
 }

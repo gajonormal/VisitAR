@@ -91,8 +91,16 @@ Future<void> _submit() async {
     } catch (e) {
       // Se houver erro, ficamos no ecrã e mostramos a mensagem
       if (mounted) {
+        String cleanError = e.toString().replaceAll("Exception:", "").trim();
+        // Remove padrões [firebase_auth/...] ou similares do Firebase
+        cleanError = cleanError.replaceAll(RegExp(r'\[.*?\]\s*'), '');
+        
         setState(() { 
-          errorMessage = e.toString().replaceAll("Exception:", "").trim(); 
+          if (cleanError.contains("invalid-credential") || cleanError.contains("invalid_credential")) {
+            errorMessage = AppLocalizations.of(context)!.invalidCredentialError;
+          } else {
+            errorMessage = cleanError;
+          }
         });
       }
     } finally {
@@ -133,7 +141,7 @@ Future<void> _submit() async {
                   Icon(Icons.location_on_outlined, size: 60, color: Colors.white), // Ícone menor
                   SizedBox(height: 5),
                   Text(
-                    isLogin ? "Bem-vindo!" : "Criar Conta",
+                    isLogin ? AppLocalizations.of(context)!.welcomeTitle : AppLocalizations.of(context)!.createAccountTitle,
                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   // Removi o texto extra para poupar espaço
@@ -205,9 +213,9 @@ Future<void> _submit() async {
                                 children: [
                                   _buildTextField(
                                     controller: _nameController,
-                                    label: "Nome",
+                                    label: AppLocalizations.of(context)!.name,
                                     icon: Icons.person_outline,
-                                    validator: (val) => val!.isEmpty ? "Obrigatório" : null,
+                                    validator: (val) => val!.isEmpty ? AppLocalizations.of(context)!.fieldRequired : null,
                                   ),
                                   SizedBox(height: 15), // Espaço reduzido
                                   _buildGenderDropdown(),
@@ -220,10 +228,10 @@ Future<void> _submit() async {
                           // EMAIL & PASS
                           _buildTextField(
                             controller: _emailController,
-                            label: "Email",
+                            label: AppLocalizations.of(context)!.email,
                             icon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
-                            validator: (val) => val!.contains('@') ? null : "Email inválido",
+                            validator: (val) => val!.contains('@') ? null : AppLocalizations.of(context)!.emailInvalid,
                           ),
                           
                           SizedBox(height: 15),
@@ -233,7 +241,7 @@ Future<void> _submit() async {
                             label: "Password",
                             icon: Icons.lock_outline,
                             isPassword: true,
-                            validator: (val) => val!.length < 6 ? "Mín. 6 carateres" : null,
+                            validator: (val) => val!.length < 6 ? AppLocalizations.of(context)!.minPasswordLength : null,
                           ),
 
                           SizedBox(height: 25),
@@ -253,7 +261,7 @@ Future<void> _submit() async {
                               child: isLoading 
                                 ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                 : Text(
-                                    isLogin ? "ENTRAR" : "CRIAR CONTA", 
+                                    isLogin ? AppLocalizations.of(context)!.loginButton : AppLocalizations.of(context)!.signUpButton, 
                                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                                   ),
                             ),
@@ -269,14 +277,14 @@ Future<void> _submit() async {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        isLogin ? "Não tens conta?" : "Já tens conta?",
+                        isLogin ? AppLocalizations.of(context)!.dontHaveAccount : AppLocalizations.of(context)!.alreadyHaveAccount,
                         style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                       TextButton(
                         onPressed: _toggleAuthMode,
                         style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 5)),
                         child: Text(
-                          isLogin ? "Regista-te" : "Entra aqui",
+                          isLogin ? AppLocalizations.of(context)!.registerNow : AppLocalizations.of(context)!.loginHere,
                           style: TextStyle(color: kPrimaryGreen, fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                       ),
@@ -338,6 +346,16 @@ Future<void> _submit() async {
     );
   }
 
+  String _getGenderTranslation(BuildContext context, String gender) {
+    switch (gender) {
+      case 'Masculino': return AppLocalizations.of(context)!.genderMale;
+      case 'Feminino': return AppLocalizations.of(context)!.genderFemale;
+      case 'Outro': return AppLocalizations.of(context)!.genderOther;
+      case 'Prefiro não dizer': return AppLocalizations.of(context)!.genderPreferNotToSay;
+      default: return gender;
+    }
+  }
+
   Widget _buildGenderDropdown() {
     return DropdownButtonFormField<String>(
       value: _selectedGender,
@@ -363,7 +381,7 @@ Future<void> _submit() async {
       items: _genders.map((String value) {
         return DropdownMenuItem<String>(
           value: value,
-          child: Text(value),
+          child: Text(_getGenderTranslation(context, value)),
         );
       }).toList(),
       onChanged: (newValue) {

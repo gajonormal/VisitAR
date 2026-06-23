@@ -901,4 +901,37 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get fieldRequired => 'Campo obrigatório';
+
+  @override
+  String get welcomeTitle => 'Bem-vindo!';
+
+  @override
+  String get createAccountTitle => 'Criar Conta';
+
+  @override
+  String get emailInvalid => 'Email inválido';
+
+  @override
+  String get minPasswordLength => 'Mín. 6 carateres';
+
+  @override
+  String get loginButton => 'ENTRAR';
+
+  @override
+  String get signUpButton => 'CRIAR CONTA';
+
+  @override
+  String get dontHaveAccount => 'Não tens conta?';
+
+  @override
+  String get alreadyHaveAccount => 'Já tens conta?';
+
+  @override
+  String get registerNow => 'Regista-te';
+
+  @override
+  String get loginHere => 'Entra aqui';
+
+  @override
+  String get invalidCredentialError => 'E-mail ou palavra-passe incorretos.';
 }
