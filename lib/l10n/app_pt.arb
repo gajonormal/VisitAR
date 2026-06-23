@@ -385,5 +385,13 @@
   "alreadyHaveAccount": "Já tens conta?",
   "registerNow": "Regista-te",
   "loginHere": "Entra aqui",
-  "invalidCredentialError": "E-mail ou palavra-passe incorretos."
+  "invalidCredentialError": "E-mail ou palavra-passe incorretos.",
+  "emailAlreadyInUseError": "Este e-mail já está associado a uma conta.",
+  "weakPasswordError": "A palavra-passe é demasiado fraca. Usa pelo menos 6 caracteres.",
+  "userNotFoundError": "Não existe nenhuma conta com este e-mail.",
+  "networkRequestFailed": "Erro de ligação à internet. Verifica a tua rede.",
+  "tooManyRequestsError": "Demasiadas tentativas. Tenta novamente mais tarde.",
+  "userDisabledError": "Esta conta foi desativada. Contacta o suporte.",
+  "operationNotAllowedError": "Operação não permitida. Contacta o suporte.",
+  "genericAuthError": "Ocorreu um erro. Tenta novamente."
 }

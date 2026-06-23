@@ -89,19 +89,31 @@ Future<void> _submit() async {
       }
 
     } catch (e) {
-      // Se houver erro, ficamos no ecrã e mostramos a mensagem
+      // Se houver erro, ficamos no ecrã e mostramos a mensagem localizada
       if (mounted) {
-        String cleanError = e.toString().replaceAll("Exception:", "").trim();
-        // Remove padrões [firebase_auth/...] ou similares do Firebase
-        cleanError = cleanError.replaceAll(RegExp(r'\[.*?\]\s*'), '');
-        
-        setState(() { 
-          if (cleanError.contains("invalid-credential") || cleanError.contains("invalid_credential")) {
-            errorMessage = AppLocalizations.of(context)!.invalidCredentialError;
-          } else {
-            errorMessage = cleanError;
-          }
-        });
+        final l = AppLocalizations.of(context)!;
+        final errStr = e.toString().toLowerCase();
+
+        String localizedError;
+        if (errStr.contains('invalid-credential') || errStr.contains('invalid_credential') || errStr.contains('wrong-password') || errStr.contains('user-not-found')) {
+          localizedError = l.invalidCredentialError;
+        } else if (errStr.contains('email-already-in-use') || errStr.contains('email_already_in_use')) {
+          localizedError = l.emailAlreadyInUseError;
+        } else if (errStr.contains('weak-password') || errStr.contains('weak_password')) {
+          localizedError = l.weakPasswordError;
+        } else if (errStr.contains('network-request-failed') || errStr.contains('network_request_failed')) {
+          localizedError = l.networkRequestFailed;
+        } else if (errStr.contains('too-many-requests') || errStr.contains('too_many_requests')) {
+          localizedError = l.tooManyRequestsError;
+        } else if (errStr.contains('user-disabled') || errStr.contains('user_disabled')) {
+          localizedError = l.userDisabledError;
+        } else if (errStr.contains('operation-not-allowed') || errStr.contains('operation_not_allowed')) {
+          localizedError = l.operationNotAllowedError;
+        } else {
+          localizedError = l.genericAuthError;
+        }
+
+        setState(() { errorMessage = localizedError; });
       }
     } finally {
       // Paramos o loading (importante se houve erro, se não houve o pop já tratou de tudo)

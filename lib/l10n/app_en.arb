@@ -385,5 +385,13 @@
   "alreadyHaveAccount": "Already have an account?",
   "registerNow": "Register",
   "loginHere": "Log in here",
-  "invalidCredentialError": "Incorrect email or password."
+  "invalidCredentialError": "Incorrect email or password.",
+  "emailAlreadyInUseError": "This email is already associated with an account.",
+  "weakPasswordError": "The password is too weak. Use at least 6 characters.",
+  "userNotFoundError": "No account found with this email.",
+  "networkRequestFailed": "Network error. Please check your connection.",
+  "tooManyRequestsError": "Too many attempts. Please try again later.",
+  "userDisabledError": "This account has been disabled. Contact support.",
+  "operationNotAllowedError": "Operation not allowed. Contact support.",
+  "genericAuthError": "An error occurred. Please try again."
 }
