@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class AdminAddPoiScreen extends StatefulWidget {
   const AdminAddPoiScreen({super.key});
@@ -69,14 +70,14 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
     // Validações básicas
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(backgroundColor: Colors.red, content: Text("Preenche os campos obrigatórios!")),
+        SnackBar(backgroundColor: Colors.red, content: Text(AppLocalizations.of(context)!.adminFillRequired)),
       );
       return;
     }
 
     if (_selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(backgroundColor: Colors.orange, content: Text("Adiciona pelo menos uma foto!")),
+        SnackBar(backgroundColor: Colors.orange, content: Text(AppLocalizations.of(context)!.adminAddAtLeastOnePhoto)),
       );
       return;
     }
@@ -142,15 +143,14 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: kPrimaryGreen, content: const Text("✅ POI Criado com sucesso!")),
+          SnackBar(backgroundColor: kPrimaryGreen, content: Text(AppLocalizations.of(context)!.adminSuccessCreated)),
         );
         Navigator.pop(context);
       }
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: Colors.red, content: Text("Erro ao gravar: $e")),
+          SnackBar(backgroundColor: Colors.red, content: Text(AppLocalizations.of(context)!.adminErrorSaving(e.toString()))),
         );
       }
     } finally {
@@ -161,7 +161,7 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Novo Ponto de Interesse")),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.adminNewPoi)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -170,7 +170,7 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // FOTOS
-              const Text("Fotos (Obrigatório)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(AppLocalizations.of(context)!.adminPhotos, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 10),
               
               if (_selectedImages.isNotEmpty)
@@ -198,7 +198,7 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(2),
                                 decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                child: const Icon(Icons.close, color: Colors.white, size: 18),
+                                child: Icon(Icons.close, color: Colors.white, size: 18),
                               ),
                             ),
                           ),
@@ -212,7 +212,7 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
               OutlinedButton.icon(
                 onPressed: _pickImages,
                 icon: const Icon(Icons.add_photo_alternate),
-                label: const Text("Adicionar da Galeria"),
+                label: Text(AppLocalizations.of(context)!.adminAddFromGallery),
                 style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 45)),
               ),
 
@@ -221,24 +221,24 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
               // DADOS DE TEXTO
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: "Nome do Local", border: OutlineInputBorder()),
-                validator: (val) => val == null || val.trim().isEmpty ? "Obrigatório" : null,
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.adminLocalName, border: const OutlineInputBorder()),
+                validator: (val) => val == null || val.trim().isEmpty ? AppLocalizations.of(context)!.adminRequired : null,
               ),
               const SizedBox(height: 15),
 
               TextFormField(
                 controller: _descPtController,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: "Descrição (PT)", border: OutlineInputBorder()),
-                validator: (val) => val == null || val.trim().isEmpty ? "Obrigatório" : null,
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.adminDescPt, border: const OutlineInputBorder()),
+                validator: (val) => val == null || val.trim().isEmpty ? AppLocalizations.of(context)!.adminRequired : null,
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
                     child: _audioPt == null 
-                      ? OutlinedButton.icon(onPressed: () => _pickAudio('pt'), icon: const Icon(Icons.audiotrack), label: const Text("Adicionar Áudio PT"))
-                      : OutlinedButton.icon(onPressed: () => _removeAudio('pt'), icon: const Icon(Icons.delete, color: Colors.red), label: Text("Remover ${_audioPt!.path.split(Platform.pathSeparator).last}", style: const TextStyle(color: Colors.red))),
+                      ? OutlinedButton.icon(onPressed: () => _pickAudio('pt'), icon: const Icon(Icons.audiotrack), label: Text(AppLocalizations.of(context)!.adminAudioPt))
+                      : OutlinedButton.icon(onPressed: () => _removeAudio('pt'), icon: const Icon(Icons.delete, color: Colors.red), label: Text("${AppLocalizations.of(context)!.adminRemove} ${_audioPt!.path.split(Platform.pathSeparator).last}", style: const TextStyle(color: Colors.red))),
                   ),
                 ],
               ),
@@ -247,15 +247,15 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
               TextFormField(
                 controller: _descEnController,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: "Descrição (EN) - Opcional", border: OutlineInputBorder()),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.adminDescEn, border: const OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
                     child: _audioEn == null 
-                      ? OutlinedButton.icon(onPressed: () => _pickAudio('en'), icon: const Icon(Icons.audiotrack), label: const Text("Adicionar Áudio EN"))
-                      : OutlinedButton.icon(onPressed: () => _removeAudio('en'), icon: const Icon(Icons.delete, color: Colors.red), label: Text("Remover ${_audioEn!.path.split(Platform.pathSeparator).last}", style: const TextStyle(color: Colors.red))),
+                      ? OutlinedButton.icon(onPressed: () => _pickAudio('en'), icon: const Icon(Icons.audiotrack), label: Text(AppLocalizations.of(context)!.adminAudioEn))
+                      : OutlinedButton.icon(onPressed: () => _removeAudio('en'), icon: const Icon(Icons.delete, color: Colors.red), label: Text("${AppLocalizations.of(context)!.adminRemove} ${_audioEn!.path.split(Platform.pathSeparator).last}", style: const TextStyle(color: Colors.red))),
                   ),
                 ],
               ),
@@ -263,10 +263,10 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
 
               TextFormField(
                 controller: _categoryController,
-                decoration: const InputDecoration(labelText: "Categoria", border: OutlineInputBorder()),
-                validator: (val) => val == null || val.trim().isEmpty ? "Obrigatório" : null,
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.category, border: const OutlineInputBorder()),
+                validator: (val) => val == null || val.trim().isEmpty ? AppLocalizations.of(context)!.adminRequired : null,
               ),
-              const SizedBox(height: 15),
+              SizedBox(height: 15),
 
               // COORDENADAS
               Row(
@@ -275,10 +275,10 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
                     child: TextFormField(
                       controller: _latController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: "Latitude (ex: 39.82)", border: OutlineInputBorder()),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context)!.adminLatitude, border: const OutlineInputBorder()),
                       validator: (val) {
-                        if (val == null || val.isEmpty) return "Obrigatório";
-                        if (double.tryParse(val.replaceAll(',', '.')) == null) return "Inválido";
+                        if (val == null || val.isEmpty) return AppLocalizations.of(context)!.adminRequired;
+                        if (double.tryParse(val.replaceAll(',', '.')) == null) return AppLocalizations.of(context)!.adminInvalid;
                         return null;
                       },
                     ),
@@ -288,10 +288,10 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
                     child: TextFormField(
                       controller: _lngController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: "Longitude (ex: -7.49)", border: OutlineInputBorder()),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context)!.adminLongitude, border: const OutlineInputBorder()),
                       validator: (val) {
-                        if (val == null || val.isEmpty) return "Obrigatório";
-                        if (double.tryParse(val.replaceAll(',', '.')) == null) return "Inválido";
+                        if (val == null || val.isEmpty) return AppLocalizations.of(context)!.adminRequired;
+                        if (double.tryParse(val.replaceAll(',', '.')) == null) return AppLocalizations.of(context)!.adminInvalid;
                         return null;
                       },
                     ),
@@ -300,13 +300,12 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
               ),
               const SizedBox(height: 15),
 
-              // MODELO 3D
               TextFormField(
                 controller: _arUrlController,
-                decoration: const InputDecoration(
-                  labelText: "Link Modelo 3D (.glb)", 
-                  border: OutlineInputBorder(),
-                  helperText: "Opcional. Cola o URL direto.",
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.adminArLink, 
+                  border: const OutlineInputBorder(),
+                  helperText: AppLocalizations.of(context)!.adminArHelper,
                 ),
               ),
 
@@ -326,12 +325,12 @@ class _AdminAddPoiScreenState extends State<AdminAddPoiScreen> {
                   child: _isUploading
                       ? Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Text("A criar POI... "),
-                            SizedBox(width: 15, height: 15, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                          children: [
+                            Text(AppLocalizations.of(context)!.adminCreating),
+                            const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
                           ],
                         )
-                      : const Text("CRIAR PONTO DE INTERESSE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      : Text(AppLocalizations.of(context)!.adminCreateButton, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
               const SizedBox(height: 30),

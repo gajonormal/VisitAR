@@ -8,6 +8,7 @@ import '../widgets/filter_bottom_sheet.dart';
 import 'services/download_service.dart';
 import 'details_screen.dart';
 import 'roteiro_details_screen.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class OfflineContentScreen extends StatefulWidget {
   const OfflineContentScreen({super.key});
@@ -88,10 +89,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
 
       setState(() => _offlinePois.removeWhere((p) => p.id == poi.id));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: Text("${poi.nome} removido.")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: Text(AppLocalizations.of(context)!.poiRemoved(poi.nome))));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Colors.red, content: Text("Erro ao remover.")));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.red, content: Text(AppLocalizations.of(context)!.errorRemoving)));
     }
   }
 
@@ -107,10 +108,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       await _loadAllOfflineData();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: Text("${roteiro.titulo} removido.")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: Text(AppLocalizations.of(context)!.roteiroRemoved(roteiro.titulo))));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Colors.red, content: Text("Erro ao remover roteiro.")));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.red, content: Text(AppLocalizations.of(context)!.errorRemovingRoteiro)));
     }
   }
 
@@ -121,12 +122,12 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: const Text("Downloads Offline", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          title: Text(AppLocalizations.of(context)!.offlineDownloads, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
           backgroundColor: Colors.white,
           elevation: 0,
           centerTitle: true,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
           bottom: TabBar(
@@ -136,9 +137,9 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             indicatorWeight: 3,
             indicatorSize: TabBarIndicatorSize.label,
             labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            tabs: const [
-              Tab(text: "Locais (POIs)"),
-              Tab(text: "Roteiros"),
+            tabs: [
+              Tab(text: AppLocalizations.of(context)!.locationsPois),
+              Tab(text: AppLocalizations.of(context)!.tabItineraries),
             ],
           ),
         ),
@@ -174,8 +175,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, color: Colors.grey),
-          const SizedBox(width: 10),
+          Icon(Icons.search, color: Colors.grey),
+          SizedBox(width: 10),
           
           // Campo de Texto
           Expanded(
@@ -186,8 +187,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                   _searchQuery = value;
                 });
               },
-              decoration: const InputDecoration(
-                hintText: 'Pesquisar nos downloads...', 
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.searchDownloads, 
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
@@ -246,7 +247,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             },
           ),
           
-          const SizedBox(width: 5), // Pequena margem final
+          SizedBox(width: 5), // Pequena margem final
         ],
       ),
     );
@@ -261,8 +262,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.cloud_off, size: 60, color: Colors.grey[300]),
-            const SizedBox(height: 15),
-            Text("Sem downloads offline", style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+            SizedBox(height: 15),
+            Text(AppLocalizations.of(context)!.noDownloadsOffline, style: TextStyle(color: Colors.grey[500], fontSize: 16)),
           ],
         ),
       );
@@ -279,8 +280,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
-                      const SizedBox(height: 10),
-                      Text("Nenhum local encontrado para '$_searchQuery'", 
+                      SizedBox(height: 10),
+                      Text(AppLocalizations.of(context)!.noLocationFoundFor(_searchQuery), 
                           style: TextStyle(color: Colors.grey[500])),
                     ],
                   ),
@@ -294,7 +295,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                       itemName: poi.nome,
                       coverImagePath: poi.imagens.isNotEmpty ? poi.imagens[0] : null,
                       title: poi.nome,
-                      subtitle: "Disponível offline",
+                      subtitle: AppLocalizations.of(context)!.availableOffline,
                       onDelete: () => _deletePoi(poi),
                       onTap: () {
                         Navigator.push(
@@ -316,8 +317,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.route, size: 60, color: Colors.grey[300]),
-            const SizedBox(height: 15),
-            Text("Sem roteiros offline", style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+            SizedBox(height: 15),
+            Text(AppLocalizations.of(context)!.noRoteirosOffline, style: TextStyle(color: Colors.grey[500], fontSize: 16)),
           ],
         ),
       );
@@ -334,8 +335,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
-            const SizedBox(height: 10),
-            Text("Nenhum roteiro encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
+            SizedBox(height: 10),
+            Text(AppLocalizations.of(context)!.noRoteiroFoundFor(_searchQuery), style: TextStyle(color: Colors.grey[500])),
           ],
         ),
       );
@@ -350,7 +351,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           itemName: roteiro.titulo,
           coverImagePath: roteiro.imagemCapa.isNotEmpty ? roteiro.imagemCapa : null,
           title: roteiro.titulo,
-          subtitle: "${roteiro.poiIds.length} paragens • Offline",
+          subtitle: AppLocalizations.of(context)!.offlineStops(roteiro.poiIds.length),
           onDelete: () => _deleteRoteiro(roteiro),
           onTap: () {
             Navigator.push(
@@ -418,24 +419,24 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           ),
 
           trailing: IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 22),
+            icon: Icon(Icons.delete_outline, color: Colors.redAccent, size: 22),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text("Apagar Download?"),
-                  content: Text("Deseja remover '$itemName' dos downloads?"),
+                  title: Text(AppLocalizations.of(context)!.deleteDownloadTitle),
+                  content: Text(AppLocalizations.of(context)!.deleteDownloadConfirm(itemName)),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+                      child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Colors.grey)),
                     ),
                     TextButton(
                       onPressed: () {
                         Navigator.pop(ctx);
                         onDelete();
                       },
-                      child: const Text("Apagar", style: TextStyle(color: Colors.red)),
+                      child: Text(AppLocalizations.of(context)!.deleteButton, style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),

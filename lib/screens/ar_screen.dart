@@ -20,6 +20,7 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'package:visitar_teste/screens/services/database_services.dart';
 import '../models/poi.dart';
 import 'details_screen.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class ArScreen extends StatefulWidget {
   const ArScreen({super.key});
@@ -272,7 +273,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
               planeDetectionConfig: PlaneDetectionConfig.horizontalAndVertical,
             )
           else
-            const Center(child: CircularProgressIndicator(color: Colors.white)),
+            Center(child: CircularProgressIndicator(color: Colors.white)),
           
           SafeArea(
             child: Stack(
@@ -294,11 +295,11 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
                             shape: BoxShape.circle,
                             boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: const Offset(0, 2))]
                           ),
-                          child: const Icon(Icons.arrow_back, color: Colors.black),
+                          child: Icon(Icons.arrow_back, color: Colors.black),
                         ),
                       ),
                       
-                      const SizedBox(width: 12), // Espaço entre a seta e a pílula
+                      SizedBox(width: 12), // Espaço entre a seta e a pílula
 
                       // 2. Pílula de Status (Expanded para ocupar o resto da linha)
                       Expanded(
@@ -313,10 +314,10 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
                             mainAxisSize: MainAxisSize.min, // Não estica a pílula desnecessariamente
                             children: [
                               if (_poisLoading.isNotEmpty)
-                                 const Padding(padding: EdgeInsets.only(right: 10), child: SizedBox(width: 15, height: 15, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
+                                 Padding(padding: EdgeInsets.only(right: 10), child: SizedBox(width: 15, height: 15, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
                               else
                                  Icon(Icons.location_on, color: kPrimaryGreen, size: 20),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               
                               // Texto da pílula
                               Flexible(
@@ -369,15 +370,15 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
             decoration: BoxDecoration(color: kPrimaryGreen.withOpacity(0.1), borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
             child: Row(
               children: [
-                const SizedBox(width: 20),
+                SizedBox(width: 20),
                 Icon(Icons.location_on, color: kPrimaryGreen, size: 20),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Text(
                   poiSelecionado!.categoria.toUpperCase(), 
                   style: TextStyle(fontWeight: FontWeight.bold, color: kPrimaryGreen, fontSize: 12, letterSpacing: 1.0)
                 ),
                 const Spacer(),
-                IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => setState(() => showInfoCard = false)),
+                IconButton(icon: Icon(Icons.close, color: Colors.grey), onPressed: () => setState(() => showInfoCard = false)),
               ],
             ),
           ),
@@ -393,14 +394,14 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
                   maxLines: 2, 
                   overflow: TextOverflow.ellipsis
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   poiSelecionado!.description, 
                   style: TextStyle(color: Colors.grey[700], fontSize: 14, height: 1.4),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -412,7 +413,7 @@ class _ArScreenState extends State<ArScreen> with WidgetsBindingObserver {
                       elevation: 0, 
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                     ),
-                    child: const Text("Ver Detalhes", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    child: Text(AppLocalizations.of(context)!.viewDetails, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

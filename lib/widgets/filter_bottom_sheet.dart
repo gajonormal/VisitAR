@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/filter_options.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 const Color kPrimaryGreen = Color(0xFF2E8B57);
 
@@ -61,12 +62,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Filtros", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(AppLocalizations.of(context)!.filters, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: () {
                   setState(() {
@@ -74,11 +75,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     _roteiroFilter = RoteiroFilter();
                   });
                 },
-                child: Text("Limpar", style: TextStyle(color: kPrimaryGreen)),
+                child: Text(AppLocalizations.of(context)!.clear, style: TextStyle(color: kPrimaryGreen)),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           
           Flexible(
             child: SingleChildScrollView(
@@ -87,15 +88,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 children: [
                   if (widget.showPoiFilters) ...[
                     if (widget.showPoiFilters && widget.showRoteiroFilters)
-                      const Text("Locais (POIs)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
-                    const SizedBox(height: 10),
+                      Text(AppLocalizations.of(context)!.locationsPois, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    SizedBox(height: 10),
                     _buildPoiFilters(),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                   ],
                   if (widget.showRoteiroFilters) ...[
                     if (widget.showPoiFilters && widget.showRoteiroFilters)
-                      const Text("Roteiros", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
-                    const SizedBox(height: 10),
+                      Text(AppLocalizations.of(context)!.tabItineraries, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    SizedBox(height: 10),
                     _buildRoteiroFilters(),
                   ],
                 ],
@@ -103,7 +104,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             ),
           ),
           
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryGreen,
@@ -118,7 +119,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               );
               Navigator.pop(context);
             },
-            child: const Text("Aplicar Filtros", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: Text(AppLocalizations.of(context)!.applyFilters, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -129,15 +130,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Categoria", style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
+        Text(AppLocalizations.of(context)!.category, style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 10),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: _categorias.map((cat) {
             bool isSelected = _poiFilter.categoria == cat;
             return ChoiceChip(
-              label: Text(cat),
+              label: Text(_getCategoryTranslation(context, cat)),
               selected: isSelected,
               showCheckmark: false,
               selectedColor: kPrimaryGreen.withOpacity(0.2),
@@ -148,16 +149,16 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             );
           }).toList(),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         SwitchListTile(
-          title: const Text("Apenas com Modelo 3D"),
+          title: Text(AppLocalizations.of(context)!.onlyWith3d),
           value: _poiFilter.temModelo3D,
           activeColor: kPrimaryGreen,
           contentPadding: EdgeInsets.zero,
           onChanged: (val) => setState(() => _poiFilter = _poiFilter.copyWith(temModelo3D: val)),
         ),
         SwitchListTile(
-          title: const Text("Apenas com Áudio"),
+          title: Text(AppLocalizations.of(context)!.onlyWithAudio),
           value: _poiFilter.temAudio,
           activeColor: kPrimaryGreen,
           contentPadding: EdgeInsets.zero,
@@ -171,15 +172,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Dificuldade", style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
+        Text(AppLocalizations.of(context)!.difficulty, style: const TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 10),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: _dificuldades.map((dif) {
             bool isSelected = _roteiroFilter.dificuldade == dif;
             return ChoiceChip(
-              label: Text(dif),
+              label: Text(_getDifficultyTranslation(context, dif)),
               selected: isSelected,
               showCheckmark: false,
               selectedColor: kPrimaryGreen.withOpacity(0.2),
@@ -192,5 +193,39 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         ),
       ],
     );
+  }
+
+  String _getCategoryTranslation(BuildContext context, String category) {
+    switch (category) {
+      case 'Tudo':
+        return AppLocalizations.of(context)!.catAll;
+      case 'Histórico':
+        return AppLocalizations.of(context)!.catHistoric;
+      case 'Natureza':
+        return AppLocalizations.of(context)!.catNature;
+      case 'Geológico':
+        return AppLocalizations.of(context)!.catGeologic;
+      case 'Trilho':
+        return AppLocalizations.of(context)!.catTrail;
+      case 'Gastronomia':
+        return AppLocalizations.of(context)!.catGastronomy;
+      default:
+        return category;
+    }
+  }
+
+  String _getDifficultyTranslation(BuildContext context, String difficulty) {
+    switch (difficulty) {
+      case 'Qualquer':
+        return AppLocalizations.of(context)!.difAny;
+      case 'Fácil':
+        return AppLocalizations.of(context)!.difEasy;
+      case 'Moderado':
+        return AppLocalizations.of(context)!.difMedium;
+      case 'Difícil':
+        return AppLocalizations.of(context)!.difHard;
+      default:
+        return difficulty;
+    }
   }
 }

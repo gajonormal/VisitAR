@@ -11,6 +11,9 @@ import 'settings_screen.dart';
 import 'favorites_screen.dart';
 import 'passport_screen.dart';
 import 'services/passport_service.dart';
+import 'package:provider/provider.dart';
+import 'services/language_provider.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -62,7 +65,7 @@ class ProfileScreen extends StatelessWidget {
             leadingWidth: 100,
             leading: TextButton.icon(
               icon: Icon(Icons.logout, color: Colors.grey[700], size: 20),
-              label: Text("Sair", style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold)),
+              label: Text(AppLocalizations.of(context)!.logout, style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold)),
               onPressed: () async {
                 await AuthService().signOut();
               },
@@ -83,7 +86,7 @@ class ProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 15.0),
                 child: IconButton(
                   icon: Icon(Icons.settings_outlined, color: Colors.grey[700], size: 24),
-                  tooltip: "Definições",
+                  tooltip: AppLocalizations.of(context)!.settings,
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
                   },
@@ -117,11 +120,11 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Text(nome, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 Text(email, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
 
-                const SizedBox(height: 15), // Espaço antes do botão
+                SizedBox(height: 15), // Espaço antes do botão
 
                 // --- NOVO BOTÃO EDITAR PERFIL (MAIS PEQUENO E POR BAIXO DO NOME) ---
                 SizedBox(
@@ -140,29 +143,29 @@ class ProfileScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), // Mais arredondado
                       padding: EdgeInsets.zero, // Remove padding interno para o texto caber bem na altura pequena
                     ),
-                    child: const Text("Editar Perfil", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    child: Text(AppLocalizations.of(context)!.editProfile, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
                 ),
 
-                const SizedBox(height: 25),
+                SizedBox(height: 25),
 
                 // ─── SECÇÃO BADGES ───
                 _buildBadgesSection(context, user.uid),
 
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 
                 // LISTA DE OPÇÕES
                 _buildListOption(
                   icon: Icons.flag_circle_rounded,
-                  text: "Os meus roteiros",
+                  text: AppLocalizations.of(context)!.myItineraries,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("A abrir...")));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.opening)));
                   },
                 ),
 
                 _buildListOption(
                   icon: Icons.book_outlined,
-                  text: "O meu Passaporte",
+                  text: AppLocalizations.of(context)!.myPassport,
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const PassportScreen()));
                   },
@@ -170,7 +173,7 @@ class ProfileScreen extends StatelessWidget {
                 
                 _buildListOption(
                   icon: Icons.favorite_outlined,
-                  text: "Os meus favoritos",
+                  text: AppLocalizations.of(context)!.myFavorites,
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen()));
                   },
@@ -178,7 +181,7 @@ class ProfileScreen extends StatelessWidget {
 
                 _buildListOption(
                   icon: Icons.download_done_rounded,
-                  text: "Downloads Offline",
+                  text: AppLocalizations.of(context)!.offlineDownloads,
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const OfflineContentScreen()));
                   },
@@ -187,26 +190,26 @@ class ProfileScreen extends StatelessWidget {
                 // --- PAINEL DE ADMIN ---
                 _buildListOption(
                   icon: Icons.admin_panel_settings,
-                  text: "Painel de Admin",
+                  text: AppLocalizations.of(context)!.adminPanel,
                   onTap: () {
                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminAddPoiScreen()));
                   },
                 ),
                 _buildListOption(
                   icon: Icons.military_tech,
-                  text: "Criar Badges (Admin)",
+                  text: AppLocalizations.of(context)!.createBadgesAdmin,
                   onTap: () async {
                     await PassportService().seedBadges();
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('✅ Badges criadas no Firestore!'), backgroundColor: Color(0xFF0F9D58))
+                        SnackBar(content: Text(AppLocalizations.of(context)!.badgesCreated), backgroundColor: Color(0xFF0F9D58))
                       );
                     }
                   },
                 ),
                 _buildListOption(
                   icon: Icons.delete_forever,
-                  text: "Reset Conquistas (Teste)",
+                  text: AppLocalizations.of(context)!.resetAchievementsTest,
                   onTap: () async {
                     final uid = FirebaseAuth.instance.currentUser?.uid;
                     if (uid != null) {
@@ -220,7 +223,7 @@ class ProfileScreen extends StatelessWidget {
                       }
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('🗑️ Todas as tuas conquistas foram apagadas!'), backgroundColor: Colors.orange)
+                          SnackBar(content: Text(AppLocalizations.of(context)!.achievementsDeleted), backgroundColor: Colors.orange)
                         );
                       }
                     }
@@ -228,7 +231,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 _buildListOption(
                   icon: Icons.restore_page_outlined,
-                  text: "Reset Carimbos (Teste)",
+                  text: AppLocalizations.of(context)!.resetStampsTest,
                   onTap: () async {
                     final uid = FirebaseAuth.instance.currentUser?.uid;
                     if (uid != null) {
@@ -238,13 +241,13 @@ class ProfileScreen extends StatelessWidget {
                       }
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('🗑️ Todos os teus carimbos de visitas foram apagados!'), backgroundColor: Colors.orange)
+                          SnackBar(content: Text(AppLocalizations.of(context)!.stampsDeleted), backgroundColor: Colors.orange)
                         );
                       }
                     }
                   },
                 ),
-                const SizedBox(height: 100), // Espaço extra para scrollar além da NavigationBar
+                SizedBox(height: 100), // Espaço extra para scrollar além da NavigationBar
               ],
             ),
           ),
@@ -257,7 +260,7 @@ class ProfileScreen extends StatelessWidget {
   // PERFIL PARA VISITANTE (NÃO AUTENTICADO)
   Widget _buildGuestProfile(BuildContext context) {
     // Linguagem padrão para visitante (pode ser guardada em SharedPreferences)
-    String guestLangCode = "pt";
+    String guestLangCode = Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -267,7 +270,7 @@ class ProfileScreen extends StatelessWidget {
         leadingWidth: 160,
         leading: TextButton.icon(
           icon: Icon(Icons.login, color: kPrimaryGreen, size: 20),
-          label: Text("Login/Registo", style: TextStyle(color: kPrimaryGreen, fontWeight: FontWeight.bold)),
+          label: Text(AppLocalizations.of(context)!.loginRegister, style: TextStyle(color: kPrimaryGreen, fontWeight: FontWeight.bold)),
           onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
           },
@@ -293,7 +296,7 @@ class ProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.only(right: 15.0),
             child: IconButton(
               icon: Icon(Icons.settings_outlined, color: Colors.grey[700], size: 24),
-              tooltip: "Definições",
+              tooltip: AppLocalizations.of(context)!.settings,
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
               },
@@ -319,11 +322,11 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 10),
-            const Text("Visitante", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            Text("Modo sem conta", style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+            SizedBox(height: 10),
+            Text(AppLocalizations.of(context)!.guest, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.guestMode, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
 
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
 
             // INFO: Visitantes têm acesso limitado
             Container(
@@ -336,10 +339,10 @@ class ProfileScreen extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(Icons.info_outline, color: Colors.grey[700]),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      "Como visitante, tens acesso limitado. Cria uma conta para mais funcionalidades!",
+                      AppLocalizations.of(context)!.guestLimitedAccess,
                       style: TextStyle(color: Colors.grey[900], fontSize: 13),
                     ),
                   ),
@@ -347,12 +350,12 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Opções disponíveis para visitante
             _buildListOption(
               icon: Icons.download_done_rounded,
-              text: "Downloads Offline",
+              text: AppLocalizations.of(context)!.offlineDownloads,
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const OfflineContentScreen()));
               },
@@ -403,8 +406,8 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Últimas Conquistas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-            const SizedBox(height: 10),
+            Text(AppLocalizations.of(context)!.latestAchievements, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+            SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
@@ -451,7 +454,7 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.grey[300]!),
                       ),
-                      child: const Icon(Icons.add, color: Colors.grey, size: 22),
+                      child: Icon(Icons.add, color: Colors.grey, size: 22),
                     ),
                   ),
                 ],
@@ -495,7 +498,7 @@ Widget _buildListOption({required IconData icon, required String text, required 
           // Aumentei de 14 para 14.5 para encher melhor o espaço
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5) 
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
+        trailing: Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
         onTap: onTap,
       ),
     );
@@ -506,14 +509,12 @@ Widget _buildListOption({required IconData icon, required String text, required 
     final Map<String, String> languages = {
       'Português': 'pt',
       'English': 'en',
-      'Español': 'es',
-      'Français': 'fr',
     };
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Escolher Idioma"),
+        title: Text(AppLocalizations.of(context)!.chooseLanguage),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: languages.entries.map((entry) {
@@ -543,22 +544,24 @@ Widget _buildListOption({required IconData icon, required String text, required 
 
   // Função para alterar idioma
   void _changeLanguage(BuildContext context, String newLang, String? userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('global_language', newLang);
+    Provider.of<LanguageProvider>(context, listen: false).changeLanguage(newLang);
 
-    if (userId != null) {
+      if (userId != null) {
       // Utilizador autenticado: guarda no Firestore
       await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'linguagem': newLang,
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Idioma alterado para ${newLang.toUpperCase()}"))
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.languageChanged(newLang.toUpperCase())))
+        );
+      }
     } else {
-      // Visitante: já guardado em SharedPreferences
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Idioma alterado para ${newLang.toUpperCase()} (local)"))
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.languageChangedLocal(newLang.toUpperCase())))
+        );
+      }
     }
   }
 }

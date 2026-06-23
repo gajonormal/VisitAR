@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens/services/auth_service.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -129,14 +130,14 @@ Future<void> _submit() async {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.location_on_outlined, size: 60, color: Colors.white), // Ícone menor
-                  const SizedBox(height: 5),
+                  Icon(Icons.location_on_outlined, size: 60, color: Colors.white), // Ícone menor
+                  SizedBox(height: 5),
                   Text(
                     isLogin ? "Bem-vindo!" : "Criar Conta",
                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   // Removi o texto extra para poupar espaço
-                  const SizedBox(height: 30), 
+                  SizedBox(height: 30), 
                 ],
               ),
             ),
@@ -148,7 +149,7 @@ Future<void> _submit() async {
             left: 0,
             child: SafeArea(
               child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                icon: Icon(Icons.arrow_back, color: Colors.white, size: 28),
                 onPressed: () => Navigator.pop(context), // Volta para trás
               ),
             ),
@@ -188,8 +189,8 @@ Future<void> _submit() async {
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                                  const SizedBox(width: 8),
+                                  Icon(Icons.error_outline, color: Colors.red, size: 20),
+                                  SizedBox(width: 8),
                                   Expanded(child: Text(errorMessage!, style: TextStyle(color: Colors.red[800], fontSize: 12))),
                                 ],
                               ),
@@ -208,9 +209,9 @@ Future<void> _submit() async {
                                     icon: Icons.person_outline,
                                     validator: (val) => val!.isEmpty ? "Obrigatório" : null,
                                   ),
-                                  const SizedBox(height: 15), // Espaço reduzido
+                                  SizedBox(height: 15), // Espaço reduzido
                                   _buildGenderDropdown(),
-                                  const SizedBox(height: 15),
+                                  SizedBox(height: 15),
                                 ],
                               ) 
                             : const SizedBox.shrink(),
@@ -225,7 +226,7 @@ Future<void> _submit() async {
                             validator: (val) => val!.contains('@') ? null : "Email inválido",
                           ),
                           
-                          const SizedBox(height: 15),
+                          SizedBox(height: 15),
                           
                           _buildTextField(
                             controller: _passwordController,
@@ -235,7 +236,7 @@ Future<void> _submit() async {
                             validator: (val) => val!.length < 6 ? "Mín. 6 carateres" : null,
                           ),
 
-                          const SizedBox(height: 25),
+                          SizedBox(height: 25),
 
                           // BOTÃO AÇÃO
                           SizedBox(
@@ -250,7 +251,7 @@ Future<void> _submit() async {
                                 elevation: 3,
                               ),
                               child: isLoading 
-                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                 : Text(
                                     isLogin ? "ENTRAR" : "CRIAR CONTA", 
                                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
@@ -263,7 +264,7 @@ Future<void> _submit() async {
                   ),
 
                   // RODAPÉ (Links)
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -282,7 +283,7 @@ Future<void> _submit() async {
                     ],
                   ),
                   // Margem extra em baixo para garantir que o scroll funciona bem com teclado
-                  const SizedBox(height: 50), 
+                  SizedBox(height: 50), 
                 ],
               ),
             ),
@@ -339,11 +340,11 @@ Future<void> _submit() async {
 
   Widget _buildGenderDropdown() {
     return DropdownButtonFormField<String>(
-      initialValue: _selectedGender,
+      value: _selectedGender,
       icon: Icon(Icons.arrow_drop_down, color: kPrimaryGreen, size: 20),
       style: const TextStyle(color: Colors.black, fontSize: 14),
       decoration: InputDecoration(
-        labelText: "Género",
+        labelText: AppLocalizations.of(context)!.gender,
         labelStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
         prefixIcon: Icon(Icons.people_outline, color: kPrimaryGreen, size: 20),
         filled: true,

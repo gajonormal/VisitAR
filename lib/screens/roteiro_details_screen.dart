@@ -17,6 +17,7 @@ import 'create_roteiro_screen.dart';
 import 'services/roteiros_service.dart';
 import 'services/passport_service.dart';
 import '../../models/badge_model.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class RoteiroDetailsScreen extends StatefulWidget {
   final Roteiro roteiro;
@@ -92,12 +93,12 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
       if (mounted) {
         setState(() => _isFavorite = !_isFavorite);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_isFavorite ? "Adicionado aos favoritos" : "Removido dos favoritos"),
+          content: Text(_isFavorite ? AppLocalizations.of(context)!.addedToFavorites : AppLocalizations.of(context)!.removedFromFavorites),
           backgroundColor: kPrimaryGreen,
         ));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao atualizar favorito")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.errorUpdatingFavorite)));
     }
   }
 
@@ -119,35 +120,34 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
               ),
               child: Icon(Icons.lock_outline_rounded, color: kPrimaryGreen, size: 32),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Sessão necessária',
+            SizedBox(height: 16),
+            Text(AppLocalizations.of(context)!.loginRequiredTitle,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
-              'Para $acao, precisas de ter uma conta e iniciar sessão.',
+              '${AppLocalizations.of(context)!.loginRequiredBody1}$acao${AppLocalizations.of(context)!.loginRequiredBody2}',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.4),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CustomButton(
                   onPressed: () => Navigator.pop(ctx),
-                  text: 'Agora não',
+                  text: AppLocalizations.of(context)!.notNow,
                   backgroundColor: Colors.grey[200]!,
                   textColor: Colors.grey[700]!,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 CustomButton(
                   onPressed: () {
                     Navigator.pop(ctx);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
                   },
-                  text: 'Iniciar sessão',
+                  text: AppLocalizations.of(context)!.login,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ],
@@ -160,7 +160,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
 
   Future<void> _handleDownload() async {
     if (_isDownloaded) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Roteiro já está disponível offline.")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.roteiroAvailableOffline)));
       return;
     }
     setState(() => _isDownloading = true);
@@ -173,7 +173,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
         _isDownloaded = success;
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(success ? "Download concluído com sucesso!" : "Erro ao transferir roteiro."),
+        content: Text(success ? AppLocalizations.of(context)!.downloadSuccess : AppLocalizations.of(context)!.downloadError),
         backgroundColor: success ? kPrimaryGreen : Colors.red,
       ));
     }
@@ -198,8 +198,8 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
         title: Column(
           children: [
             Icon(Icons.military_tech_outlined, color: kPrimaryGreen, size: 54),
-            const SizedBox(height: 8),
-            const Text('Conquista Desbloqueada!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            SizedBox(height: 8),
+            Text(AppLocalizations.of(context)!.achievementUnlocked, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
         content: Column(
@@ -208,9 +208,9 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             padding: const EdgeInsets.only(bottom: 10),
             child: Column(
               children: [
-                Text(b.titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                Text(_getBadgeTitle(context, b.id, b.titulo), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                 const SizedBox(height: 4),
-                Text(b.descricao, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(_getBadgeDesc(context, b.id, b.descricao), textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontSize: 13)),
               ],
             ),
           )).toList(),
@@ -220,7 +220,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             child: TextButton(
               onPressed: () => Navigator.pop(ctx),
               style: TextButton.styleFrom(foregroundColor: kPrimaryGreen),
-              child: const Text('Fantástico!', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(AppLocalizations.of(context)!.fantastic, style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -237,7 +237,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: Center(
@@ -254,9 +254,9 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             color: _isFavorite ? Colors.red : Colors.grey[600]!,
             onTap: _toggleFavorite,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           _isDownloading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 35, 
                   height: 35, 
                   child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2))
@@ -267,7 +267,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                   onTap: _handleDownload,
                 ),
           if (FirebaseAuth.instance.currentUser?.uid == _currentRoteiro.criadorId || FirebaseAuth.instance.currentUser?.uid == 'admin') ...[
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             _buildCircleButton(
               Icons.edit,
               color: Colors.grey[700]!,
@@ -288,7 +288,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                 }
               },
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             _buildCircleButton(
               Icons.delete_outline,
               color: Colors.grey[700]!,
@@ -296,11 +296,11 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                 bool confirmar = await showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text("Apagar Roteiro"),
-                    content: const Text("Tens a certeza que queres apagar este roteiro? Esta ação é irreversível."),
+                    title: Text(AppLocalizations.of(context)!.deleteRoteiro),
+                    content: Text(AppLocalizations.of(context)!.deleteRoteiroConfirm),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancelar", style: TextStyle(color: Colors.grey))),
-                      TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Apagar", style: TextStyle(color: Colors.red))),
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context)!.cancel, style: const TextStyle(color: Colors.grey))),
+                      TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context)!.deleteButton, style: const TextStyle(color: Colors.red))),
                     ],
                   ),
                 ) ?? false;
@@ -309,17 +309,17 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                   try {
                     await RoteirosService().deleteRoteiro(_currentRoteiro.id);
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Roteiro apagado com sucesso!")));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.roteiroDeletedSuccess)));
                       Navigator.pop(context);
                     }
                   } catch (e) {
-                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao apagar roteiro.")));
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.errorDeletingRoteiro)));
                   }
                 }
               },
             ),
           ],
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
         ],
       ),
       body: SingleChildScrollView(
@@ -329,27 +329,27 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
           children: [
             // Categoria
             Text(
-              "Categoria",
+              AppLocalizations.of(context)!.category,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             
             // IMAGEM DE CAPA
             _buildCoverImage(),
-            const SizedBox(height: 15),
+            SizedBox(height: 15),
 
             // ESTATÍSTICAS EM BLOCOS (ESTILO HEADER VERDE)
             Row(
               children: [
                 Expanded(child: _buildStatBlock("POIs", "${_currentRoteiro.poiIds.length}")),
-                const SizedBox(width: 8),
-                Expanded(child: _buildStatBlock("Duração", _currentRoteiro.duracao)),
-                const SizedBox(width: 8),
-                Expanded(child: _buildStatBlock("Distância", "${_currentRoteiro.distancia.toStringAsFixed(1)} km")),
+                SizedBox(width: 8),
+                Expanded(child: _buildStatBlock(AppLocalizations.of(context)!.duration, _currentRoteiro.duracao)),
+                SizedBox(width: 8),
+                Expanded(child: _buildStatBlock(AppLocalizations.of(context)!.distance, "${_currentRoteiro.distancia.toStringAsFixed(1)} km")),
               ],
             ),
             
-            const SizedBox(height: 25),
+            SizedBox(height: 25),
             
             // DESCRIÇÃO
             Container(
@@ -362,22 +362,22 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Descrição", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                  const SizedBox(height: 10),
+                  Text(AppLocalizations.of(context)!.descriptionLabel, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                  SizedBox(height: 10),
                   Text(
-                    _currentRoteiro.descricao.isEmpty ? "Sem descrição." : _currentRoteiro.descricao,
+                    _currentRoteiro.descricao.isEmpty ? AppLocalizations.of(context)!.noDescription : _currentRoteiro.descricao,
                     style: TextStyle(fontSize: 15, height: 1.5, color: Colors.grey[800]),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 30),
+            SizedBox(height: 30),
 
             // PROGRESSO DO ROTEIRO
             StreamBuilder<RoteiroProgress>(
               stream: PassportService().getRoteiroProgressStream(_currentRoteiro),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const SizedBox();
+                if (!snapshot.hasData) return SizedBox();
                 final progress = snapshot.data!;
                 
                 // Se o roteiro acabou de ser concluído, regista e possivelmente lança conquista
@@ -392,7 +392,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                 }
 
                 return _buildGreenSection(
-                  title: "Progresso da Exploração",
+                  title: AppLocalizations.of(context)!.explorationProgress,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                     child: Column(
@@ -400,11 +400,11 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('${progress.visitedCount} de ${progress.total} locais visitados', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                            Text(AppLocalizations.of(context)!.visitedProgress(progress.visitedCount, progress.total), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
                             Text('${(progress.percentage * 100).toInt()}%', style: TextStyle(fontWeight: FontWeight.bold, color: kPrimaryGreen)),
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        SizedBox(height: 10),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
@@ -415,13 +415,13 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                           ),
                         ),
                         if (progress.isCompleted) ...[
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.verified, color: kPrimaryGreen, size: 18),
-                              const SizedBox(width: 5),
-                              Text('Roteiro Concluído! Badge ganho.', style: TextStyle(color: kPrimaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
+                              SizedBox(width: 5),
+                              Text(AppLocalizations.of(context)!.roteiroCompletedBadge, style: TextStyle(color: kPrimaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
                             ],
                           ),
                         ]
@@ -431,11 +431,11 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                 );
               },
             ),
-            const SizedBox(height: 30),
+            SizedBox(height: 30),
             
             // PONTOS DE INTERESSE ADICIONADOS (ESTILO FIGMA)
             _buildGreenSection(
-              title: "Pontos de interesse adicionados",
+              title: AppLocalizations.of(context)!.poisAdded,
               child: Column(
                 children: [
                   // Lista
@@ -446,7 +446,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
               ),
             ),
             
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
             
             // BOTÕES INFERIORES
             SizedBox(
@@ -461,10 +461,10 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                   backgroundColor: kPrimaryGreen,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                 ),
-                child: const Text("Iniciar Roteiro", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(AppLocalizations.of(context)!.startRoteiro, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
-            const SizedBox(height: 30),
+            SizedBox(height: 30),
           ],
         ),
       ),
@@ -533,16 +533,16 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                 ? Image.network(
                     _currentRoteiro.imagemCapa, 
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
+                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
                   )
                 : Image.file(
                     File(_currentRoteiro.imagemCapa), 
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
+                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
                   ))
             : Container(
                 color: Colors.grey[300], 
-                child: const Icon(Icons.camera_alt_outlined, color: Colors.white, size: 50)
+                child: Icon(Icons.camera_alt_outlined, color: Colors.white, size: 50)
               ),
       ),
     );
@@ -579,9 +579,9 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
 
   Widget _buildPoiTimeline() {
     if (_poisDoRoteiro.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.all(20.0),
-        child: Text("Não foi possível carregar as paragens."),
+        child: Text(AppLocalizations.of(context)!.cannotLoadStops),
       );
     }
     
@@ -652,14 +652,14 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                             width: 45, height: 45,
                             child: img != null 
                               ? (img.startsWith('http') 
-                                  ? Image.network(img, fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(color: Colors.grey[200], child: const Icon(Icons.place, color: Colors.grey, size: 20))) 
-                                  : Image.file(File(img), fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(color: Colors.grey[200], child: const Icon(Icons.place, color: Colors.grey, size: 20))))
+                                  ? Image.network(img, fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(color: Colors.grey[200], child: Icon(Icons.place, color: Colors.grey, size: 20))) 
+                                  : Image.file(File(img), fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(color: Colors.grey[200], child: Icon(Icons.place, color: Colors.grey, size: 20))))
                               : Container(color: Colors.grey[200]),
                           ),
                         ),
                         title: Text(poi.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        subtitle: Text(poi.categoria, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+                        subtitle: Text(_getCategoryTranslation(context, poi.categoria), style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                        trailing: Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
                       ),
                     ),
                   ),
@@ -670,5 +670,52 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
         );
       },
     );
+  }
+
+  String _getCategoryTranslation(BuildContext context, String category) {
+    switch (category) {
+      case 'Histórico':
+        return AppLocalizations.of(context)!.catHistoric;
+      case 'Natureza':
+        return AppLocalizations.of(context)!.catNature;
+      case 'Geológico':
+        return AppLocalizations.of(context)!.catGeologic;
+      case 'Trilho':
+        return AppLocalizations.of(context)!.catTrail;
+      case 'Gastronomia':
+        return AppLocalizations.of(context)!.catGastronomy;
+      default:
+        return category;
+    }
+  }
+
+  String _getBadgeTitle(BuildContext context, String badgeId, String defaultVal) {
+    switch (badgeId) {
+      case 'primeiro_carimbo': return AppLocalizations.of(context)!.badgePrimeiroCarimboTitle;
+      case 'conhecedor': return AppLocalizations.of(context)!.badgeConhecedorTitle;
+      case 'colecionador': return AppLocalizations.of(context)!.badgeColecionadorTitle;
+      case 'grande_explorador': return AppLocalizations.of(context)!.badgeGrandeExploradorTitle;
+      case 'primeiro_roteiro': return AppLocalizations.of(context)!.badgePrimeiroRoteiroTitle;
+      case 'aventureiro': return AppLocalizations.of(context)!.badgeAventureiroTitle;
+      case 'viajante': return AppLocalizations.of(context)!.badgeViajanteTitle;
+      case 'criador': return AppLocalizations.of(context)!.badgeCriadorTitle;
+      case 'guia_local': return AppLocalizations.of(context)!.badgeGuiaLocalTitle;
+      default: return defaultVal;
+    }
+  }
+
+  String _getBadgeDesc(BuildContext context, String badgeId, String defaultVal) {
+    switch (badgeId) {
+      case 'primeiro_carimbo': return AppLocalizations.of(context)!.badgePrimeiroCarimboDesc;
+      case 'conhecedor': return AppLocalizations.of(context)!.badgeConhecedorDesc;
+      case 'colecionador': return AppLocalizations.of(context)!.badgeColecionadorDesc;
+      case 'grande_explorador': return AppLocalizations.of(context)!.badgeGrandeExploradorDesc;
+      case 'primeiro_roteiro': return AppLocalizations.of(context)!.badgePrimeiroRoteiroDesc;
+      case 'aventureiro': return AppLocalizations.of(context)!.badgeAventureiroDesc;
+      case 'viajante': return AppLocalizations.of(context)!.badgeViajanteDesc;
+      case 'criador': return AppLocalizations.of(context)!.badgeCriadorDesc;
+      case 'guia_local': return AppLocalizations.of(context)!.badgeGuiaLocalDesc;
+      default: return defaultVal;
+    }
   }
 }

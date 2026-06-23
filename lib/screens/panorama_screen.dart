@@ -5,6 +5,7 @@ import '../models/panorama.dart';
 import '../models/poi.dart';
 import 'services/database_services.dart';
 import 'details_screen.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class PanoramaScreen extends StatefulWidget {
   final Panorama panorama;
@@ -124,10 +125,10 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.grey[200]!)),
-                              child: const Icon(Icons.volume_up_rounded, size: 20),
+                              child: Icon(Icons.volume_up_rounded, size: 20),
                             ),
-                            const SizedBox(width: 15),
-                            const Text("Ouvir áudio guia", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            SizedBox(width: 15),
+                            Text(AppLocalizations.of(context)!.listenAudioGuide, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                             const Spacer(),
                             GestureDetector(
                               onTap: () async {
@@ -153,7 +154,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 5),
+                        SizedBox(height: 5),
                         SliderTheme(
                           data: SliderTheme.of(context).copyWith(
                             activeTrackColor: kPrimaryGreen,
@@ -173,7 +174,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        SizedBox(height: 5),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -185,9 +186,9 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                     ),
                   ),
                 Text(poi.nome, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, height: 1.1)),
-                const SizedBox(height: 5),
+                SizedBox(height: 5),
                 Text(poi.categoria, style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w500)),
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
                 Text(
                   poi.mapaDescricao['pt'] ?? 'Sem descrição',
                   maxLines: 3,
@@ -195,7 +196,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                   style: TextStyle(fontSize: 15, height: 1.5, color: Colors.grey[800]),
                 ),
                 if (widget.initialPoiId != poi.id) ...[
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -211,7 +212,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                         await _audioPlayer.stop();
                         Navigator.push(context, MaterialPageRoute(builder: (_) => DetailsScreen(poi: poi)));
                       },
-                      child: const Text("Explorar Local", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      child: Text("Explorar Local", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ]
@@ -245,7 +246,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(color: Colors.grey[100], shape: BoxShape.circle),
-              child: const Icon(Icons.arrow_back, color: Colors.black, size: 22),
+              child: Icon(Icons.arrow_back, color: Colors.black, size: 22),
             ),
           ),
         ),
@@ -261,11 +262,11 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: Colors.red[50], shape: BoxShape.circle),
-                  child: const Icon(Icons.stop, color: Colors.red, size: 22),
+                  child: Icon(Icons.stop, color: Colors.red, size: 22),
                 ),
               ),
             ),
-          if (_isPlayingAudio) const SizedBox(width: 10),
+          if (_isPlayingAudio) SizedBox(width: 10),
           Center(
             child: InkWell(
               onTap: () => setState(() => _isGyroEnabled = !_isGyroEnabled),
@@ -277,7 +278,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Center(
             child: InkWell(
               onTap: () {
@@ -292,7 +293,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
         ],
       ),
       body: PanoramaViewer(
@@ -317,7 +318,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                   border: Border.all(color: Colors.white, width: 3),
                   boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 6, offset: const Offset(0, 3))],
                 ),
-                child: const Icon(Icons.location_on, color: Colors.white, size: 35),
+                child: Icon(Icons.location_on, color: Colors.white, size: 35),
               ),
             ),
           );

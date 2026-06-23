@@ -28,6 +28,7 @@ import 'explore_screen.dart';
 import 'favorites_screen.dart';
 import 'roteiros_screen.dart';
 import 'login_screen.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class HomeMap extends StatefulWidget {
   const HomeMap({super.key});
@@ -699,7 +700,7 @@ class _HomeMapState extends State<HomeMap> {
                 right: (_isSearchFocused || _isSearching) ? -80 : 20,
                 child: FloatingActionButton.small(
                   heroTag: "gps_btn", backgroundColor: Colors.white, onPressed: _locateUser,
-                  child: const Icon(Icons.my_location, color: Colors.black54),
+                  child: Icon(Icons.my_location, color: Colors.black54),
                 ),
               ),
 
@@ -712,8 +713,8 @@ class _HomeMapState extends State<HomeMap> {
                 child: FloatingActionButton.extended(
                   heroTag: "ar_btn", backgroundColor: kPrimaryGreen,
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ArScreen())),
-                  icon: const Icon(Icons.camera_alt, color: Colors.white),
-                  label: const Text("Modo AR", style: TextStyle(color: Colors.white)),
+                  icon: Icon(Icons.camera_alt, color: Colors.white),
+                  label: Text(AppLocalizations.of(context)!.arMode, style: TextStyle(color: Colors.white)),
                 ),
               ),
 
@@ -749,11 +750,11 @@ class _HomeMapState extends State<HomeMap> {
                               ),
                             );
                           },
-                          icon: const Icon(Icons.threesixty, size: 18),
-                          label: const Text("Ver 360º", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          icon: Icon(Icons.threesixty, size: 18),
+                          label: Text(AppLocalizations.of(context)!.view360, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                     ],
                     SizedBox(
                       height: 42,
@@ -771,8 +772,8 @@ class _HomeMapState extends State<HomeMap> {
                             _startNavigation(_visiblePois[_selectedPoiIndex]);
                           }
                         },
-                        icon: const Icon(Icons.navigation_rounded, size: 18),
-                        label: const Text("Navegar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        icon: Icon(Icons.navigation_rounded, size: 18),
+                        label: Text(AppLocalizations.of(context)!.navigate, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       ),
                     ),
                   ],
@@ -865,7 +866,7 @@ class _HomeMapState extends State<HomeMap> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(formatTime(_roteiroElapsedSeconds), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                    const Text("Tempo", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text("Tempo", style: TextStyle(color: Colors.grey, fontSize: 12)),
                   ],
                 ),
                 Expanded(
@@ -883,19 +884,19 @@ class _HomeMapState extends State<HomeMap> {
                 ),
               ],
             ),
-            const SizedBox(height: 15),
+            SizedBox(height: 15),
             Row(
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(formatDistance(_roteiroDistanceCovered), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const Text("Distância", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(AppLocalizations.of(context)!.distance, style: TextStyle(color: Colors.grey, fontSize: 12)),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
@@ -911,10 +912,10 @@ class _HomeMapState extends State<HomeMap> {
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     ),
-                    child: Text(_isRoteiroPaused ? "Continuar" : "Pausar", style: const TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text(_isRoteiroPaused ? AppLocalizations.of(context)!.resume : AppLocalizations.of(context)!.pause, style: const TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
-                const SizedBox(width: 15),
+                SizedBox(width: 15),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _showEndRoteiroDialog,
@@ -924,7 +925,7 @@ class _HomeMapState extends State<HomeMap> {
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     ),
-                    child: const Text("Parar", style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text(AppLocalizations.of(context)!.stop, style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -945,12 +946,12 @@ class _HomeMapState extends State<HomeMap> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Parar Navegação", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.stopNavigation, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Queres parar de seguir as indicações deste roteiro?", textAlign: TextAlign.center),
-            const SizedBox(height: 20),
+            Text(AppLocalizations.of(context)!.stopNavigationConfirm, textAlign: TextAlign.center),
+            SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(15)),
@@ -960,14 +961,14 @@ class _HomeMapState extends State<HomeMap> {
                   Column(
                     children: [
                       Icon(Icons.timer, color: kPrimaryGreen),
-                      const SizedBox(height: 5),
+                      SizedBox(height: 5),
                       Text("${(_roteiroElapsedSeconds / 60).toStringAsFixed(1)} min", style: const TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Column(
                     children: [
                       Icon(Icons.directions_walk, color: kPrimaryGreen),
-                      const SizedBox(height: 5),
+                      SizedBox(height: 5),
                       Text("${(_roteiroDistanceCovered / 1000).toStringAsFixed(2)} km", style: const TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
@@ -985,7 +986,7 @@ class _HomeMapState extends State<HomeMap> {
                     Navigator.pop(ctx);
                     setState(() => _isRoteiroPaused = false); // Continuar
                   },
-                  child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+                  child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Colors.grey)),
                 ),
               ),
               Expanded(
@@ -995,7 +996,7 @@ class _HomeMapState extends State<HomeMap> {
                     _finishRoteiro();
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: kPrimaryGreen, foregroundColor: Colors.white),
-                  child: const Text("Concluir"),
+                  child: Text(AppLocalizations.of(context)!.finish),
                 ),
               ),
             ],
@@ -1042,14 +1043,14 @@ class _HomeMapState extends State<HomeMap> {
               children: [
                 // Ícone de pesquisa
                 Icon(Icons.search, color: _isSearching ? kPrimaryGreen : Colors.grey),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 // Campo de texto
                 Expanded(
                   child: TextField(
                     controller: _searchController,
                     focusNode: _searchFocusNode,
-                    decoration: const InputDecoration(
-                      hintText: 'Pesquisar local...',
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.searchLocation,
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                       isDense: true,
@@ -1066,13 +1067,13 @@ class _HomeMapState extends State<HomeMap> {
                 // Botão X para limpar (só aparece enquanto pesquisa)
                 if (_isSearching)
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.grey),
+                    icon: Icon(Icons.close, color: Colors.grey),
                     splashRadius: 20,
                     onPressed: _clearSearch,
                   )
                 else ...([
                   Container(width: 1, height: 24, color: Colors.grey[300]),
-                  const SizedBox(width: 5),
+                  SizedBox(width: 5),
                   IconButton(
                     icon: Icon(Icons.tune, color: _poiFilter.isActive ? kPrimaryGreen : Colors.grey),
                     splashRadius: 24,
@@ -1128,8 +1129,8 @@ class _HomeMapState extends State<HomeMap> {
               child: Row(
                 children: [
                   Icon(Icons.search_off, color: Colors.grey[400], size: 20),
-                  const SizedBox(width: 10),
-                  Text('Nenhum local encontrado', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                  SizedBox(width: 10),
+                  Text(AppLocalizations.of(context)!.noLocationFound, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
                 ],
               ),
             ),
@@ -1161,9 +1162,9 @@ class _HomeMapState extends State<HomeMap> {
               child: Row(
                 children: [
                   Icon(Icons.near_me, size: 15, color: kPrimaryGreen),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Text(
-                    'Locais Próximos',
+                    AppLocalizations.of(context)!.nearbyPlaces,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -1264,12 +1265,12 @@ class _HomeMapState extends State<HomeMap> {
         selectedItemColor: kPrimaryGreen, unselectedItemColor: Colors.grey,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-        items: const [
-          BottomNavigationBarItem(icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.explore_outlined)), activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.explore)), label: 'Explorar'),
-          BottomNavigationBarItem(icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.map_outlined)), activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.map)), label: 'Mapa'),
-          BottomNavigationBarItem(icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.tour_outlined)), activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.tour)), label: 'Roteiros'),
-          BottomNavigationBarItem(icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.favorite_outline)), activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.favorite)), label: 'Favoritos'),
-          BottomNavigationBarItem(icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.person_outline)), activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.person)), label: 'Perfil'),
+        items: [
+          BottomNavigationBarItem(icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.explore_outlined)), activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.explore)), label: AppLocalizations.of(context)!.tabExplore),
+          BottomNavigationBarItem(icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.map_outlined)), activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.map)), label: AppLocalizations.of(context)!.tabMap),
+          BottomNavigationBarItem(icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.tour_outlined)), activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.tour)), label: AppLocalizations.of(context)!.tabItineraries),
+          BottomNavigationBarItem(icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.favorite_outline)), activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.favorite)), label: AppLocalizations.of(context)!.tabFavorites),
+          BottomNavigationBarItem(icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.person_outline)), activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.person)), label: AppLocalizations.of(context)!.tabProfile),
         ],
       ),
     );
@@ -1319,11 +1320,11 @@ class _HomeMapState extends State<HomeMap> {
                            fit: BoxFit.cover, 
                            errorBuilder: (_,__,___) => Container(
                              width: 50, height: 50, color: Colors.grey.shade200,
-                             child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                             child: Icon(Icons.image_not_supported, color: Colors.grey),
                            )
                          ),
                        ),
-                       const SizedBox(width: 12),
+                       SizedBox(width: 12),
                        Expanded(
                          child: Column(
                            crossAxisAlignment: CrossAxisAlignment.start,
@@ -1333,7 +1334,7 @@ class _HomeMapState extends State<HomeMap> {
                            ],
                          ),
                        ),
-                       const Icon(Icons.chevron_right, color: Colors.grey),
+                       Icon(Icons.chevron_right, color: Colors.grey),
                     ],
                   ),
                 ),
@@ -1401,7 +1402,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
         if (mounted) setState(() => isFavorite = true);
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao atualizar favoritos."), backgroundColor: Colors.red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.errorUpdatingFavorites), backgroundColor: Colors.red));
     } finally {
       if (mounted) setState(() => _isLoadingFavorite = false);
     }
@@ -1424,20 +1425,19 @@ class _PoiMapCardState extends State<PoiMapCard> {
                 color: kGreen.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.lock_outline_rounded, color: kGreen, size: 32),
+              child: Icon(Icons.lock_outline_rounded, color: kGreen, size: 32),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Sessão necessária',
+            SizedBox(height: 16),
+            Text(AppLocalizations.of(context)!.loginRequiredTitle,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               'Para guardar nos favoritos, precisas de ter uma conta e iniciar sessão.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.4),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -1448,9 +1448,9 @@ class _PoiMapCardState extends State<PoiMapCard> {
                     foregroundColor: Colors.grey[700],
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Agora não'),
+                  child: Text(AppLocalizations.of(context)!.notNow),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
@@ -1461,7 +1461,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Iniciar sessão'),
+                  child: Text(AppLocalizations.of(context)!.login),
                 ),
               ],
             ),
@@ -1551,16 +1551,16 @@ class _PoiMapCardState extends State<PoiMapCard> {
                                 child: ElevatedButton(
                                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => DetailsScreen(poi: widget.poi))),
                                   style: ElevatedButton.styleFrom(backgroundColor: kPrimaryGreen, foregroundColor: Colors.white, elevation: 0, shape: const StadiumBorder(), padding: EdgeInsets.zero),
-                                  child: const Text("Ver Detalhes", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                  child: Text(AppLocalizations.of(context)!.viewDetails, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            SizedBox(width: 12),
                             // Botões Ícone (Limpos)
                             _isLoadingFavorite
-                                ? const SizedBox(width: 36, height: 36, child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)))
+                                ? SizedBox(width: 36, height: 36, child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)))
                                 : _buildIconButton(icon: isFavorite ? Icons.favorite : Icons.favorite_border, activeColor: Colors.red, isActive: isFavorite, onTap: _toggleFavorite),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             _buildIconButton(icon: isInItinerary ? Icons.playlist_add_check : Icons.playlist_add, activeColor: kPrimaryGreen, isActive: isInItinerary, onTap: () => setState(() => isInItinerary = !isInItinerary)),
                           ],
                         )

@@ -16,6 +16,7 @@ import 'login_screen.dart';
 import 'panorama_screen.dart';
 import '../models/roteiro.dart';
 import '../screens/services/roteiro_state.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class DetailsScreen extends StatefulWidget {
   final POI poi;
@@ -107,7 +108,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
   Future<void> _registerVisit() async {
     if (FirebaseAuth.instance.currentUser == null) {
-      _showLoginRequiredDialog('registar visitas no Passaporte');
+      _showLoginRequiredDialog(AppLocalizations.of(context)!.actionRegisterVisit);
       return;
     }
     setState(() => _isRegisteringVisit = true);
@@ -115,7 +116,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
       final distance = await _passportService.getDistanceToPoi(widget.poi);
       if (distance == null) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível obter a tua localização.'), backgroundColor: Colors.orange),
+          SnackBar(content: Text(AppLocalizations.of(context)!.locationError), backgroundColor: Colors.orange),
         );
         return;
       }
@@ -138,7 +139,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
         setState(() => _isVisited = true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('✅ Visita registada no teu Passaporte!'),
+            content: Text(AppLocalizations.of(context)!.visitRegistered),
             backgroundColor: kPrimaryGreen,
           ),
         );
@@ -176,7 +177,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao registar visita.'), backgroundColor: Colors.red),
+        SnackBar(content: Text(AppLocalizations.of(context)!.registerVisitError), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isRegisteringVisit = false);
@@ -192,8 +193,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
         title: Column(
           children: [
             Icon(Icons.military_tech_outlined, color: kPrimaryGreen, size: 54),
-            const SizedBox(height: 8),
-            const Text('Conquista Desbloqueada!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            SizedBox(height: 8),
+            Text(AppLocalizations.of(context)!.achievementUnlocked, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
         content: Column(
@@ -203,7 +204,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
             child: Column(
               children: [
                 Text(b.titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(b.descricao, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
               ],
             ),
@@ -214,7 +215,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
             child: TextButton(
               onPressed: () => Navigator.pop(ctx),
               style: TextButton.styleFrom(foregroundColor: kPrimaryGreen),
-              child: const Text('Fantástico!', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(AppLocalizations.of(context)!.fantastic, style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -241,10 +242,10 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
     if (isInItinerary) {
       if (!cartIds.contains(widget.poi.id)) cartIds.add(widget.poi.id);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Adicionado aos locais para o novo Roteiro!"), duration: Duration(seconds: 2)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.addedToItinerary), duration: Duration(seconds: 2)));
     } else {
       cartIds.remove(widget.poi.id);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Removido dos locais para o novo Roteiro."), duration: Duration(seconds: 2)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.removedFromItinerary), duration: Duration(seconds: 2)));
     }
     
     await prefs.setStringList('roteiro_cart_poi_ids', cartIds);
@@ -298,7 +299,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
   }
 
   String _formatDistance() {
-    if (_isLoadingLocation) return 'Calculando...';
+    if (_isLoadingLocation) return AppLocalizations.of(context)!.calculating;
     if (_userPosition == null) return '— km';
     double dist = Geolocator.distanceBetween(
         _userPosition!.latitude, _userPosition!.longitude,
@@ -320,7 +321,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
   Future<void> _toggleFavorite() async {
     if (FirebaseAuth.instance.currentUser == null) {
-      _showLoginRequiredDialog('guardar nos favoritos');
+      _showLoginRequiredDialog(AppLocalizations.of(context)!.actionSaveFavorites);
       return;
     }
 
@@ -336,7 +337,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Erro ao atualizar favoritos."), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorUpdatingFavorites), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -363,18 +364,17 @@ class _DetailsScreenState extends State<DetailsScreen> {
               ),
               child: Icon(Icons.lock_outline_rounded, color: kPrimaryGreen, size: 32),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Sessão necessária',
+            SizedBox(height: 16),
+            Text(AppLocalizations.of(context)!.loginRequiredTitle,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               'Para $acao, precisas de ter uma conta e iniciar sessão.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.4),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -385,9 +385,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     foregroundColor: Colors.grey[700],
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Agora não'),
+                  child: Text(AppLocalizations.of(context)!.notNow),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
@@ -398,7 +398,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Iniciar sessão'),
+                  child: Text(AppLocalizations.of(context)!.login),
                 ),
               ],
             ),
@@ -450,14 +450,14 @@ class _DetailsScreenState extends State<DetailsScreen> {
           isLoadingDownload = false;
           _displayPoi = widget.poi; // Volta a usar os dados originais (online)
         });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Conteúdo removido.")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contentRemoved)));
       }
       return;
     }
 
     // MODO BAIXAR
     if (!_hasInternet) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Sem conexão para baixar.")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.noConnectionToDownload)));
       return;
     }
 
@@ -517,12 +517,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
           _displayPoi = offlinePoi; // <--- Atualiza a UI para usar os ficheiros locais IMEDIATAMENTE
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: kPrimaryGreen, content: const Text("Guardado offline"))
+          SnackBar(backgroundColor: kPrimaryGreen, content: Text(AppLocalizations.of(context)!.savedOffline))
         );
       }
     } catch (e) {
       setState(() => isLoadingDownload = false);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Colors.red, content: Text("Erro ao baixar.")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.red, content: Text(AppLocalizations.of(context)!.errorDownloading)));
     }
   }
 
@@ -588,7 +588,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                 _buildFullWidthCarousel(),
 
                 if (_panorama != null) ...[
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 25),
                     child: Container(
@@ -620,8 +620,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.threesixty, color: kPrimaryGreen),
-                            const SizedBox(width: 10),
-                            Text("Explorar em 360º", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: kPrimaryGreen)),
+                            SizedBox(width: 10),
+                            Text(AppLocalizations.of(context)!.explore360, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: kPrimaryGreen)),
                           ],
                         ),
                       ),
@@ -629,15 +629,15 @@ class _DetailsScreenState extends State<DetailsScreen> {
                   )
                 ],
 
-                const SizedBox(height: 25),
+                SizedBox(height: 25),
 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Sobre este local", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 10),
+                      Text(AppLocalizations.of(context)!.aboutThisPlace, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 10),
                       
                       Container(
                         width: double.infinity,
@@ -650,27 +650,27 @@ class _DetailsScreenState extends State<DetailsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _displayPoi.getDescription('pt').isEmpty ? "Sem descrição." : _displayPoi.getDescription('pt'),
+                              _displayPoi.getDescription('pt').isEmpty ? AppLocalizations.of(context)!.noDescription : _displayPoi.getDescription('pt'),
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(fontSize: 15, height: 1.5, color: Colors.grey[800]),
                             ),
-                            const SizedBox(height: 15),
+                            SizedBox(height: 15),
                             Center(
                               child: InkWell(
                                 onTap: _openFullDescriptionPage,
-                                child: Text("Ler mais", style: TextStyle(color: kPrimaryGreen, fontWeight: FontWeight.bold, fontSize: 16)),
+                                child: Text(AppLocalizations.of(context)!.readMore, style: TextStyle(color: kPrimaryGreen, fontWeight: FontWeight.bold, fontSize: 16)),
                               ),
                             ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(height: 25),
+                      SizedBox(height: 25),
                       _buildNavigationButton(),
-                      const SizedBox(height: 15),
+                      SizedBox(height: 15),
                       _build3DButton(),
-                      const SizedBox(height: 40),
+                      SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -701,11 +701,11 @@ class _DetailsScreenState extends State<DetailsScreen> {
                         child: IconButton(
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.arrow_back, color: Colors.black, size: 28),
+                          icon: Icon(Icons.arrow_back, color: Colors.black, size: 28),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ),
-                      const SizedBox(height: 15),
+                      SizedBox(height: 15),
                       _buildHeaderContent(),
                     ],
                   ),
@@ -732,7 +732,7 @@ Widget _buildHeaderContent() {
                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, height: 1.1),
               ),
               
-              const SizedBox(height: 5),
+              SizedBox(height: 5),
 
               // 2. CATEGORIA (NOVO)
               Text(
@@ -744,13 +744,13 @@ Widget _buildHeaderContent() {
                 ),
               ),
 
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
 
               // 3. LOCALIZAÇÃO E DISTÂNCIA
               Row(
                 children: [
                   Icon(Icons.location_on, size: 16, color: kPrimaryGreen),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(_formatDistance(), style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 13)),
                 ],
               ),
@@ -762,32 +762,32 @@ Widget _buildHeaderContent() {
         Row(
           children: [
             _isLoadingFavorite
-                ? const SizedBox(width: 35, height: 35, child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)))
+                ? SizedBox(width: 35, height: 35, child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)))
                 : _buildCircleButton(
                     icon: isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: isFavorite ? Colors.red : Colors.grey,
                     onTap: _toggleFavorite,
                   ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             _buildCircleButton(
               icon: isInItinerary ? Icons.playlist_add_check : Icons.playlist_add,
               color: isInItinerary ? kPrimaryGreen : Colors.grey,
               onTap: _toggleItinerary,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             // BOTÃO PASSAPORTE
             _isRegisteringVisit
-                ? const SizedBox(width: 35, height: 35, child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))
+                ? SizedBox(width: 35, height: 35, child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))
                 : _buildCircleButton(
                     icon: _isVisited ? Icons.verified : Icons.approval,
                     color: _isVisited ? kPrimaryGreen : Colors.grey,
                     onTap: _isVisited ? () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Já visitaste este local!'), backgroundColor: Colors.green),
+                        SnackBar(content: Text(AppLocalizations.of(context)!.alreadyVisited), backgroundColor: Colors.green),
                       );
                     } : _registerVisit,
                   ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
 if (isLoadingDownload)
               SizedBox( // Removi o 'const' aqui
                 width: 35, 
@@ -832,7 +832,7 @@ if (isLoadingDownload)
     if (images.isEmpty) {
       return Container(
         height: 250, color: Colors.grey[200],
-        child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
+        child: Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
       );
     }
 
@@ -858,19 +858,19 @@ if (isLoadingDownload)
                     ? Image.network(
                         imgPath, fit: BoxFit.cover,
                         loadingBuilder: (context, child, p) => p == null ? child : Center(child: CircularProgressIndicator(color: kPrimaryGreen)),
-                        errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300], child: const Icon(Icons.broken_image)),
+                        errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300], child: Icon(Icons.broken_image)),
                       )
                     // SE FOR LOCAL (OFFLINE)
                     : Image.file(
                         File(imgPath), fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300], child: const Icon(Icons.broken_image, color: Colors.grey)),
+                        errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300], child: Icon(Icons.broken_image, color: Colors.grey)),
                       ),
                 ),
               );
             },
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(images.length, (index) {
@@ -925,12 +925,12 @@ if (isLoadingDownload)
           padding: const EdgeInsets.symmetric(vertical: 15),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.navigation_rounded, color: Colors.white),
             SizedBox(width: 10),
-            Text("Navegar para o Local", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+            Text(AppLocalizations.of(context)!.navigateToLocation, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
           ],
         ),
       ),
@@ -943,11 +943,11 @@ if (isLoadingDownload)
 
     String buttonText;
     if (!hasModelUrl) {
-      buttonText = "Sem modelo 3D";
+      buttonText = AppLocalizations.of(context)!.no3dModel;
     } else if (isButtonEnabled) {
-      buttonText = "Visualizar Modelo 3D";
+      buttonText = AppLocalizations.of(context)!.view3dModel;
     } else {
-      buttonText = "Sem modelo 3D";
+      buttonText = AppLocalizations.of(context)!.no3dModel;
     }
 
     return Container(
@@ -970,7 +970,7 @@ if (isLoadingDownload)
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.view_in_ar, color: isButtonEnabled ? kPrimaryGreen : Colors.grey),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Text(buttonText, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isButtonEnabled ? kPrimaryGreen : Colors.grey)),
           ],
         ),
@@ -1098,7 +1098,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.grey, size: 28),
+                  icon: Icon(Icons.close_rounded, color: Colors.grey, size: 28),
                   onPressed: () => Navigator.pop(context),
                 )
               ],
@@ -1130,10 +1130,10 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.grey[200]!)),
-                                child: const Icon(Icons.volume_up_rounded, size: 20),
+                                child: Icon(Icons.volume_up_rounded, size: 20),
                               ),
-                              const SizedBox(width: 15),
-                              const Text("Ouvir áudio guia", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                              SizedBox(width: 15),
+                              Text(AppLocalizations.of(context)!.listenAudioGuide, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                               const Spacer(),
                               GestureDetector(
                                 onTap: _togglePlayPause,
@@ -1145,7 +1145,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 5),
+                          SizedBox(height: 5),
                           SliderTheme(
                             data: SliderTheme.of(context).copyWith(
                               activeTrackColor: kPrimaryGreen,
@@ -1165,7 +1165,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                               },
                             ),
                           ),
-                          const SizedBox(height: 5),
+                          SizedBox(height: 5),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -1177,8 +1177,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                       ),
                     ),
 // --- ADICIONADO AQUI: Título Descrição ---
-                  const Text(
-                    "Descrição",
+                  Text(AppLocalizations.of(context)!.descriptionLabel,
                     style: TextStyle(
                       fontSize: 22, 
                       fontWeight: FontWeight.bold,
@@ -1186,7 +1185,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                     ),
                   ),
                   
-                  const SizedBox(height: 10), // Espaçamento entre o título e o texto
+                  SizedBox(height: 10), // Espaçamento entre o título e o texto
                   // Texto da Descrição
                   Text(
                     widget.poi.getDescription(_selectedLang),

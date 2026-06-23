@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -86,11 +87,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
 
       if (_newPassController.text.isNotEmpty) {
-         if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Atenção: Password requer re-autenticação.")));
+         if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.reauthRequired)));
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: const Text("Perfil atualizado!")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: kPrimaryGreen, content: Text(AppLocalizations.of(context)!.profileUpdated)));
         Navigator.pop(context);
       }
     } catch (e) {
@@ -127,12 +128,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Editar Perfil", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.editProfile, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -158,14 +159,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           backgroundColor: Colors.grey[200],
                           backgroundImage: backgroundImage,
                           child: backgroundImage == null
-                              ? const Icon(Icons.camera_alt, size: 35, color: Colors.grey)
+                              ? Icon(Icons.camera_alt, size: 35, color: Colors.grey)
                               : null,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 25), // <--- Mais espaço
+                SizedBox(height: 25), // <--- Mais espaço
 
                 // NOME
                 TextFormField(
@@ -175,9 +176,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     labelText: "Nome", 
                     prefixIcon: Icon(Icons.person_outline, color: kPrimaryGreen)
                   ),
-                  validator: (val) => val!.isEmpty ? "O nome não pode ser vazio" : null,
+                  validator: (val) => val!.isEmpty ? AppLocalizations.of(context)!.nameCannotBeEmpty : null,
                 ),
-                const SizedBox(height: 15), // <--- Espaço de 15px
+                SizedBox(height: 15), // <--- Espaço de 15px
 
                 // EMAIL
                 TextFormField(
@@ -185,12 +186,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   readOnly: true,
                   style: const TextStyle(fontSize: 15),
                   decoration: inputDecoration.copyWith(
-                    labelText: "E-mail", 
+                    labelText: AppLocalizations.of(context)!.email, 
                     prefixIcon: Icon(Icons.email_outlined, color: Colors.grey), 
                     fillColor: Colors.grey[200]
                   ),
                 ),
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
 
                 // GÉNERO
                 ButtonTheme(
@@ -201,11 +202,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     isExpanded: true,
                     // Removi a restrição de altura fixa para ele crescer com o padding
                     decoration: inputDecoration.copyWith(
-                      labelText: "Género",
+                      labelText: AppLocalizations.of(context)!.gender,
                       prefixIcon: Icon(Icons.people_outline, color: kPrimaryGreen),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                     ),
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                    icon: Icon(Icons.arrow_drop_down, color: Colors.grey),
                     dropdownColor: Colors.white,
                     items: _genders.map((String value) {
                       return DropdownMenuItem<String>(
@@ -217,7 +218,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
 
                 // NACIONALIDADE
                 ButtonTheme(
@@ -227,11 +228,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     borderRadius: BorderRadius.circular(20),
                     isExpanded: true,
                     decoration: inputDecoration.copyWith(
-                      labelText: "Nacionalidade",
+                      labelText: AppLocalizations.of(context)!.nationality,
                       prefixIcon: Icon(Icons.flag_outlined, color: kPrimaryGreen),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                     ),
-                    icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                    icon: Icon(Icons.arrow_drop_down, color: Colors.grey),
                     dropdownColor: Colors.white,
                     items: _languageMap.keys.map((String value) {
                       return DropdownMenuItem<String>(
@@ -243,12 +244,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 25),
+                SizedBox(height: 25),
                 const Divider(height: 20, thickness: 1),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 
-                const Text("Alterar Palavra-passe", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 15),
+                Text(AppLocalizations.of(context)!.changePassword, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                SizedBox(height: 15),
 
                 // PASSWORD 1
                 TextFormField(
@@ -256,11 +257,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   obscureText: true,
                   style: const TextStyle(fontSize: 15),
                   decoration: inputDecoration.copyWith(
-                    labelText: "Nova password", 
+                    labelText: AppLocalizations.of(context)!.newPassword, 
                     prefixIcon: Icon(Icons.lock_outline, color: kPrimaryGreen)
                   ),
                 ),
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
                 
                 // PASSWORD 2
                 TextFormField(
@@ -268,15 +269,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   obscureText: true,
                   style: const TextStyle(fontSize: 15),
                   decoration: inputDecoration.copyWith(
-                    labelText: "Confirmar nova password", 
+                    labelText: AppLocalizations.of(context)!.confirmNewPassword, 
                     prefixIcon: Icon(Icons.lock_outline, color: kPrimaryGreen)
                   ),
                   validator: (val) {
-                    if (_newPassController.text.isNotEmpty && val != _newPassController.text) return "Não coincidem";
+                    if (_newPassController.text.isNotEmpty && val != _newPassController.text) return AppLocalizations.of(context)!.passwordsDoNotMatch;
                     return null;
                   },
                 ),
-                const SizedBox(height: 30),
+                SizedBox(height: 30),
 
                 // BOTÃO
                 isLoading 
@@ -293,7 +294,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       shadowColor: kPrimaryGreen.withOpacity(0.4),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
-                    child: const Text("Guardar Alterações", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: Text(AppLocalizations.of(context)!.saveChanges, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ],

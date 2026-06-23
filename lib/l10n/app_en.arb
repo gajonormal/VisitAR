@@ -1,0 +1,378 @@
+{
+  "@@locale": "en",
+  "appTitle": "VisitAR",
+  "settings": "Settings",
+  "general": "General",
+  "managePermissions": "Manage Permissions",
+  "openingSettings": "Opening settings...",
+  "darkMode": "Dark Mode",
+  "clearCache": "Clear Cache",
+  "cacheClearedSuccess": "Cache cleared successfully!",
+  "account": "Account",
+  "deleteAccount": "Delete Account",
+  "deleteAccountWarningTitle": "Delete Account?",
+  "deleteAccountWarningBody": "This action is irreversible. All your data will be deleted.",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "error": "Error",
+  "version": "Version",
+  
+  "aboutThisPlace": "About this place",
+  "noDescription": "No description.",
+  "readMore": "Read more",
+  "explore360": "Explore in 360º",
+  "calculating": "Calculating...",
+  
+  "addedToItinerary": "Added to the locations for the new Itinerary!",
+  "removedFromItinerary": "Removed from the locations for the new Itinerary.",
+  "loginRequiredTitle": "Session required",
+  "loginRequiredBody1": "To ",
+  "loginRequiredBody2": ", you need to have an account and log in.",
+  "notNow": "Not now",
+  "login": "Log in",
+  "actionSaveFavorites": "save to favorites",
+  "actionRegisterVisit": "register visits in Passport",
+  
+  "alreadyVisited": "You have already visited this place!",
+  "youAreAt": "You are ",
+  "approachToRegister": " away from this location. Get closer to register the visit.",
+  "visitRegistered": "✅ Visit registered in your Passport!",
+  "congratsCompletedItinerary": "🎉 Congratulations! You completed the itinerary",
+  "achievementUnlocked": "Achievement Unlocked!",
+  "fantastic": "Fantastic!",
+  
+  "noConnectionToDownload": "No connection to download.",
+  "savedOffline": "Saved offline",
+  "errorDownloading": "Error downloading.",
+  "contentRemoved": "Content removed.",
+  
+  "language": "Language",
+
+  "arMode": "AR Mode",
+  "view360": "View 360º",
+  "navigate": "Navigate",
+  "time": "Time",
+  "distance": "Distance",
+  "pause": "Pause",
+  "resume": "Resume",
+  "stop": "Stop",
+  "stopNavigation": "Stop Navigation",
+  "stopNavigationConfirm": "Do you want to stop following this itinerary?",
+  "finish": "Finish",
+  "searchLocation": "Search location...",
+  "noLocationFound": "No location found",
+  "nearbyPlaces": "Nearby Places",
+  "tabExplore": "Explore",
+  "tabMap": "Map",
+  "tabItineraries": "Itineraries",
+  "tabFavorites": "Favorites",
+  "tabProfile": "Profile",
+  "errorUpdatingFavorites": "Error updating favorites.",
+  "approx": "Approx.",
+  "viewDetails": "View Details",
+  "welcomeExplorer": "Explorer",
+  "welcomeHeader": "WELCOME",
+  "hello": "Hello, ",
+  "arBannerTitle": "Heritage\nlives right in front of you.",
+  "arBannerSubtitle": "Point the camera and discover.",
+  "nearYou": "Near you",
+  "results": "results",
+  "result": "result",
+  "locationNotFound": "Location not found",
+  "noPlacesNearYou": "No places near you (50km)",
+  "turnOnGps": "Turn on GPS or wait a moment",
+  "tryExploringOtherZones": "Try exploring other map zones",
+  "suggestedItineraries": "Suggested Itineraries",
+  "viewAll": "View all",
+  "noItinerariesAvailable": "No itineraries available at the moment.",
+  "logout": "Log out",
+  "editProfile": "Edit Profile",
+  "myItineraries": "My itineraries",
+  "myPassport": "My Passport",
+  "myFavorites": "My favorites",
+  "offlineDownloads": "Offline Downloads",
+  "adminPanel": "Admin Panel",
+  "createBadgesAdmin": "Create Badges (Admin)",
+  "resetAchievementsTest": "Reset Achievements (Test)",
+  "resetStampsTest": "Reset Stamps (Test)",
+  "latestAchievements": "Latest Achievements",
+  "guest": "Guest",
+  "guestMode": "Guest mode",
+  "guestLimitedAccess": "As a guest, you have limited access. Create an account for more features!",
+  "chooseLanguage": "Choose Language",
+  "languageChangedTo": "Language changed to",
+  "local": "(local)",
+  "loginRegister": "Login/Register",
+  "badgesCreated": "✅ Badges created in Firestore!",
+  "achievementsDeleted": "🗑️ All your achievements have been deleted!",
+  "stampsDeleted": "🗑️ All your visit stamps have been deleted!",
+  
+  "searchItineraries": "Search itineraries...",
+  "suggested": "Suggested",
+  "mine": "Mine",
+  "completed": "Completed",
+  "noItineraryFoundFor": "No itinerary found for",
+  "loginToCreateItineraries": "Log in to create and view your itineraries.",
+  "stillNoItineraries": "No itineraries yet",
+  "clickPlusToCreate": "Click the + button to create your first itinerary.",
+  "loginToViewCompleted": "Log in to view the itineraries you have completed.",
+  "noCompletedItineraries": "No completed itineraries",
+  "completedWillAppearHere": "When you complete an itinerary, it will appear here.",
+  "noAvailableItineraries": "No itineraries available",
+  "noSuggestedItinerariesAtMoment": "No suggested itineraries at the moment.",
+  "loginToViewFavorites": "Log in to save and view your favorites.",
+  "locationsPois": "Locations (POIs)",
+  "searchFavorites": "Search in favorites...",
+  "noFavorites": "No favorites",
+  "noLocationFoundFor": "No location found for",
+  "removedFromFavorites": "removed from favorites.",
+  "errorLoadingFavoriteItineraries": "Error loading favorite itineraries.",
+  "noFavoriteItineraries": "No favorite itineraries",
+  "stops": "Stops",
+  "removeFavoriteQuestion": "Remove Favorite?",
+  "doYouWantToRemove": "Do you want to remove",
+  "fromFavorites": "from favorites?",
+  "remove": "Remove",
+  "errorRemovingFavorite": "Error removing from favorites.",
+  "errorLoadingFavorites": "Error loading favorites.",
+  "name": "Name",
+  "nameCannotBeEmpty": "Name cannot be empty",
+  "email": "E-mail",
+  "gender": "Gender",
+  "genderMale": "Male",
+  "genderFemale": "Female",
+  "genderOther": "Other",
+  "genderPreferNotToSay": "Prefer not to say",
+  "nationality": "Nationality",
+  "changePassword": "Change Password",
+  "newPassword": "New password",
+  "confirmNewPassword": "Confirm new password",
+  "passwordsDoNotMatch": "Do not match",
+  "saveChanges": "Save Changes",
+  "reauthRequired": "Attention: Password requires re-authentication.",
+  "profileUpdated": "Profile updated!",
+  "locationError": "Could not get your location.",
+  "registerVisitError": "Error registering visit.",
+  "error360": "360 Error:",
+  "no3dModel": "No 3D model",
+  "view3dModel": "View 3D Model",
+  "navigateToLocation": "Navigate to Location",
+  "listenAudioGuide": "Listen to audio guide",
+  "descriptionLabel": "Description",
+  "destination": "Destination:",
+  "loadingMap": "Loading map...",
+  "yourLocation": "Your location",
+  "errorLoadingMap": "An error occurred while loading the map",
+  "showAll": "Show: All",
+  "onlyFavorites": "Only favorites",
+  "searchRadius": "Search radius:",
+  "filterByCategory": "Filter by Category",
+  "sessionRequired": "Session required",
+  "exploreLocationsPois": "Explore Locations (POIs)",
+  "profileUpdateSuccess": "Profile updated successfully",
+  "profileUpdateError": "Error updating profile",
+  "addedToFavorites": "Added to favorites",
+  "errorUpdatingFavorite": "Error updating favorite",
+  "roteiroAvailableOffline": "Itinerary is already available offline.",
+  "downloadSuccess": "Download completed successfully!",
+  "downloadError": "Error downloading itinerary.",
+  "deleteRoteiro": "Delete Itinerary",
+  "deleteRoteiroConfirm": "Are you sure you want to delete this itinerary? This action is irreversible.",
+  "roteiroDeletedSuccess": "Itinerary deleted successfully!",
+  "errorDeletingRoteiro": "Error deleting itinerary.",
+  "category": "Category",
+  "duration": "Duration",
+  "explorationProgress": "Exploration Progress",
+  "placesVisited": "places visited",
+  "roteiroCompletedBadge": "Itinerary Completed! Badge earned.",
+  "poisAdded": "Points of interest added",
+  "cannotLoadStops": "Could not load stops.",
+  "startRoteiro": "Start Itinerary",
+  "errorLoadingItinerary": "Error loading itinerary",
+  "languageChanged": "Language changed to {lang}",
+  "@languageChanged": {
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
+  },
+  "languageChangedLocal": "Language changed to {lang} (locally)",
+  "@languageChangedLocal": {
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
+  },
+  "opening": "Opening...",
+  "searchDownloads": "Search downloads...",
+  "noDownloadsOffline": "No offline downloads",
+  "noLocationFoundFor": "No location found for '{query}'",
+  "@noLocationFoundFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "availableOffline": "Available offline",
+  "noRoteirosOffline": "No offline itineraries",
+  "noRoteiroFoundFor": "No itinerary found for '{query}'",
+  "@noRoteiroFoundFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineStops": "{count} stops • Offline",
+  "@offlineStops": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteDownloadTitle": "Delete Download?",
+  "deleteDownloadConfirm": "Do you want to remove '{name}' from downloads?",
+  "@deleteDownloadConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteButton": "Delete",
+  "poiRemoved": "{name} removed.",
+  "@poiRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errorRemoving": "Error removing.",
+  "roteiroRemoved": "{title} removed.",
+  "@roteiroRemoved": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "errorRemovingRoteiro": "Error removing itinerary.",
+  "roteiroUpdatedSuccess": "Itinerary updated successfully!",
+  "roteiroCreatedSuccess": "Itinerary created successfully!",
+  "errorCreatingRoteiro": "Error creating itinerary. Are you logged in?",
+  "filters": "Filters",
+  "clear": "Clear",
+  "applyFilters": "Apply Filters",
+  "onlyWith3d": "Only with 3D Model",
+  "onlyWithAudio": "Only with Audio",
+  "difficulty": "Difficulty",
+  "catAll": "All",
+  "catHistoric": "Historic",
+  "catNature": "Nature",
+  "catGeologic": "Geologic",
+  "catTrail": "Trail",
+  "catGastronomy": "Gastronomy",
+  "difAny": "Any",
+  "difEasy": "Easy",
+  "difMedium": "Moderate",
+  "difHard": "Hard",
+  "badgeCatExploration": "Exploration",
+  "badgeCatItineraries": "Itineraries",
+  "badgeCatCreation": "Creation",
+  "badgePrimeiroCarimboTitle": "First Stamp",
+  "badgePrimeiroCarimboDesc": "You visited your first point of interest!",
+  "badgeConhecedorTitle": "Connoisseur",
+  "badgeConhecedorDesc": "You visited 5 points of interest.",
+  "badgeColecionadorTitle": "Collector",
+  "badgeColecionadorDesc": "You visited 10 points of interest.",
+  "badgeGrandeExploradorTitle": "Great Explorer",
+  "badgeGrandeExploradorDesc": "You visited 25 points of interest.",
+  "badgePrimeiroRoteiroTitle": "First Itinerary",
+  "badgePrimeiroRoteiroDesc": "You completed your first itinerary!",
+  "badgeAventureiroTitle": "Adventurer",
+  "badgeAventureiroDesc": "You completed 3 itineraries.",
+  "badgeViajanteTitle": "Traveler",
+  "badgeViajanteDesc": "You completed 5 itineraries.",
+  "badgeCriadorTitle": "Creator",
+  "badgeCriadorDesc": "You created your first itinerary!",
+  "badgeGuiaLocalTitle": "Local Guide",
+  "badgeGuiaLocalDesc": "You created 3 itineraries.",
+  "stampsTab": "Stamps",
+  "achievementsTab": "Achievements",
+  "noStampsYet": "No stamps yet",
+  "noStampsSubtitle": "Visit points of interest to\ncollect stamps in your passport!",
+  "placesVisitedSingular": "place visited",
+  "continueExploring": "Keep exploring!",
+  "noAchievementsDefined": "No achievements defined on the server yet.",
+  "achievementsProgress": "{earned} of {total} achievements",
+  "@achievementsProgress": {
+    "placeholders": {
+      "earned": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "visitedProgress": "{visited} of {total} places visited",
+  "@visitedProgress": {
+    "placeholders": {
+      "visited": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "removedFromFavorites": "Removed from favorites",
+  "actionSaveItineraries": "save itineraries to favorites",
+  "adminNewPoi": "New Point of Interest",
+  "adminPhotos": "Photos (Required)",
+  "adminAddFromGallery": "Add from Gallery",
+  "adminRequired": "Required",
+  "adminInvalid": "Invalid",
+  "adminLocalName": "Location Name",
+  "adminDescPt": "Description (PT)",
+  "adminAudioPt": "Add Audio PT",
+  "adminRemove": "Remove",
+  "adminDescEn": "Description (EN) - Optional",
+  "adminAudioEn": "Add Audio EN",
+  "adminLatitude": "Latitude (e.g., 39.82)",
+  "adminLongitude": "Longitude (e.g., -7.49)",
+  "adminArLink": "3D Model Link (.glb)",
+  "adminArHelper": "Optional. Paste the direct URL.",
+  "adminCreating": "Creating POI... ",
+  "adminCreateButton": "CREATE POINT OF INTEREST",
+  "adminFillRequired": "Fill in the required fields!",
+  "adminAddAtLeastOnePhoto": "Add at least one photo!",
+  "adminSuccessCreated": "✅ POI created successfully!",
+  "adminErrorSaving": "Error saving: {error}",
+  "@adminErrorSaving": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "routeMinLocations": "Add at least 2 locations to create an itinerary.",
+  "routeTitleRequired": "Give your itinerary a title!",
+  "routeInternetRequired": "You need internet connection to create an itinerary so the app can calculate the route between points!",
+  "editRoteiroTitle": "Edit Itinerary",
+  "createRoteiroTitle": "Create New Itinerary",
+  "itineraryNameHint": "Itinerary name",
+  "addCoverPhoto": "Add Cover Photo",
+  "noLocationsAddedYet": "You haven't added any locations yet.",
+  "canAddPoisLater": "You can always add POIs\nlater when editing an Itinerary",
+  "nearbyPois": "Nearby points of interest",
+  "noLocationsAvailable": "No locations available.",
+  "createRoteiroButton": "Create Itinerary",
+  "saveRoteiroButton": "Save Itinerary",
+  "fieldRequired": "Required field"
+}

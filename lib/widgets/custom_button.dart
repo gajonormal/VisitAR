@@ -35,7 +35,7 @@ class CustomButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 icon!,
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             )

@@ -14,6 +14,7 @@ import '../widgets/poi_card.dart';
 import 'details_screen.dart';
 import 'roteiro_details_screen.dart';
 import 'ar_screen.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class ExploreScreen extends StatefulWidget {
   /// Callback para mudar o tab ativo na navbar (e.g. ir para o Mapa)
@@ -222,7 +223,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     _buildCategoryFilters(),
                     _buildNearbySection(),
                     _buildItinerariesSection(),
-                    const SizedBox(height: 100),
+                    SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -272,13 +273,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Icon(Icons.search, color: _isSearching ? kPrimaryGreen : Colors.grey),
-                            const SizedBox(width: 10),
+                            SizedBox(width: 10),
                             Expanded(
                               child: TextField(
                                 controller: _searchController,
                                 focusNode: _searchFocusNode,
-                                decoration: const InputDecoration(
-                                  hintText: 'Pesquisar local...',
+                                decoration: InputDecoration(
+                                  hintText: AppLocalizations.of(context)!.searchLocation,
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
                                   isDense: true,
@@ -292,13 +293,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             ),
                             if (_isSearching)
                               IconButton(
-                                icon: const Icon(Icons.close, color: Colors.grey),
+                                icon: Icon(Icons.close, color: Colors.grey),
                                 splashRadius: 20,
                                 onPressed: _clearSearch,
                               )
                             else ...[
                               Container(width: 1, height: 24, color: Colors.grey[300]),
-                              const SizedBox(width: 5),
+                              SizedBox(width: 5),
                               IconButton(
                                 icon: Icon(Icons.tune, color: _poiFilter.isActive ? kPrimaryGreen : Colors.grey),
                                 splashRadius: 24,
@@ -354,8 +355,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           child: Row(
                             children: [
                               Icon(Icons.search_off, color: Colors.grey[400], size: 20),
-                              const SizedBox(width: 10),
-                              Text('Nenhum local encontrado', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                              SizedBox(width: 10),
+                              Text(AppLocalizations.of(context)!.noLocationFound, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
                             ],
                           ),
                         ),
@@ -397,8 +398,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
           child: Row(
             children: [
               Icon(Icons.near_me, size: 15, color: kPrimaryGreen),
-              const SizedBox(width: 6),
-              Text('Locais Próximos', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kPrimaryGreen, letterSpacing: 0.5)),
+              SizedBox(width: 6),
+              Text(AppLocalizations.of(context)!.nearbyPlaces, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kPrimaryGreen, letterSpacing: 0.5)),
             ],
           ),
         ),
@@ -440,12 +441,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
           return StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
             builder: (context, userSnap) {
-              final nome = (userSnap.data?.data() as Map<String, dynamic>?)?['nome'] ?? 'Explorador';
+              final nome = (userSnap.data?.data() as Map<String, dynamic>?)?['nome'] ?? AppLocalizations.of(context)!.welcomeExplorer;
               return _headerContent(nome);
             },
           );
         }
-        return _headerContent('Explorador');
+        return _headerContent(AppLocalizations.of(context)!.welcomeExplorer);
       },
     );
   }
@@ -460,7 +461,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'BEM-VINDO/A',
+            AppLocalizations.of(context)!.welcomeHeader,
             style: TextStyle(
               fontSize: 11, fontWeight: FontWeight.w700,
               fontFamily: 'GoogleSans',
@@ -468,14 +469,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
               letterSpacing: 1.2,
             ),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: 2),
           RichText(
             text: TextSpan(
               style: const TextStyle(
                 fontSize: 26, color: Colors.white, fontFamily: 'GoogleSans',
               ),
               children: [
-                const TextSpan(text: 'Olá, ', style: TextStyle(fontWeight: FontWeight.w400)),
+                TextSpan(text: AppLocalizations.of(context)!.hello, style: TextStyle(fontWeight: FontWeight.w400)),
                 TextSpan(text: nome, style: const TextStyle(fontWeight: FontWeight.w700)),
               ],
             ),
@@ -504,7 +505,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: const Color(0xFF1B4332),
-                    child: const Center(child: Icon(Icons.landscape, color: Colors.white54, size: 60)),
+                    child: Center(child: Icon(Icons.landscape, color: Colors.white54, size: 60)),
                   ),
                 ),
               ),
@@ -531,17 +532,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           Icon(Icons.auto_awesome, color: Colors.white, size: 13),
                           SizedBox(width: 5),
-                          Text('MODO AR', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+                          Text(AppLocalizations.of(context)!.arMode.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    const Text('O património\nvive à tua frente.', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.2)),
-                    const SizedBox(height: 4),
-                    Text('Aponta a câmara e descobre.', style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13)),
+                    SizedBox(height: 15),
+                    Text(
+                      AppLocalizations.of(context)!.arBannerTitle,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 15),
+                    Text(AppLocalizations.of(context)!.arBannerSubtitle, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13)),
                   ],
                 ),
               ),
@@ -564,7 +568,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           scrollDirection: Axis.horizontal,
           itemCount: _categories.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          separatorBuilder: (_, __) => SizedBox(width: 8),
           itemBuilder: (context, i) {
             final cat = _categories[i];
             final isSelected = cat == _poiFilter.categoria;
@@ -580,7 +584,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   boxShadow: isSelected ? [BoxShadow(color: kPrimaryGreen.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))] : [],
                 ),
                 child: Text(
-                  cat,
+                  _getCategoryTranslation(context, cat),
                   style: TextStyle(
                     color: isSelected ? Colors.white : Colors.grey[700],
                     fontSize: 13.5,
@@ -607,17 +611,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Perto de ti', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1A1A1A))),
+              Text(AppLocalizations.of(context)!.nearYou, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1A1A1A))),
               if (!_isLoading)
                 Text(
-                  '${_nearbyPois.length} resultado${_nearbyPois.length != 1 ? 's' : ''}',
+                  '${_nearbyPois.length} ${_nearbyPois.length == 1 ? AppLocalizations.of(context)!.result : AppLocalizations.of(context)!.results}',
                   style: TextStyle(fontSize: 13, color: Colors.grey[500], fontWeight: FontWeight.w500),
                 ),
             ],
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           if (_isLoading)
-            const Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator()))
+            Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator()))
           else if (_nearbyPois.isEmpty)
             _buildEmptyState()
           else
@@ -636,14 +640,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
         child: Column(
           children: [
             Icon(Icons.location_off_outlined, color: Colors.grey[300], size: 48),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
-              _userPosition == null ? 'Localização não encontrada' : 'Nenhum local perto de ti (50km)', 
+              _userPosition == null ? AppLocalizations.of(context)!.locationNotFound : AppLocalizations.of(context)!.noPlacesNearYou, 
               style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.w600)
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
-              _userPosition == null ? 'Ativa o GPS ou aguarda um momento' : 'Experimenta explorar noutras zonas do mapa', 
+              _userPosition == null ? AppLocalizations.of(context)!.turnOnGps : AppLocalizations.of(context)!.tryExploringOtherZones, 
               style: TextStyle(color: Colors.grey[400], fontSize: 13),
               textAlign: TextAlign.center,
             ),
@@ -670,33 +674,33 @@ class _ExploreScreenState extends State<ExploreScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text('Roteiros Sugeridos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                Text(AppLocalizations.of(context)!.suggestedItineraries, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                 GestureDetector(
                   onTap: () => widget.onTabChange(2), // Roteiros é o índice 2
-                  child: Text('Ver todos', style: TextStyle(color: kPrimaryGreen, fontSize: 14, fontWeight: FontWeight.w700)),
+                  child: Text(AppLocalizations.of(context)!.viewAll, style: TextStyle(color: kPrimaryGreen, fontSize: 14, fontWeight: FontWeight.w700)),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           SizedBox(
             height: 200,
             child: StreamBuilder<List<Roteiro>>(
               stream: _roteirosService.getExploreRoteiros(), // Mostra apenas os do utilizador + admin
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(child: CircularProgressIndicator());
                 }
                 final roteiros = snapshot.data ?? [];
                 if (roteiros.isEmpty) {
-                  return const Center(child: Text("Nenhum roteiro disponível no momento.", style: TextStyle(color: Colors.grey)));
+                  return Center(child: Text(AppLocalizations.of(context)!.noItinerariesAvailable, style: TextStyle(color: Colors.grey)));
                 }
 
                 return ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.only(left: 20, right: 20),
                   itemCount: roteiros.length > 5 ? 5 : roteiros.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 14),
+                  separatorBuilder: (_, __) => SizedBox(width: 14),
                   itemBuilder: (context, i) => _buildItineraryCard(roteiros[i]),
                 );
               },
@@ -739,7 +743,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(color: Colors.black.withOpacity(0.45), borderRadius: BorderRadius.circular(12)),
-                  child: Text(roteiro.dificuldade, style: TextStyle(color: _difficultyColor(roteiro.dificuldade), fontSize: 11, fontWeight: FontWeight.w700)),
+                  child: Text(_getDifficultyTranslation(context, roteiro.dificuldade), style: TextStyle(color: _difficultyColor(roteiro.dificuldade), fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
               ),
               Positioned(
@@ -748,15 +752,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(roteiro.titulo, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700, height: 1.2), maxLines: 2, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Row(
                       children: [
                         Icon(Icons.access_time, color: Colors.white.withOpacity(0.75), size: 12),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         Text(roteiro.duracao, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10),
                         Container(width: 3, height: 3, decoration: const BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10),
                         Text('${roteiro.distancia.toStringAsFixed(1)} km', style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
                       ],
                     ),
@@ -768,5 +772,39 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ),
       ),
     );
+  }
+
+  String _getCategoryTranslation(BuildContext context, String category) {
+    switch (category) {
+      case 'Tudo':
+        return AppLocalizations.of(context)!.catAll;
+      case 'Histórico':
+        return AppLocalizations.of(context)!.catHistoric;
+      case 'Natureza':
+        return AppLocalizations.of(context)!.catNature;
+      case 'Geológico':
+        return AppLocalizations.of(context)!.catGeologic;
+      case 'Trilho':
+        return AppLocalizations.of(context)!.catTrail;
+      case 'Gastronomia':
+        return AppLocalizations.of(context)!.catGastronomy;
+      default:
+        return category;
+    }
+  }
+
+  String _getDifficultyTranslation(BuildContext context, String difficulty) {
+    switch (difficulty) {
+      case 'Qualquer':
+        return AppLocalizations.of(context)!.difAny;
+      case 'Fácil':
+        return AppLocalizations.of(context)!.difEasy;
+      case 'Moderado':
+        return AppLocalizations.of(context)!.difMedium;
+      case 'Difícil':
+        return AppLocalizations.of(context)!.difHard;
+      default:
+        return difficulty;
+    }
   }
 }

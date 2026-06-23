@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'services/language_provider.dart';
 // import '../screens/services/auth_service.dart'; // Descomenta se precisares
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -25,7 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text("Cache limpa com sucesso!"), backgroundColor: kPrimaryGreen),
+        SnackBar(content: Text(AppLocalizations.of(context)!.cacheClearedSuccess), backgroundColor: kPrimaryGreen),
       );
     }
   }
@@ -36,17 +39,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bool confirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Excluir Conta?", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text("Esta ação é irreversível. Todos os teus dados serão apagados."),
+        title: Text(AppLocalizations.of(context)!.deleteAccountWarningTitle, style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(AppLocalizations.of(context)!.deleteAccountWarningBody),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Excluir", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: Text(AppLocalizations.of(context)!.delete, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -71,15 +74,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    final currentLang = languageProvider.currentLocale.languageCode;
+
     return Scaffold(
       backgroundColor: Colors.white, // Fundo branco como no Perfil
       appBar: AppBar(
-        title: const Text("Definições", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.settings, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -90,21 +96,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionTitle("Geral"),
+                _buildSectionTitle(AppLocalizations.of(context)!.general),
                 
                 // 1. Gerir Permissões
                 _buildListOption(
                   icon: Icons.security_rounded,
-                  text: "Gerir Permissões",
+                  text: AppLocalizations.of(context)!.managePermissions,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("A abrir definições...")));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.openingSettings)));
                   },
+                ),
+
+                // 2. Idioma
+                _buildListOption(
+                  icon: Icons.translate_rounded,
+                  text: AppLocalizations.of(context)!.language,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        currentLang == 'pt' ? 'Português' : 'English',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14.5, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 5),
+                      const Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
+                    ],
+                  ),
+                  onTap: () => _showLanguageDialog(context, currentLang, user?.uid),
                 ),
 
                 // 2. Modo Escuro (Com Switch)
                 _buildListOption(
                   icon: _isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                  text: "Modo Escuro",
+                  text: AppLocalizations.of(context)!.darkMode,
                   onTap: () => setState(() => _isDarkMode = !_isDarkMode),
                   // Aqui passamos o Switch como widget "trailing"
                   trailing: Transform.scale(
@@ -120,22 +144,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // 3. Limpar Cache
                 _buildListOption(
                   icon: Icons.cleaning_services_rounded,
-                  text: "Limpar Cache",
+                  text: AppLocalizations.of(context)!.clearCache,
                   iconColor: Colors.orange, // Cor personalizada
                   iconBgColor: Colors.orange.withOpacity(0.1),
                   onTap: _clearCache,
                 ),
 
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
                 // SECÇÃO CONTA (Se tiver login)
                 if (user != null) ...[
-                  _buildSectionTitle("Conta"),
+                  _buildSectionTitle(AppLocalizations.of(context)!.account),
                   
                   // 4. Excluir Conta (Vermelho)
                   _buildListOption(
                     icon: Icons.delete_forever_rounded,
-                    text: "Excluir Conta",
+                    text: AppLocalizations.of(context)!.deleteAccount,
                     iconColor: Colors.red,
                     iconBgColor: Colors.red.withOpacity(0.1),
                     textColor: Colors.red, // Texto vermelho para destaque
@@ -143,7 +167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
 
-                const SizedBox(height: 30),
+                SizedBox(height: 30),
                 Center(
                   child: Text(
                     "Versão 1.0.0",
@@ -157,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (_isLoading)
             Container(
               color: Colors.black.withOpacity(0.3),
-              child: const Center(child: CircularProgressIndicator()),
+              child: Center(child: CircularProgressIndicator()),
             ),
         ],
       ),
@@ -221,10 +245,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         
         // Ícone à direita (Seta ou Switch)
-        trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
+        trailing: trailing ?? Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
         
         onTap: onTap,
       ),
     );
+  }
+
+  // Dialog para escolher idioma
+  void _showLanguageDialog(BuildContext context, String currentLang, String? userId) {
+    final Map<String, String> languages = {
+      'Português': 'pt',
+      'English': 'en',
+    };
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.chooseLanguage),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: languages.entries.map((entry) {
+            bool isSelected = entry.value == currentLang;
+            return ListTile(
+              leading: Radio<String>(
+                value: entry.value,
+                groupValue: currentLang,
+                activeColor: kPrimaryGreen,
+                onChanged: (val) {
+                  Navigator.pop(context);
+                  _changeLanguage(context, val!, userId);
+                },
+              ),
+              title: Text(entry.key),
+              trailing: isSelected ? Icon(Icons.check, color: kPrimaryGreen) : null,
+              onTap: () {
+                Navigator.pop(context);
+                _changeLanguage(context, entry.value, userId);
+              },
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  // Função para alterar idioma
+  void _changeLanguage(BuildContext context, String newLang, String? userId) async {
+    Provider.of<LanguageProvider>(context, listen: false).changeLanguage(newLang);
+
+    if (userId != null) {
+      // Utilizador autenticado: guarda no Firestore
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'linguagem': newLang,
+      });
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.languageChanged(newLang.toUpperCase())))
+        );
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.languageChangedLocal(newLang.toUpperCase())))
+        );
+      }
+    }
   }
 }

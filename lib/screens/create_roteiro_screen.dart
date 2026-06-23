@@ -10,6 +10,7 @@ import 'services/database_services.dart';
 import 'services/roteiros_service.dart';
 import 'services/passport_service.dart';
 import '../../models/badge_model.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class CreateRoteiroScreen extends StatefulWidget {
   final Roteiro? roteiroToEdit;
@@ -117,14 +118,14 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
     
     if (_selectedPois.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Adiciona pelo menos 2 locais para criar um roteiro."), backgroundColor: Colors.red),
+        SnackBar(content: Text(AppLocalizations.of(context)!.routeMinLocations), backgroundColor: Colors.red),
       );
       return;
     }
     
     if (_tituloController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Dá um título ao teu roteiro!"), backgroundColor: Colors.red),
+        SnackBar(content: Text(AppLocalizations.of(context)!.routeTitleRequired), backgroundColor: Colors.red),
       );
       return;
     }
@@ -132,15 +133,15 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
     setState(() => _isSaving = true);
 
     bool hasNet = await _hasInternet();
-    if (!hasNet) {
-      setState(() => _isSaving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Precisas de internet para criar um roteiro, para que a app possa calcular a rota entre os pontos!"), backgroundColor: Colors.red),
-        );
+      if (!hasNet) {
+        setState(() => _isSaving = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.routeInternetRequired), backgroundColor: Colors.red),
+          );
+        }
+        return;
       }
-      return;
-    }
 
     try {
       double distTotal = 0;
@@ -189,7 +190,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
       if (widget.roteiroToEdit != null) {
         await RoteirosService().updateRoteiro(novoRoteiro);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Roteiro atualizado com sucesso!"), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.roteiroUpdatedSuccess), backgroundColor: Colors.green));
           Navigator.pop(context); // Voltar aos detalhes
         }
       } else {
@@ -203,7 +204,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
         final novasBadges = await PassportService().onRoteiroCreated();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Roteiro criado com sucesso!"), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.roteiroCreatedSuccess), backgroundColor: Colors.green));
           
           if (novasBadges.isNotEmpty) {
             await _showBadgeUnlockedDialog(novasBadges);
@@ -215,7 +216,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Erro ao criar roteiro. Tens a sessão iniciada?"), backgroundColor: Colors.red),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorCreatingRoteiro), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -232,8 +233,8 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
         title: Column(
           children: [
             Icon(Icons.military_tech_outlined, color: kPrimaryGreen, size: 54),
-            const SizedBox(height: 8),
-            const Text('Conquista Desbloqueada!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            SizedBox(height: 8),
+            Text(AppLocalizations.of(context)!.achievementUnlocked, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
         content: Column(
@@ -243,7 +244,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
             child: Column(
               children: [
                 Text(b.titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(b.descricao, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 13)),
               ],
             ),
@@ -254,7 +255,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
             child: TextButton(
               onPressed: () => Navigator.pop(ctx),
               style: TextButton.styleFrom(foregroundColor: kPrimaryGreen),
-              child: const Text('Fantástico!', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(AppLocalizations.of(context)!.fantastic, style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -262,17 +263,30 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
     );
   }
 
+  String _getDifficultyTranslation(BuildContext context, String difficulty) {
+    switch (difficulty.toUpperCase()) {
+      case 'FÁCIL':
+        return AppLocalizations.of(context)!.difEasy;
+      case 'MODERADO':
+        return AppLocalizations.of(context)!.difMedium;
+      case 'DIFÍCIL':
+        return AppLocalizations.of(context)!.difHard;
+      default:
+        return difficulty;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.roteiroToEdit != null ? "Editar Roteiro" : "Criar Novo Roteiro", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(widget.roteiroToEdit != null ? AppLocalizations.of(context)!.editRoteiroTitle : AppLocalizations.of(context)!.createRoteiroTitle, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -285,8 +299,8 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                 child: Column(
                   children: [
                     // Nome
-                    _buildTextField(_tituloController, "Nome do roteiro"),
-                    const SizedBox(height: 15),
+                    _buildTextField(_tituloController, AppLocalizations.of(context)!.itineraryNameHint),
+                    SizedBox(height: 15),
 
                     // Imagem Placeholder / Selecionada
                     GestureDetector(
@@ -306,9 +320,9 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(Icons.camera_alt_outlined, size: 40, color: Colors.white),
-                                    const SizedBox(height: 5),
-                                    const Text("Adicionar Capa", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                    Icon(Icons.camera_alt_outlined, size: 40, color: Colors.white),
+                                    SizedBox(height: 5),
+                                    Text(AppLocalizations.of(context)!.addCoverPhoto, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               )
@@ -319,14 +333,14 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(5),
                                       decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                                      child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                                      child: Icon(Icons.edit, color: Colors.white, size: 20),
                                     ),
                                   )
                                 ],
                               ),
                       ),
                     ),
-                    const SizedBox(height: 15),
+                    SizedBox(height: 15),
 
                     // Categoria / Dificuldade
                     DropdownButtonFormField<String>(
@@ -343,29 +357,29 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                           borderRadius: BorderRadius.circular(15),
                           borderSide: BorderSide(color: Colors.grey[300]!),
                         ),
-                        hintText: "Categoria",
+                        hintText: AppLocalizations.of(context)!.category,
                       ),
                       icon: Icon(Icons.arrow_drop_down, color: kPrimaryGreen),
                       items: _dificuldades.map((String dif) {
-                        return DropdownMenuItem(value: dif, child: Text(dif));
+                        return DropdownMenuItem(value: dif, child: Text(_getDifficultyTranslation(context, dif)));
                       }).toList(),
                       onChanged: (val) {
                         if (val != null) setState(() => _dificuldade = val);
                       },
                     ),
-                    const SizedBox(height: 15),
+                    SizedBox(height: 15),
 
                     // Descrição
-                    _buildTextField(_descricaoController, "Descrição", maxLines: 4),
-                    const SizedBox(height: 30),
+                    _buildTextField(_descricaoController, AppLocalizations.of(context)!.descriptionLabel, maxLines: 4),
+                    SizedBox(height: 30),
 
                     // PONTOS DE INTERESSE ADICIONADOS
                     _buildGreenSection(
-                      title: "Pontos de interesse adicionados",
+                      title: AppLocalizations.of(context)!.poisAdded,
                       child: _selectedPois.isEmpty
-                          ? const Padding(
+                          ? Padding(
                               padding: EdgeInsets.all(20.0),
-                              child: Text("Ainda não adicionaste nenhum local.", style: TextStyle(color: Colors.grey)),
+                              child: Text(AppLocalizations.of(context)!.noLocationsAddedYet, style: TextStyle(color: Colors.grey)),
                             )
                           : ListView.builder(
                               shrinkWrap: true,
@@ -376,7 +390,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                                 return ListTile(
                                   title: Text("${index + 1}. ${poi.nome}", style: const TextStyle(fontWeight: FontWeight.bold)),
                                   trailing: IconButton(
-                                    icon: const Icon(Icons.remove, color: Colors.black),
+                                    icon: Icon(Icons.remove, color: Colors.black),
                                     onPressed: () async {
                                       setState(() => _selectedPois.remove(poi));
                                       // Remove também do carrinho
@@ -391,17 +405,17 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                             ),
                     ),
                     
-                    const SizedBox(height: 8),
-                    const Text(
-                      "Pode sempre adicionar POIs\nfuturamente ao editar um Roteiro",
+                    SizedBox(height: 8),
+                    Text(
+                      AppLocalizations.of(context)!.canAddPoisLater,
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 11, color: Colors.grey),
                     ),
-                    const SizedBox(height: 25),
+                    SizedBox(height: 25),
 
                     // PONTOS DE INTERESSE PRÓXIMOS (Para Selecionar)
                     _buildGreenSection(
-                      title: "Pontos de interesse próximos",
+                      title: AppLocalizations.of(context)!.nearbyPois,
                       child: Column(
                         children: [
                           // Search bar inside
@@ -417,15 +431,15 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  const SizedBox(width: 15),
-                                  const Icon(Icons.search, color: Colors.grey),
-                                  const SizedBox(width: 10),
+                                  SizedBox(width: 15),
+                                  Icon(Icons.search, color: Colors.grey),
+                                  SizedBox(width: 10),
                                   Expanded(
                                     child: TextField(
                                       controller: _searchController,
                                       onChanged: (val) => setState(() => _searchQuery = val),
-                                      decoration: const InputDecoration(
-                                        hintText: "Pesquisar local...",
+                                      decoration: InputDecoration(
+                                        hintText: AppLocalizations.of(context)!.searchLocation,
                                         border: InputBorder.none,
                                         isDense: true,
                                         contentPadding: EdgeInsets.zero,
@@ -445,16 +459,16 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                                       splashRadius: 20,
                                       constraints: const BoxConstraints(),
                                     ),
-                                  const SizedBox(width: 15),
+                                  SizedBox(width: 15),
                                 ],
                               ),
                             ),
                           ),
                           
                           if (_availablePois.isEmpty)
-                            const Padding(
+                            Padding(
                               padding: EdgeInsets.only(bottom: 20),
-                              child: Text("Nenhum local disponível.", style: TextStyle(color: Colors.grey)),
+                              child: Text(AppLocalizations.of(context)!.noLocationsAvailable, style: TextStyle(color: Colors.grey)),
                             )
                           else
                             ListView.builder(
@@ -466,7 +480,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                                 return ListTile(
                                   title: Text(poi.nome, style: const TextStyle(fontWeight: FontWeight.bold)),
                                   trailing: IconButton(
-                                    icon: const Icon(Icons.add, color: Colors.black),
+                                    icon: Icon(Icons.add, color: Colors.black),
                                     onPressed: () async {
                                       setState(() => _selectedPois.add(poi));
                                       // Adiciona ao carrinho caso o utilizador volte atrás
@@ -483,7 +497,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40),
 
                     // BOTÃO CRIAR ROTEIRO
                     SizedBox(
@@ -496,11 +510,11 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                         ),
                         child: _isSaving
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white))
-                            : const Text("Criar Roteiro", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white))
+                            : Text(widget.roteiroToEdit != null ? AppLocalizations.of(context)!.saveRoteiroButton : AppLocalizations.of(context)!.createRoteiroButton, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -526,7 +540,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
           borderSide: BorderSide(color: Colors.grey[300]!),
         ),
       ),
-      validator: (val) => val == null || val.trim().isEmpty ? 'Campo obrigatório' : null,
+      validator: (val) => val == null || val.trim().isEmpty ? AppLocalizations.of(context)!.fieldRequired : null,
     );
   }
 

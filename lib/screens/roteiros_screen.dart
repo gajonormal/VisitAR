@@ -9,6 +9,7 @@ import 'services/roteiros_service.dart';
 import 'roteiro_details_screen.dart';
 import 'create_roteiro_screen.dart';
 import 'login_screen.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class RoteirosScreen extends StatefulWidget {
   const RoteirosScreen({super.key});
@@ -70,18 +71,17 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
               ),
               child: Icon(Icons.lock_outline_rounded, color: kPrimaryGreen, size: 32),
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Sessão necessária',
+            SizedBox(height: 16),
+            Text(AppLocalizations.of(context)!.loginRequiredTitle,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               'Para $acao, precisas de ter uma conta e iniciar sessão.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.4),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -92,9 +92,9 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                     foregroundColor: Colors.grey[700],
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Agora não'),
+                  child: Text(AppLocalizations.of(context)!.notNow),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
@@ -105,7 +105,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Iniciar sessão'),
+                  child: Text(AppLocalizations.of(context)!.login),
                 ),
               ],
             ),
@@ -129,8 +129,8 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, color: Colors.grey),
-          const SizedBox(width: 10),
+          Icon(Icons.search, color: Colors.grey),
+          SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: _searchController,
@@ -139,8 +139,8 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                   _searchQuery = value;
                 });
               },
-              decoration: const InputDecoration(
-                hintText: 'Pesquisar roteiros...', 
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.searchItineraries, 
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
@@ -187,7 +187,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
               );
             },
           ),
-          const SizedBox(width: 5),
+          SizedBox(width: 5),
         ],
       ),
     );
@@ -209,8 +209,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text(
-                    "Roteiros",
+                  Text(AppLocalizations.of(context)!.tabItineraries,
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
@@ -240,7 +239,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                           )
                         ],
                       ),
-                      child: const Icon(Icons.add, color: Colors.white, size: 24),
+                      child: Icon(Icons.add, color: Colors.white, size: 24),
                     ),
                   ),
                 ],
@@ -254,16 +253,16 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  _buildFilterChip("Sugeridos", 0),
-                  const SizedBox(width: 10),
-                  _buildFilterChip("Meus", 1),
-                  const SizedBox(width: 10),
-                  _buildFilterChip("Concluídos", 2),
+                  _buildFilterChip(AppLocalizations.of(context)!.suggested, 0),
+                  SizedBox(width: 10),
+                  _buildFilterChip(AppLocalizations.of(context)!.mine, 1),
+                  SizedBox(width: 10),
+                  _buildFilterChip(AppLocalizations.of(context)!.completed, 2),
                 ],
               ),
             ),
 
-            const SizedBox(height: 15),
+            SizedBox(height: 15),
 
             // LISTA DE CARTÕES
             Expanded(
@@ -289,7 +288,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
-                            const SizedBox(height: 10),
+                            SizedBox(height: 10),
                             Text("Nenhum roteiro encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
                           ],
                         ),
@@ -327,27 +326,27 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
     if (_selectedFilter == 1) {
       if (!isLoggedIn) {
         icon = Icons.lock_outline_rounded;
-        title = 'Sessão necessária';
-        subtitle = 'Inicia sessão para criares e veres os teus roteiros.';
+        title = AppLocalizations.of(context)!.loginRequiredTitle;
+        subtitle = AppLocalizations.of(context)!.loginToCreateItineraries;
       } else {
         icon = Icons.route_outlined;
-        title = 'Ainda sem roteiros';
-        subtitle = 'Clica no botão + para criar o teu primeiro roteiro.';
+        title = AppLocalizations.of(context)!.stillNoItineraries;
+        subtitle = AppLocalizations.of(context)!.clickPlusToCreate;
       }
     } else if (_selectedFilter == 2) {
       if (!isLoggedIn) {
         icon = Icons.lock_outline_rounded;
-        title = 'Sessão necessária';
-        subtitle = 'Inicia sessão para veres os roteiros que já concluíste.';
+        title = AppLocalizations.of(context)!.loginRequiredTitle;
+        subtitle = AppLocalizations.of(context)!.loginToViewCompleted;
       } else {
         icon = Icons.check_circle_outline_rounded;
-        title = 'Nenhum roteiro concluído';
-        subtitle = 'Quando completares um roteiro, aparece aqui.';
+        title = AppLocalizations.of(context)!.noCompletedItineraries;
+        subtitle = AppLocalizations.of(context)!.completedWillAppearHere;
       }
     } else {
       icon = Icons.explore_outlined;
-      title = 'Nenhum roteiro disponível';
-      subtitle = 'De momento não há roteiros sugeridos.';
+      title = AppLocalizations.of(context)!.noAvailableItineraries;
+      subtitle = AppLocalizations.of(context)!.noSuggestedItinerariesAtMoment;
     }
 
     return Center(
@@ -358,23 +357,23 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 56, color: Colors.grey[350]),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 title,
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 subtitle,
                 style: TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.4),
                 textAlign: TextAlign.center,
               ),
               if (!isLoggedIn && _selectedFilter != 0) ...[
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 CustomButton(
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-                  text: 'Iniciar sessão',
+                  text: AppLocalizations.of(context)!.login,
                 ),
               ],
             ],
@@ -448,12 +447,12 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                             ? Image.network(
                                 roteiro.imagemCapa, 
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
+                                errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
                               )
                             : Image.file(
                                 File(roteiro.imagemCapa), 
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
+                                errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
                               ))
                         : Container(color: Colors.grey[200]),
                   ),
@@ -521,16 +520,16 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
               child: Row(
                 children: [
                   Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Text(
                     roteiro.duracao,
                     style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.w500),
                   ),
                   
-                  const SizedBox(width: 15),
+                  SizedBox(width: 15),
                   
                   Icon(Icons.route_outlined, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(
                     "${roteiro.distancia.toStringAsFixed(1)} km",
                     style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.w500),

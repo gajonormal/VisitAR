@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'services/passport_service.dart';
 import '../models/badge_model.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class PassportScreen extends StatefulWidget {
   const PassportScreen({super.key});
@@ -31,7 +32,7 @@ class _PassportScreenState extends State<PassportScreen> {
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return const Scaffold(body: Center(child: Text('Sessão necessária.')));
+    if (uid == null) return Scaffold(body: Center(child: Text(AppLocalizations.of(context)!.sessionRequired)));
 
     return DefaultTabController(
       length: 2,
@@ -42,11 +43,10 @@ class _PassportScreenState extends State<PassportScreen> {
           elevation: 0,
           centerTitle: true,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'O meu Passaporte',
+          title: Text(AppLocalizations.of(context)!.myPassport,
             style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18),
           ),
           bottom: TabBar(
@@ -56,9 +56,9 @@ class _PassportScreenState extends State<PassportScreen> {
             indicatorWeight: 3,
             indicatorSize: TabBarIndicatorSize.label,
             labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            tabs: const [
-              Tab(text: 'Carimbos'),
-              Tab(text: 'Conquistas'),
+            tabs: [
+              Tab(text: AppLocalizations.of(context)!.stampsTab),
+              Tab(text: AppLocalizations.of(context)!.achievementsTab),
             ],
           ),
         ),
@@ -91,7 +91,7 @@ class _StampsTab extends StatelessWidget {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: PassportScreen.kPrimaryGreen));
+          return Center(child: CircularProgressIndicator(color: PassportScreen.kPrimaryGreen));
         }
 
         final docs = snapshot.data?.docs ?? [];
@@ -108,16 +108,16 @@ class _StampsTab extends StatelessWidget {
                     color: PassportScreen.kPrimaryGreen.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.location_on_outlined, color: PassportScreen.kPrimaryGreen, size: 38),
+                  child: Icon(Icons.location_on_outlined, color: PassportScreen.kPrimaryGreen, size: 38),
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Ainda sem carimbos',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                SizedBox(height: 20),
+                Text(
+                  AppLocalizations.of(context)!.noStampsYet,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Visita pontos de interesse para\ncolecionar carimbos no teu passaporte!',
+                  AppLocalizations.of(context)!.noStampsSubtitle,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey[500], fontSize: 14, height: 1.5),
                 ),
@@ -151,14 +151,14 @@ class _StampsTab extends StatelessWidget {
                         color: PassportScreen.kPrimaryGreen.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.approval, color: PassportScreen.kPrimaryGreen, size: 28),
+                      child: Icon(Icons.approval, color: PassportScreen.kPrimaryGreen, size: 28),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${docs.length} ${docs.length == 1 ? 'local visitado' : 'locais visitados'}',
+                          '${docs.length} ${docs.length == 1 ? AppLocalizations.of(context)!.placesVisitedSingular : AppLocalizations.of(context)!.placesVisited}',
                           style: const TextStyle(
                             color: Colors.black87,
                             fontWeight: FontWeight.bold,
@@ -167,7 +167,7 @@ class _StampsTab extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Continua a explorar!',
+                          AppLocalizations.of(context)!.continueExploring,
                           style: TextStyle(color: Colors.grey[500], fontSize: 13),
                         ),
                       ],
@@ -175,7 +175,7 @@ class _StampsTab extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               Expanded(
                 child: GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -211,6 +211,24 @@ class _StampsTab extends StatelessWidget {
     );
   }
 }
+
+String _getCategoryTranslation(BuildContext context, String category) {
+  switch (category) {
+    case 'Histórico':
+      return AppLocalizations.of(context)!.catHistoric;
+    case 'Natureza':
+      return AppLocalizations.of(context)!.catNature;
+    case 'Geológico':
+      return AppLocalizations.of(context)!.catGeologic;
+    case 'Trilho':
+      return AppLocalizations.of(context)!.catTrail;
+    case 'Gastronomia':
+      return AppLocalizations.of(context)!.catGastronomy;
+    default:
+      return category;
+  }
+}
+
 
 class _StampCard extends StatelessWidget {
   final String nome, categoria, image, date;
@@ -249,7 +267,7 @@ class _StampCard extends StatelessWidget {
                         color: PassportScreen.kPrimaryGreen,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.verified, color: Colors.white, size: 14),
+                      child: Icon(Icons.verified, color: Colors.white, size: 14),
                     ),
                   ),
                 ],
@@ -268,7 +286,7 @@ class _StampCard extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 if (categoria.isNotEmpty)
-                  Text(categoria, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                  Text(_getCategoryTranslation(context, categoria), style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                 if (date.isNotEmpty)
                   Text(date, style: TextStyle(color: PassportScreen.kPrimaryGreen, fontSize: 11, fontWeight: FontWeight.w500)),
               ],
@@ -281,7 +299,7 @@ class _StampCard extends StatelessWidget {
 
   Widget _placeholder() => Container(
     color: Colors.grey[100],
-    child: const Center(child: Icon(Icons.location_on, color: Colors.grey, size: 36)),
+    child: Center(child: Icon(Icons.location_on, color: Colors.grey, size: 36)),
   );
 }
 
@@ -332,17 +350,17 @@ class _BadgesTab extends StatelessWidget {
             }
             if (allBadgesSnap.connectionState == ConnectionState.waiting ||
                 userBadgesSnap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: PassportScreen.kPrimaryGreen));
+              return Center(child: CircularProgressIndicator(color: PassportScreen.kPrimaryGreen));
             }
 
             final allBadges = allBadgesSnap.data?.docs ?? [];
             final earnedIds = (userBadgesSnap.data?.docs ?? []).map((d) => d.id).toSet();
 
             if (allBadges.isEmpty) {
-              return const Center(
+              return Center(
                 child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Text('Nenhuma conquista definida no servidor ainda.'),
+                  padding: const EdgeInsets.all(32),
+                  child: Text(AppLocalizations.of(context)!.noAchievementsDefined),
                 ),
               );
             }
@@ -379,18 +397,18 @@ class _BadgesTab extends StatelessWidget {
                       color: PassportScreen.kGold.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.military_tech_outlined, color: PassportScreen.kGold, size: 32),
+                    child: Icon(Icons.military_tech_outlined, color: PassportScreen.kGold, size: 32),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$earned de $total conquistas',
+                          AppLocalizations.of(context)!.achievementsProgress(earned, total),
                           style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(6),
                           child: LinearProgressIndicator(
@@ -406,7 +424,7 @@ class _BadgesTab extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // Por categoria
             ...grouped.entries.map((entry) {
@@ -420,18 +438,19 @@ class _BadgesTab extends StatelessWidget {
                       Icon(_categoryIcons[cat] ?? Icons.category_outlined, size: 20, color: Colors.grey[700]),
                       const SizedBox(width: 8),
                       Text(
-                        cat[0].toUpperCase() + cat.substring(1),
+                        _getBadgeCategoryTranslation(context, cat),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   ...badges.map((badgeDoc) {
                     final data = badgeDoc.data();
                     final badgeId = badgeDoc.id;
                     final isEarned = earnedIds.contains(badgeId);
                     final icon = _badgeIcons[badgeId] ?? Icons.star_border;
                     return _BadgeTile(
+                      badgeId: badgeId,
                       icon: icon,
                       titulo: data['titulo'] ?? '',
                       descricao: data['descricao'] ?? '',
@@ -440,7 +459,7 @@ class _BadgesTab extends StatelessWidget {
                       isEarned: isEarned,
                     );
                   }),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                 ],
               );
             }),
@@ -451,15 +470,30 @@ class _BadgesTab extends StatelessWidget {
       },
     );
   }
+
+  String _getBadgeCategoryTranslation(BuildContext context, String category) {
+    switch (category.toLowerCase()) {
+      case 'exploração':
+        return AppLocalizations.of(context)!.badgeCatExploration;
+      case 'roteiros':
+        return AppLocalizations.of(context)!.badgeCatItineraries;
+      case 'criação':
+        return AppLocalizations.of(context)!.badgeCatCreation;
+      default:
+        return category.isNotEmpty ? category[0].toUpperCase() + category.substring(1) : '';
+    }
+  }
 }
 
 class _BadgeTile extends StatelessWidget {
+  final String badgeId;
   final IconData icon;
   final String titulo, descricao, condicaoTipo;
   final int quantidadeAlvo;
   final bool isEarned;
 
   const _BadgeTile({
+    required this.badgeId,
     required this.icon,
     required this.titulo,
     required this.descricao,
@@ -503,13 +537,13 @@ class _BadgeTile extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  titulo,
+                  _getBadgeTitle(context, badgeId, titulo),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -518,16 +552,46 @@ class _BadgeTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  descricao,
+                  _getBadgeDesc(context, badgeId, descricao),
                   style: TextStyle(fontSize: 12, color: isEarned ? Colors.grey[700] : Colors.grey[400]),
                 ),
               ],
             ),
           ),
           if (isEarned)
-            const Icon(Icons.verified, color: Color(0xFFFFD700), size: 20),
+            Icon(Icons.verified, color: Color(0xFFFFD700), size: 20),
         ],
       ),
     );
+  }
+
+  String _getBadgeTitle(BuildContext context, String badgeId, String defaultVal) {
+    switch (badgeId) {
+      case 'primeiro_carimbo': return AppLocalizations.of(context)!.badgePrimeiroCarimboTitle;
+      case 'conhecedor': return AppLocalizations.of(context)!.badgeConhecedorTitle;
+      case 'colecionador': return AppLocalizations.of(context)!.badgeColecionadorTitle;
+      case 'grande_explorador': return AppLocalizations.of(context)!.badgeGrandeExploradorTitle;
+      case 'primeiro_roteiro': return AppLocalizations.of(context)!.badgePrimeiroRoteiroTitle;
+      case 'aventureiro': return AppLocalizations.of(context)!.badgeAventureiroTitle;
+      case 'viajante': return AppLocalizations.of(context)!.badgeViajanteTitle;
+      case 'criador': return AppLocalizations.of(context)!.badgeCriadorTitle;
+      case 'guia_local': return AppLocalizations.of(context)!.badgeGuiaLocalTitle;
+      default: return defaultVal;
+    }
+  }
+
+  String _getBadgeDesc(BuildContext context, String badgeId, String defaultVal) {
+    switch (badgeId) {
+      case 'primeiro_carimbo': return AppLocalizations.of(context)!.badgePrimeiroCarimboDesc;
+      case 'conhecedor': return AppLocalizations.of(context)!.badgeConhecedorDesc;
+      case 'colecionador': return AppLocalizations.of(context)!.badgeColecionadorDesc;
+      case 'grande_explorador': return AppLocalizations.of(context)!.badgeGrandeExploradorDesc;
+      case 'primeiro_roteiro': return AppLocalizations.of(context)!.badgePrimeiroRoteiroDesc;
+      case 'aventureiro': return AppLocalizations.of(context)!.badgeAventureiroDesc;
+      case 'viajante': return AppLocalizations.of(context)!.badgeViajanteDesc;
+      case 'criador': return AppLocalizations.of(context)!.badgeCriadorDesc;
+      case 'guia_local': return AppLocalizations.of(context)!.badgeGuiaLocalDesc;
+      default: return defaultVal;
+    }
   }
 }

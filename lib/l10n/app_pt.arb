@@ -1,0 +1,378 @@
+{
+  "@@locale": "pt",
+  "appTitle": "VisitAR",
+  "settings": "Definições",
+  "general": "Geral",
+  "managePermissions": "Gerir Permissões",
+  "openingSettings": "A abrir definições...",
+  "darkMode": "Modo Escuro",
+  "clearCache": "Limpar Cache",
+  "cacheClearedSuccess": "Cache limpa com sucesso!",
+  "account": "Conta",
+  "deleteAccount": "Excluir Conta",
+  "deleteAccountWarningTitle": "Excluir Conta?",
+  "deleteAccountWarningBody": "Esta ação é irreversível. Todos os teus dados serão apagados.",
+  "cancel": "Cancelar",
+  "delete": "Excluir",
+  "error": "Erro",
+  "version": "Versão",
+  
+  "aboutThisPlace": "Sobre este local",
+  "noDescription": "Sem descrição.",
+  "readMore": "Ler mais",
+  "explore360": "Explorar em 360º",
+  "calculating": "Calculando...",
+  
+  "addedToItinerary": "Adicionado aos locais para o novo Roteiro!",
+  "removedFromItinerary": "Removido dos locais para o novo Roteiro.",
+  "loginRequiredTitle": "Sessão necessária",
+  "loginRequiredBody1": "Para ",
+  "loginRequiredBody2": ", precisas de ter uma conta e iniciar sessão.",
+  "notNow": "Agora não",
+  "login": "Iniciar sessão",
+  "actionSaveFavorites": "guardar nos favoritos",
+  "actionRegisterVisit": "registar visitas no Passaporte",
+  
+  "alreadyVisited": "Já visitaste este local!",
+  "youAreAt": "Estás a ",
+  "approachToRegister": " deste local. Aproxima-te para registar a visita.",
+  "visitRegistered": "✅ Visita registada no teu Passaporte!",
+  "congratsCompletedItinerary": "🎉 Parabéns! Concluíste o roteiro",
+  "achievementUnlocked": "Conquista Desbloqueada!",
+  "fantastic": "Fantástico!",
+  
+  "noConnectionToDownload": "Sem conexão para baixar.",
+  "savedOffline": "Guardado offline",
+  "errorDownloading": "Erro ao baixar.",
+  "contentRemoved": "Conteúdo removido.",
+  
+  "language": "Idioma",
+
+  "arMode": "Modo AR",
+  "view360": "Ver 360º",
+  "navigate": "Navegar",
+  "time": "Tempo",
+  "distance": "Distância",
+  "pause": "Pausar",
+  "resume": "Continuar",
+  "stop": "Parar",
+  "stopNavigation": "Parar Navegação",
+  "stopNavigationConfirm": "Queres parar de seguir as indicações deste roteiro?",
+  "finish": "Concluir",
+  "searchLocation": "Pesquisar local...",
+  "noLocationFound": "Nenhum local encontrado",
+  "nearbyPlaces": "Locais Próximos",
+  "tabExplore": "Explorar",
+  "tabMap": "Mapa",
+  "tabItineraries": "Roteiros",
+  "tabFavorites": "Favoritos",
+  "tabProfile": "Perfil",
+  "errorUpdatingFavorites": "Erro ao atualizar favoritos.",
+  "approx": "Aprox.",
+  "viewDetails": "Ver Detalhes",
+  "welcomeExplorer": "Explorador",
+  "welcomeHeader": "BEM-VINDO/A",
+  "hello": "Olá, ",
+  "arBannerTitle": "O património\nvive à tua frente.",
+  "arBannerSubtitle": "Aponta a câmara e descobre.",
+  "nearYou": "Perto de ti",
+  "results": "resultados",
+  "result": "resultado",
+  "locationNotFound": "Localização não encontrada",
+  "noPlacesNearYou": "Nenhum local perto de ti (50km)",
+  "turnOnGps": "Ativa o GPS ou aguarda um momento",
+  "tryExploringOtherZones": "Experimenta explorar noutras zonas do mapa",
+  "suggestedItineraries": "Roteiros Sugeridos",
+  "viewAll": "Ver todos",
+  "noItinerariesAvailable": "Nenhum roteiro disponível no momento.",
+  "logout": "Sair",
+  "editProfile": "Editar Perfil",
+  "myItineraries": "Os meus roteiros",
+  "myPassport": "O meu Passaporte",
+  "myFavorites": "Os meus favoritos",
+  "offlineDownloads": "Downloads Offline",
+  "adminPanel": "Painel de Admin",
+  "createBadgesAdmin": "Criar Badges (Admin)",
+  "resetAchievementsTest": "Reset Conquistas (Teste)",
+  "resetStampsTest": "Reset Carimbos (Teste)",
+  "latestAchievements": "Últimas Conquistas",
+  "guest": "Visitante",
+  "guestMode": "Modo sem conta",
+  "guestLimitedAccess": "Como visitante, tens acesso limitado. Cria uma conta para mais funcionalidades!",
+  "chooseLanguage": "Escolher Idioma",
+  "languageChangedTo": "Idioma alterado para",
+  "local": "(local)",
+  "loginRegister": "Login/Registo",
+  "badgesCreated": "✅ Badges criadas no Firestore!",
+  "achievementsDeleted": "🗑️ Todas as tuas conquistas foram apagadas!",
+  "stampsDeleted": "🗑️ Todos os teus carimbos de visitas foram apagados!",
+  
+  "searchItineraries": "Pesquisar roteiros...",
+  "suggested": "Sugeridos",
+  "mine": "Meus",
+  "completed": "Concluídos",
+  "noItineraryFoundFor": "Nenhum roteiro encontrado para",
+  "loginToCreateItineraries": "Inicia sessão para criares e veres os teus roteiros.",
+  "stillNoItineraries": "Ainda sem roteiros",
+  "clickPlusToCreate": "Clica no botão + para criar o teu primeiro roteiro.",
+  "loginToViewCompleted": "Inicia sessão para veres os roteiros que já concluíste.",
+  "noCompletedItineraries": "Nenhum roteiro concluído",
+  "completedWillAppearHere": "Quando completares um roteiro, aparece aqui.",
+  "noAvailableItineraries": "Nenhum roteiro disponível",
+  "noSuggestedItinerariesAtMoment": "De momento não há roteiros sugeridos.",
+  "loginToViewFavorites": "Inicia sessão para guardares e veres os teus favoritos.",
+  "locationsPois": "Locais (POIs)",
+  "searchFavorites": "Pesquisar nos favoritos...",
+  "noFavorites": "Sem favoritos",
+  "noLocationFoundFor": "Nenhum local encontrado para",
+  "removedFromFavorites": "removido dos favoritos.",
+  "errorLoadingFavoriteItineraries": "Erro ao carregar roteiros favoritos.",
+  "noFavoriteItineraries": "Sem roteiros favoritos",
+  "stops": "Paragens",
+  "removeFavoriteQuestion": "Remover Favorito?",
+  "doYouWantToRemove": "Deseja remover",
+  "fromFavorites": "dos favoritos?",
+  "remove": "Remover",
+  "errorRemovingFavorite": "Erro ao remover dos favoritos.",
+  "errorLoadingFavorites": "Erro ao carregar favoritos.",
+  "name": "Nome",
+  "nameCannotBeEmpty": "O nome não pode ser vazio",
+  "email": "E-mail",
+  "gender": "Género",
+  "genderMale": "Masculino",
+  "genderFemale": "Feminino",
+  "genderOther": "Outro",
+  "genderPreferNotToSay": "Prefiro não dizer",
+  "nationality": "Nacionalidade",
+  "changePassword": "Alterar Palavra-passe",
+  "newPassword": "Nova password",
+  "confirmNewPassword": "Confirmar nova password",
+  "passwordsDoNotMatch": "Não coincidem",
+  "saveChanges": "Guardar Alterações",
+  "reauthRequired": "Atenção: Password requer re-autenticação.",
+  "poisAdded": "Pontos de interesse adicionados",
+  "cannotLoadStops": "Não foi possível carregar as paragens.",
+  "startRoteiro": "Iniciar Roteiro",
+  "errorLoadingItinerary": "Erro ao carregar roteiro",
+  "profileUpdated": "Perfil atualizado!",
+  "locationError": "Não foi possível obter a tua localização.",
+  "registerVisitError": "Erro ao registar visita.",
+  "error360": "Erro 360:",
+  "no3dModel": "Sem modelo 3D",
+  "view3dModel": "Visualizar Modelo 3D",
+  "navigateToLocation": "Navegar para o Local",
+  "listenAudioGuide": "Ouvir áudio guia",
+  "descriptionLabel": "Descrição",
+  "destination": "Destino:",
+  "loadingMap": "A carregar mapa...",
+  "yourLocation": "A tua localização",
+  "errorLoadingMap": "Ocorreu um erro a carregar o mapa",
+  "showAll": "Mostrar: Todos",
+  "onlyFavorites": "Apenas favoritos",
+  "searchRadius": "Raio de busca:",
+  "filterByCategory": "Filtrar por Categoria",
+  "sessionRequired": "Sessão necessária",
+  "exploreLocationsPois": "Explorar Local (POIs)",
+  "profileUpdateSuccess": "Perfil atualizado com sucesso",
+  "profileUpdateError": "Erro ao atualizar perfil",
+  "addedToFavorites": "Adicionado aos favoritos",
+  "errorUpdatingFavorite": "Erro ao atualizar favorito",
+  "roteiroAvailableOffline": "Roteiro já está disponível offline.",
+  "downloadSuccess": "Download concluído com sucesso!",
+  "downloadError": "Erro ao transferir roteiro.",
+  "deleteRoteiro": "Apagar Roteiro",
+  "deleteRoteiroConfirm": "Tens a certeza que queres apagar este roteiro? Esta ação é irreversível.",
+  "roteiroDeletedSuccess": "Roteiro apagado com sucesso!",
+  "errorDeletingRoteiro": "Erro ao apagar roteiro.",
+  "category": "Categoria",
+  "duration": "Duração",
+  "explorationProgress": "Progresso da Exploração",
+  "placesVisited": "locais visitados",
+  "roteiroCompletedBadge": "Roteiro Concluído! Badge ganho.",
+  "languageChanged": "Idioma alterado para {lang}",
+  "@languageChanged": {
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
+  },
+  "languageChangedLocal": "Idioma alterado para {lang} (local)",
+  "@languageChangedLocal": {
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
+  },
+  "opening": "A abrir...",
+  "searchDownloads": "Pesquisar nos downloads...",
+  "noDownloadsOffline": "Sem downloads offline",
+  "noLocationFoundFor": "Nenhum local encontrado para '{query}'",
+  "@noLocationFoundFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "availableOffline": "Disponível offline",
+  "noRoteirosOffline": "Sem roteiros offline",
+  "noRoteiroFoundFor": "Nenhum roteiro encontrado para '{query}'",
+  "@noRoteiroFoundFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineStops": "{count} paragens • Offline",
+  "@offlineStops": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteDownloadTitle": "Apagar Download?",
+  "deleteDownloadConfirm": "Deseja remover '{name}' dos downloads?",
+  "@deleteDownloadConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteButton": "Apagar",
+  "poiRemoved": "{name} removido.",
+  "@poiRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errorRemoving": "Erro ao remover.",
+  "roteiroRemoved": "{title} removido.",
+  "@roteiroRemoved": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "errorRemovingRoteiro": "Erro ao remover roteiro.",
+  "roteiroUpdatedSuccess": "Roteiro atualizado com sucesso!",
+  "roteiroCreatedSuccess": "Roteiro criado com sucesso!",
+  "errorCreatingRoteiro": "Erro ao criar roteiro. Tens a sessão iniciada?",
+  "filters": "Filtros",
+  "clear": "Limpar",
+  "applyFilters": "Aplicar Filtros",
+  "onlyWith3d": "Apenas com Modelo 3D",
+  "onlyWithAudio": "Apenas com Áudio",
+  "difficulty": "Dificuldade",
+  "catAll": "Tudo",
+  "catHistoric": "Histórico",
+  "catNature": "Natureza",
+  "catGeologic": "Geológico",
+  "catTrail": "Trilho",
+  "catGastronomy": "Gastronomia",
+  "difAny": "Qualquer",
+  "difEasy": "Fácil",
+  "difMedium": "Moderado",
+  "difHard": "Difícil",
+  "badgeCatExploration": "Exploração",
+  "badgeCatItineraries": "Roteiros",
+  "badgeCatCreation": "Criação",
+  "badgePrimeiroCarimboTitle": "Primeiro Carimbo",
+  "badgePrimeiroCarimboDesc": "Visitaste o teu primeiro ponto de interesse!",
+  "badgeConhecedorTitle": "Conhecedor",
+  "badgeConhecedorDesc": "Visitaste 5 pontos de interesse.",
+  "badgeColecionadorTitle": "Colecionador",
+  "badgeColecionadorDesc": "Visitaste 10 pontos de interesse.",
+  "badgeGrandeExploradorTitle": "Grande Explorador",
+  "badgeGrandeExploradorDesc": "Visitaste 25 pontos de interesse.",
+  "badgePrimeiroRoteiroTitle": "Primeiro Roteiro",
+  "badgePrimeiroRoteiroDesc": "Completaste o teu primeiro roteiro!",
+  "badgeAventureiroTitle": "Aventureiro",
+  "badgeAventureiroDesc": "Completaste 3 roteiros.",
+  "badgeViajanteTitle": "Viajante",
+  "badgeViajanteDesc": "Completaste 5 roteiros.",
+  "badgeCriadorTitle": "Criador",
+  "badgeCriadorDesc": "Criaste o teu primeiro roteiro!",
+  "badgeGuiaLocalTitle": "Guia Local",
+  "badgeGuiaLocalDesc": "Criaste 3 roteiros.",
+  "stampsTab": "Carimbos",
+  "achievementsTab": "Conquistas",
+  "noStampsYet": "Ainda sem carimbos",
+  "noStampsSubtitle": "Visita pontos de interesse para\ncolecionar carimbos no teu passaporte!",
+  "placesVisitedSingular": "local visitado",
+  "continueExploring": "Continua a explorar!",
+  "noAchievementsDefined": "Nenhuma conquista definida no servidor ainda.",
+  "achievementsProgress": "{earned} de {total} conquistas",
+  "@achievementsProgress": {
+    "placeholders": {
+      "earned": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "visitedProgress": "{visited} de {total} locais visitados",
+  "@visitedProgress": {
+    "placeholders": {
+      "visited": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "removedFromFavorites": "Removido dos favoritos",
+  "actionSaveItineraries": "guardar roteiros nos favoritos",
+  "adminNewPoi": "Novo Ponto de Interesse",
+  "adminPhotos": "Fotos (Obrigatório)",
+  "adminAddFromGallery": "Adicionar da Galeria",
+  "adminRequired": "Obrigatório",
+  "adminInvalid": "Inválido",
+  "adminLocalName": "Nome do Local",
+  "adminDescPt": "Descrição (PT)",
+  "adminAudioPt": "Adicionar Áudio PT",
+  "adminRemove": "Remover",
+  "adminDescEn": "Descrição (EN) - Opcional",
+  "adminAudioEn": "Adicionar Áudio EN",
+  "adminLatitude": "Latitude (ex: 39.82)",
+  "adminLongitude": "Longitude (ex: -7.49)",
+  "adminArLink": "Link Modelo 3D (.glb)",
+  "adminArHelper": "Opcional. Cola o URL direto.",
+  "adminCreating": "A criar POI... ",
+  "adminCreateButton": "CRIAR PONTO DE INTERESSE",
+  "adminFillRequired": "Preenche os campos obrigatórios!",
+  "adminAddAtLeastOnePhoto": "Adiciona pelo menos uma foto!",
+  "adminSuccessCreated": "✅ POI Criado com sucesso!",
+  "adminErrorSaving": "Erro ao gravar: {error}",
+  "@adminErrorSaving": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "routeMinLocations": "Adiciona pelo menos 2 locais para criar um roteiro.",
+  "routeTitleRequired": "Dá um título ao teu roteiro!",
+  "routeInternetRequired": "Precisas de internet para criar um roteiro, para que a app possa calcular a rota entre os pontos!",
+  "editRoteiroTitle": "Editar Roteiro",
+  "createRoteiroTitle": "Criar Novo Roteiro",
+  "itineraryNameHint": "Nome do roteiro",
+  "addCoverPhoto": "Adicionar Capa",
+  "noLocationsAddedYet": "Ainda não adicionaste nenhum local.",
+  "canAddPoisLater": "Podes sempre adicionar POIs\nfuturamente ao editar um Roteiro",
+  "nearbyPois": "Pontos de interesse próximos",
+  "noLocationsAvailable": "Nenhum local disponível.",
+  "createRoteiroButton": "Criar Roteiro",
+  "saveRoteiroButton": "Guardar Roteiro",
+  "fieldRequired": "Campo obrigatório"
+}

@@ -13,6 +13,7 @@ import 'services/roteiros_service.dart';
 import 'details_screen.dart';
 import 'roteiro_details_screen.dart';
 import 'login_screen.dart';
+import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -87,7 +88,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(backgroundColor: Colors.red, content: Text("Erro ao remover dos favoritos.")),
+          SnackBar(backgroundColor: Colors.red, content: Text(AppLocalizations.of(context)!.errorRemovingFavorite)),
         );
       }
     }
@@ -115,9 +116,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      children: const [
+                      children: [
                         Text(
-                          "Favoritos",
+                          AppLocalizations.of(context)!.tabFavorites,
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
@@ -135,22 +136,21 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.lock_outline_rounded, size: 56, color: Colors.grey[350]),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Sessão necessária',
+                            SizedBox(height: 16),
+                            Text(AppLocalizations.of(context)!.loginRequiredTitle,
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Text(
-                              'Inicia sessão para guardares e veres os teus favoritos.',
+                              AppLocalizations.of(context)!.loginToViewFavorites,
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.4),
                             ),
-                            const SizedBox(height: 24),
+                            SizedBox(height: 24),
                             CustomButton(
                               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-                              text: 'Iniciar sessão',
+                              text: AppLocalizations.of(context)!.login,
                             ),
                           ],
                         ),
@@ -179,9 +179,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      children: const [
+                      children: [
                         Text(
-                          "Favoritos",
+                          AppLocalizations.of(context)!.tabFavorites,
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
@@ -198,9 +198,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     indicatorWeight: 3,
                     indicatorSize: TabBarIndicatorSize.label,
                     labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                    tabs: const [
-                      Tab(text: "Locais (POIs)"),
-                      Tab(text: "Roteiros"),
+                    tabs: [
+                      Tab(text: AppLocalizations.of(context)!.locationsPois),
+                      Tab(text: AppLocalizations.of(context)!.tabItineraries),
                     ],
                   ),
                   _buildSearchBar(),
@@ -235,8 +235,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, color: Colors.grey),
-          const SizedBox(width: 10),
+          Icon(Icons.search, color: Colors.grey),
+          SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: _searchController,
@@ -245,8 +245,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   _searchQuery = value;
                 });
               },
-              decoration: const InputDecoration(
-                hintText: 'Pesquisar nos favoritos...', 
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.searchFavorites, 
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
@@ -293,7 +293,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               );
             },
           ),
-          const SizedBox(width: 5),
+          SizedBox(width: 5),
         ],
       ),
     );
@@ -315,9 +315,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                  mainAxisSize: MainAxisSize.min,
                  children: [
                    Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
-                   const SizedBox(height: 12),
-                   const Text("Erro ao carregar favoritos.", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                   const SizedBox(height: 6),
+                   SizedBox(height: 12),
+                   Text(AppLocalizations.of(context)!.errorLoadingFavorites, style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                   SizedBox(height: 6),
                    Text(snapshot.error.toString(), style: const TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
                  ],
                ),
@@ -333,8 +333,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.favorite_border, size: 60, color: Colors.grey[300]),
-                const SizedBox(height: 15),
-                Text("Sem favoritos", style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                SizedBox(height: 15),
+                Text(AppLocalizations.of(context)!.noFavorites, style: TextStyle(color: Colors.grey[500], fontSize: 16)),
               ],
             ),
           );
@@ -351,7 +351,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Text("Nenhum local encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
               ],
             ),
@@ -374,7 +374,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(18)),
-                  child: const Icon(Icons.delete, color: Colors.white),
+                  child: Icon(Icons.delete, color: Colors.white),
                 ),
                 onDismissed: (direction) async {
                   await _favoritesService.removeFavorite(poi.id);
@@ -410,9 +410,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
-                  const SizedBox(height: 12),
-                  const Text("Erro ao carregar roteiros favoritos.", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 12),
+                  Text(AppLocalizations.of(context)!.errorLoadingFavoriteItineraries, style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 6),
                   Text(snapshot.error.toString(), style: const TextStyle(color: Colors.grey, fontSize: 11), textAlign: TextAlign.center),
                 ],
               ),
@@ -428,8 +428,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.route, size: 60, color: Colors.grey[300]),
-                const SizedBox(height: 15),
-                Text("Sem roteiros favoritos", style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                SizedBox(height: 15),
+                Text(AppLocalizations.of(context)!.noFavoriteItineraries, style: TextStyle(color: Colors.grey[500], fontSize: 16)),
               ],
             ),
           );
@@ -446,7 +446,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.search_off, size: 50, color: Colors.grey[300]),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Text("Nenhum roteiro encontrado para '$_searchQuery'", style: TextStyle(color: Colors.grey[500])),
               ],
             ),
@@ -548,24 +548,24 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
 
           trailing: IconButton(
-            icon: const Icon(Icons.favorite, color: Colors.redAccent, size: 24),
+            icon: Icon(Icons.favorite, color: Colors.redAccent, size: 24),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text("Remover Favorito?"),
+                  title: Text(AppLocalizations.of(context)!.removeFavoriteQuestion),
                   content: Text("Deseja remover '$itemName' dos favoritos?"),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
+                      child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Colors.grey)),
                     ),
                     TextButton(
                       onPressed: () {
                         Navigator.pop(ctx);
                         onDelete();
                       },
-                      child: const Text("Remover", style: TextStyle(color: Colors.red)),
+                      child: Text(AppLocalizations.of(context)!.remove, style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),
