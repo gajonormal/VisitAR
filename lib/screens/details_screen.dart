@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -292,7 +292,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
           return;
         }
       }
-      Position pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      Position pos = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
       if (mounted) {
         setState(() {
           _userPosition = pos;
@@ -365,7 +365,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: kPrimaryGreen.withOpacity(0.1),
+                color: kPrimaryGreen.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.lock_outline_rounded, color: kPrimaryGreen, size: 32),
@@ -602,7 +602,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(15),
-                        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+                        boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 5))],
                         border: Border.all(color: Colors.grey[200]!),
                       ),
                       child: ElevatedButton(
@@ -694,7 +694,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
             child: Material(
               key: _headerKey, 
               elevation: 15,
-              shadowColor: Colors.black.withOpacity(0.4),
+              shadowColor: Colors.black.withValues(alpha: 0.4),
               color: Colors.white,
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
               clipBehavior: Clip.antiAlias, 
@@ -965,7 +965,7 @@ if (isLoadingDownload)
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 5))],
         border: Border.all(color: Colors.grey[200]!),
       ),
       child: ElevatedButton(

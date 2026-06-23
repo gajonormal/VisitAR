@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'services/passport_service.dart';
-import '../models/badge_model.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class PassportScreen extends StatefulWidget {
@@ -73,9 +72,9 @@ class _PassportScreenState extends State<PassportScreen> {
   }
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // TAB: CARIMBOS (Visitas)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _StampsTab extends StatelessWidget {
   final String uid;
   const _StampsTab({required this.uid});
@@ -214,11 +213,11 @@ class _StampsTab extends StatelessWidget {
 
 String _getCategoryTranslation(BuildContext context, String category) {
   switch (category) {
-    case 'Histórico':
+    case 'HistÃ³rico':
       return AppLocalizations.of(context)!.catHistoric;
     case 'Natureza':
       return AppLocalizations.of(context)!.catNature;
-    case 'Geológico':
+    case 'GeolÃ³gico':
       return AppLocalizations.of(context)!.catGeologic;
     case 'Trilho':
       return AppLocalizations.of(context)!.catTrail;
@@ -256,7 +255,7 @@ class _StampCard extends StatelessWidget {
                 children: [
                   image.isNotEmpty
                       ? Image.network(image, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _placeholder())
+                          errorBuilder: (_, __, e) => _placeholder())
                       : _placeholder(),
                   // Carimbo overlay
                   Positioned(
@@ -303,18 +302,18 @@ class _StampCard extends StatelessWidget {
   );
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // TAB: CONQUISTAS (Badges)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _BadgesTab extends StatelessWidget {
   final String uid;
   const _BadgesTab({required this.uid});
 
   // Icons por categoria
   static const Map<String, IconData> _categoryIcons = {
-    'exploração': Icons.map_outlined,
+    'exploraÃ§Ã£o': Icons.map_outlined,
     'roteiros': Icons.route_outlined,
-    'criação': Icons.edit_location_alt_outlined,
+    'criaÃ§Ã£o': Icons.edit_location_alt_outlined,
   };
 
   // Icons por badge ID
@@ -473,11 +472,11 @@ class _BadgesTab extends StatelessWidget {
 
   String _getBadgeCategoryTranslation(BuildContext context, String category) {
     switch (category.toLowerCase()) {
-      case 'exploração':
+      case 'exploraÃ§Ã£o':
         return AppLocalizations.of(context)!.badgeCatExploration;
       case 'roteiros':
         return AppLocalizations.of(context)!.badgeCatItineraries;
-      case 'criação':
+      case 'criaÃ§Ã£o':
         return AppLocalizations.of(context)!.badgeCatCreation;
       default:
         return category.isNotEmpty ? category[0].toUpperCase() + category.substring(1) : '';
@@ -595,3 +594,4 @@ class _BadgeTile extends StatelessWidget {
     }
   }
 }
+

@@ -374,11 +374,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noFavorites => 'No favorites';
 
   @override
-  String noLocationFoundFor(String query) {
-    return 'No location found for \'$query\'';
-  }
-
-  @override
   String get removedFromFavorites => 'Removed from favorites';
 
   @override
@@ -592,6 +587,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noDownloadsOffline => 'No offline downloads';
+
+  @override
+  String noLocationFoundFor(String query) {
+    return 'No location found for \'$query\'';
+  }
 
   @override
   String get availableOffline => 'Available offline';

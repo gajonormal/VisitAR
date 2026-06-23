@@ -9,13 +9,13 @@ class PoiCard extends StatelessWidget {
   final Position? userPosition;
 
   const PoiCard({
-    Key? key,
+    super.key,
     required this.poi,
     this.userPosition,
-  }) : super(key: key);
+  });
 
   String _formatDistance(POI poi) {
-    if (userPosition == null) return '— km';
+    if (userPosition == null) return 'â€” km';
     double dist = Geolocator.distanceBetween(
         userPosition!.latitude, userPosition!.longitude,
         poi.localizacao.latitude, poi.localizacao.longitude);
@@ -25,8 +25,8 @@ class PoiCard extends StatelessWidget {
 
   Color _categoryColor(String category) {
     switch (category.toLowerCase()) {
-      case 'geológico':   return const Color(0xFFE67E22);
-      case 'histórico':   return const Color(0xFF8B4513);
+      case 'geolÃ³gico':   return const Color(0xFFE67E22);
+      case 'histÃ³rico':   return const Color(0xFF8B4513);
       case 'natureza':    return const Color(0xFF27AE60);
       case 'trilho':      return const Color(0xFF2980B9);
       case 'gastronomia': return const Color(0xFFC0392B);
@@ -48,7 +48,7 @@ class PoiCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 3))],
         ),
         child: Row(
           children: [
@@ -59,8 +59,8 @@ class PoiCard extends StatelessWidget {
                 child: imagePath == null || imagePath.isEmpty
                     ? Container(color: Colors.grey[200], child: Icon(Icons.landscape, color: Colors.grey[400]))
                     : imagePath.startsWith('http')
-                        ? Image.network(imagePath, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.grey[200]))
-                        : Image.file(File(imagePath), fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.grey[200])),
+                        ? Image.network(imagePath, fit: BoxFit.cover, errorBuilder: (_, __, e) => Container(color: Colors.grey[200]))
+                        : Image.file(File(imagePath), fit: BoxFit.cover, errorBuilder: (_, __, e) => Container(color: Colors.grey[200])),
               ),
             ),
             SizedBox(width: 14),
@@ -92,3 +92,4 @@ class PoiCard extends StatelessWidget {
     );
   }
 }
+

@@ -291,7 +291,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       backgroundColor: kPrimaryGreen,
                       foregroundColor: Colors.white,
                       elevation: 5,
-                      shadowColor: kPrimaryGreen.withOpacity(0.4),
+                      shadowColor: Colors.green.withValues(alpha: 0.5),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
                     child: Text(AppLocalizations.of(context)!.saveChanges, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui; // Necessário para desenhar os marcadores
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Para ByteData
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../screens/services/database_services.dart';
 import '../screens/services/download_service.dart';
 import '../screens/services/roteiro_state.dart';
@@ -16,8 +15,6 @@ import '../models/panorama.dart';
 import 'panorama_screen.dart';
 import '../models/filter_options.dart';
 import '../widgets/filter_bottom_sheet.dart';
-import 'services/database_services.dart';
-import '../screens/services/roteiros_service.dart';
 import '../screens/services/routing_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/services/favorites_service.dart';
@@ -199,9 +196,9 @@ class _HomeMapState extends State<HomeMap> {
     // 1. Obter a localização atual do utilizador para reordenar
     Position? currentPos;
     try {
-      currentPos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      currentPos = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
     } catch (e) {
-      print("Erro ao obter posição atual para ordenar roteiro: $e");
+      debugPrint("Erro ao obter posição atual para ordenar roteiro: $e");
     }
 
     // 2. Verificar se temos internet para calcular a rota da nova ordem
@@ -292,7 +289,7 @@ class _HomeMapState extends State<HomeMap> {
   void _updateDistanceToNextPoi() async {
     if (_nextPoiIndex >= _currentRoteiroPois.length) return;
     try {
-      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      Position position = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
       POI nextPoi = _currentRoteiroPois[_nextPoiIndex];
       double dist = Geolocator.distanceBetween(
         position.latitude, position.longitude,
@@ -367,7 +364,7 @@ class _HomeMapState extends State<HomeMap> {
         }
       });
     } catch (e) {
-      print("Erro ao atualizar distância do POI: $e");
+      debugPrint("Erro ao atualizar distância do POI: $e");
     }
   }
 
@@ -469,7 +466,7 @@ class _HomeMapState extends State<HomeMap> {
           markerId: MarkerId(poi.id),
           position: poi.localizacao,
           icon: _numberedMarkersNormal[i + 1] ?? _markerIconNormal!,
-          zIndex: 1,
+          zIndexInt: 1,
           anchor: const Offset(0.5, 0.5),
           onTap: () {
             setState(() {
@@ -491,7 +488,7 @@ class _HomeMapState extends State<HomeMap> {
           markerId: MarkerId(poi.id),
           position: poi.localizacao,
           icon: isSelected ? _markerIconSelected! : _markerIconNormal!,
-          zIndex: isSelected ? 2 : 1,
+          zIndexInt: isSelected ? 2 : 1,
           anchor: const Offset(0.5, 0.5),
           onTap: () { 
             if (activeRoteiroNotifier.value == null) {
@@ -543,7 +540,7 @@ class _HomeMapState extends State<HomeMap> {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) return null;
       }
-      return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      return await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
     } catch (e) { return null; }
   }
 
@@ -668,10 +665,11 @@ class _HomeMapState extends State<HomeMap> {
                 initialCameraPosition: CameraPosition(target: _initialPosition, zoom: 16),
                 markers: _markers,
                 polylines: _polylines,
+                style: _mapStyle,
                 onMapCreated: (controller) {
                   _mapController = controller;
                   // Aplica o estilo para limpar o mapa
-                  controller.setMapStyle(_mapStyle);
+                  
                 },
                 mapToolbarEnabled: false,
                 myLocationEnabled: true,
@@ -853,7 +851,7 @@ class _HomeMapState extends State<HomeMap> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, -5))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 15, offset: const Offset(0, -5))],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1124,7 +1122,7 @@ class _HomeMapState extends State<HomeMap> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.10), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Row(
                 children: [
@@ -1182,7 +1180,7 @@ class _HomeMapState extends State<HomeMap> {
                 padding: EdgeInsets.zero,
                 shrinkWrap: true,
                 itemCount: nearby.length,
-                separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey[200]),
+                separatorBuilder: (_, i) => Divider(height: 1, color: Colors.grey[200]),
                 itemBuilder: (context, index) {
                   final poi = nearby[index];
                   return ListTile(
@@ -1228,7 +1226,7 @@ class _HomeMapState extends State<HomeMap> {
           padding: EdgeInsets.zero,
           shrinkWrap: true,
           itemCount: pois.length,
-          separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey[200]),
+          separatorBuilder: (_, i) => Divider(height: 1, color: Colors.grey[200]),
           itemBuilder: (context, index) {
             final poi = pois[index];
             return ListTile(
@@ -1258,7 +1256,7 @@ class _HomeMapState extends State<HomeMap> {
   Widget _buildBottomNav() {
     return Container(
       height: 90, 
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -5))]),
+      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, -5))]),
       child: BottomNavigationBar(
         currentIndex: _selectedIndex, onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed, backgroundColor: Colors.transparent, elevation: 0,
@@ -1422,7 +1420,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: kGreen.withOpacity(0.1),
+                color: kGreen.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.lock_outline_rounded, color: kGreen, size: 32),
@@ -1476,7 +1474,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
         Position? pos = await Geolocator.getLastKnownPosition();
-        pos ??= await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+        pos ??= await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
         if (mounted) setState(() => _userPosition = pos);
       }
     } catch (_) {}
@@ -1511,7 +1509,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
@@ -1640,5 +1638,5 @@ Future<BitmapDescriptor> getCustomMarker({required Color color, required Color i
   final ui.Image image = await pictureRecorder.endRecording().toImage(size.toInt(), (size + 10).toInt());
   final ByteData? data = await image.toByteData(format: ui.ImageByteFormat.png);
 
-  return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
+  return BitmapDescriptor.bytes(data!.buffer.asUint8List(), imagePixelRatio: 2.5);
 }

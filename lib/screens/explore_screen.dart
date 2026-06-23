@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -37,7 +36,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Position? _userPosition;
 
   // --- FILTROS ---
-  final List<String> _categories = ['Tudo', 'Histórico', 'Natureza', 'Geológico', 'Trilho', 'Gastronomia'];
+  final List<String> _categories = ['Tudo', 'Histórico', 'Natureza', 'Geológico', 'Trilho'];
   POIFilter _poiFilter = POIFilter();
 
   // --- PESQUISA ---
@@ -114,7 +113,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         if (permission == LocationPermission.denied) return null;
       }
       
-      return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium)
+      return await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high))
           .timeout(const Duration(seconds: 10), onTimeout: () {
         throw Exception('Location timeout');
       });
@@ -235,7 +234,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               child: Material(
                 key: _headerKey,
                 elevation: 10,
-                shadowColor: Colors.black.withOpacity(0.3),
+                shadowColor: Colors.black.withValues(alpha: 0.3),
                 color: Colors.transparent,
                 child: Container(
                   clipBehavior: Clip.hardEdge,
@@ -267,7 +266,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(30),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 12, offset: const Offset(0, 4))],
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(0, 4))],
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -350,7 +349,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.10), blurRadius: 10, offset: const Offset(0, 4))],
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 10, offset: const Offset(0, 4))],
                           ),
                           child: Row(
                             children: [
@@ -381,7 +380,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: ClipRRect(borderRadius: BorderRadius.circular(16), child: child),
     );
@@ -465,7 +464,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             style: TextStyle(
               fontSize: 11, fontWeight: FontWeight.w700,
               fontFamily: 'GoogleSans',
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               letterSpacing: 1.2,
             ),
           ),
@@ -503,7 +502,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 child: Image.network(
                   'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800',
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (_, __, e) => Container(
                     color: const Color(0xFF1B4332),
                     child: Center(child: Icon(Icons.landscape, color: Colors.white54, size: 60)),
                   ),
@@ -514,7 +513,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                    colors: [Colors.black.withOpacity(0.15), Colors.black.withOpacity(0.65)],
+                    colors: [Colors.black.withValues(alpha: 0.15), Colors.black.withValues(alpha: 0.65)],
                   ),
                 ),
               ),
@@ -526,9 +525,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withOpacity(0.4)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -545,7 +544,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 15),
-                    Text(AppLocalizations.of(context)!.arBannerSubtitle, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13)),
+                    Text(AppLocalizations.of(context)!.arBannerSubtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
                   ],
                 ),
               ),
@@ -568,7 +567,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           scrollDirection: Axis.horizontal,
           itemCount: _categories.length,
-          separatorBuilder: (_, __) => SizedBox(width: 8),
+          separatorBuilder: (_, i) => SizedBox(width: 8),
           itemBuilder: (context, i) {
             final cat = _categories[i];
             final isSelected = cat == _poiFilter.categoria;
@@ -581,7 +580,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   color: isSelected ? kPrimaryGreen : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: isSelected ? kPrimaryGreen : Colors.grey.shade300),
-                  boxShadow: isSelected ? [BoxShadow(color: kPrimaryGreen.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))] : [],
+                  boxShadow: isSelected ? [BoxShadow(color: kPrimaryGreen.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))] : [],
                 ),
                 child: Text(
                   _getCategoryTranslation(context, cat),
@@ -700,7 +699,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.only(left: 20, right: 20),
                   itemCount: roteiros.length > 5 ? 5 : roteiros.length,
-                  separatorBuilder: (_, __) => SizedBox(width: 14),
+                  separatorBuilder: (_, i) => SizedBox(width: 14),
                   itemBuilder: (context, i) => _buildItineraryCard(roteiros[i]),
                 );
               },
@@ -727,14 +726,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
             fit: StackFit.expand,
             children: [
               if (roteiro.imagemCapa.isNotEmpty)
-                Image.network(roteiro.imagemCapa, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: kPrimaryGreen))
+                Image.network(roteiro.imagemCapa, fit: BoxFit.cover, errorBuilder: (_, __, e) => Container(color: kPrimaryGreen))
               else
                 Container(color: kPrimaryGreen),
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withOpacity(0.75)],
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.75)],
                   ),
                 ),
               ),
@@ -742,7 +741,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 top: 12, left: 12,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.black.withOpacity(0.45), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), borderRadius: BorderRadius.circular(12)),
                   child: Text(_getDifficultyTranslation(context, roteiro.dificuldade), style: TextStyle(color: _difficultyColor(roteiro.dificuldade), fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
               ),
@@ -755,13 +754,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.access_time, color: Colors.white.withOpacity(0.75), size: 12),
+                        Icon(Icons.access_time, color: Colors.white.withValues(alpha: 0.75), size: 12),
                         SizedBox(width: 4),
-                        Text(roteiro.duracao, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
+                        Text(roteiro.duracao, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12)),
                         SizedBox(width: 10),
                         Container(width: 3, height: 3, decoration: const BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
                         SizedBox(width: 10),
-                        Text('${roteiro.distancia.toStringAsFixed(1)} km', style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
+                        Text('${roteiro.distancia.toStringAsFixed(1)} km', style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12)),
                       ],
                     ),
                   ],
@@ -786,8 +785,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
         return AppLocalizations.of(context)!.catGeologic;
       case 'Trilho':
         return AppLocalizations.of(context)!.catTrail;
-      case 'Gastronomia':
-        return AppLocalizations.of(context)!.catGastronomy;
       default:
         return category;
     }
@@ -808,3 +805,4 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 }
+

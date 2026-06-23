@@ -302,7 +302,6 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
         sensorControl: _isGyroEnabled ? SensorControl.orientation : SensorControl.none,
         longitude: initialMarker.rotacaoHorizontal,
         latitude: initialMarker.rotacaoVertical,
-        child: Image.network(widget.panorama.urlImagem),
         hotspots: widget.panorama.marcadores.map((marker) {
           return Hotspot(
             longitude: marker.rotacaoHorizontal,
@@ -323,6 +322,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
             ),
           );
         }).toList(),
+        child: Image.network(widget.panorama.urlImagem),
       ),
     );
   }

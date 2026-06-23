@@ -386,7 +386,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: Colors.grey[200]!),
           boxShadow: [
-            BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))
+            BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5))
           ],
         ),
         child: ListTile(
@@ -396,7 +396,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             width: 60, height: 60,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              color: kPrimaryGreen.withOpacity(0.1),
+              color: kPrimaryGreen.withValues(alpha: 0.1),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),

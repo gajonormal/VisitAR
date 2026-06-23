@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:visitar_teste/screens/services/auth_service.dart';
 import 'login_screen.dart';
 import 'edit_profile_screen.dart';
 import 'offline_content_screen.dart';
-import 'admin_add_poi.dart'; 
-import 'settings_screen.dart';
-import 'favorites_screen.dart';
 import 'passport_screen.dart';
-import 'services/passport_service.dart';
+import 'settings_screen.dart';
 import 'package:provider/provider.dart';
 import 'services/language_provider.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
+import 'services/roteiros_service.dart';
+import '../models/roteiro.dart';
+import 'roteiro_details_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -152,16 +151,13 @@ class ProfileScreen extends StatelessWidget {
                 // ─── SECÇÃO BADGES ───
                 _buildBadgesSection(context, user.uid),
 
+                SizedBox(height: 25),
+
+                // ─── SECÇÃO MEUS ROTEIROS ───
+                _buildMyRoteirosSection(context, user.uid),
+
                 SizedBox(height: 20),
                 
-                // LISTA DE OPÇÕES
-                _buildListOption(
-                  icon: Icons.flag_circle_rounded,
-                  text: AppLocalizations.of(context)!.myItineraries,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.opening)));
-                  },
-                ),
 
                 _buildListOption(
                   icon: Icons.book_outlined,
@@ -172,14 +168,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 
                 _buildListOption(
-                  icon: Icons.favorite_outlined,
-                  text: AppLocalizations.of(context)!.myFavorites,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen()));
-                  },
-                ),
-
-                _buildListOption(
                   icon: Icons.download_done_rounded,
                   text: AppLocalizations.of(context)!.offlineDownloads,
                   onTap: () {
@@ -187,66 +175,7 @@ class ProfileScreen extends StatelessWidget {
                   },
                 ),
 
-                // --- PAINEL DE ADMIN ---
-                _buildListOption(
-                  icon: Icons.admin_panel_settings,
-                  text: AppLocalizations.of(context)!.adminPanel,
-                  onTap: () {
-                     Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminAddPoiScreen()));
-                  },
-                ),
-                _buildListOption(
-                  icon: Icons.military_tech,
-                  text: AppLocalizations.of(context)!.createBadgesAdmin,
-                  onTap: () async {
-                    await PassportService().seedBadges();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(AppLocalizations.of(context)!.badgesCreated), backgroundColor: Color(0xFF0F9D58))
-                      );
-                    }
-                  },
-                ),
-                _buildListOption(
-                  icon: Icons.delete_forever,
-                  text: AppLocalizations.of(context)!.resetAchievementsTest,
-                  onTap: () async {
-                    final uid = FirebaseAuth.instance.currentUser?.uid;
-                    if (uid != null) {
-                      final snaps = await FirebaseFirestore.instance.collection('users').doc(uid).collection('badges').get();
-                      for (var doc in snaps.docs) {
-                        await doc.reference.delete();
-                      }
-                      final roteiros = await FirebaseFirestore.instance.collection('users').doc(uid).collection('completed_roteiros').get();
-                      for (var doc in roteiros.docs) {
-                        await doc.reference.delete();
-                      }
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(AppLocalizations.of(context)!.achievementsDeleted), backgroundColor: Colors.orange)
-                        );
-                      }
-                    }
-                  },
-                ),
-                _buildListOption(
-                  icon: Icons.restore_page_outlined,
-                  text: AppLocalizations.of(context)!.resetStampsTest,
-                  onTap: () async {
-                    final uid = FirebaseAuth.instance.currentUser?.uid;
-                    if (uid != null) {
-                      final snaps = await FirebaseFirestore.instance.collection('users').doc(uid).collection('visits').get();
-                      for (var doc in snaps.docs) {
-                        await doc.reference.delete();
-                      }
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(AppLocalizations.of(context)!.stampsDeleted), backgroundColor: Colors.orange)
-                        );
-                      }
-                    }
-                  },
-                ),
+
                 SizedBox(height: 100), // Espaço extra para scrollar além da NavigationBar
               ],
             ),
@@ -466,6 +395,103 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
     );
   }
 
+  Widget _buildMyRoteirosSection(BuildContext context, String uid) {
+    return StreamBuilder<List<Roteiro>>(
+      stream: RoteirosService().getUserRoteiros(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          // Se não houver roteiros, mostramos um placeholder apelativo
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(AppLocalizations.of(context)!.myItineraries, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+              SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.map_outlined, color: Colors.grey[400], size: 30),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.opening, // Ou um texto como "Ainda não criaste roteiros"
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }
+        
+        final roteiros = snapshot.data!;
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(AppLocalizations.of(context)!.myItineraries, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+            SizedBox(height: 10),
+            SizedBox(
+              height: 130,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: roteiros.length,
+                itemBuilder: (context, index) {
+                  final roteiro = roteiros[index];
+                  return GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RoteiroDetailsScreen(roteiro: roteiro))),
+                    child: Container(
+                      width: 140,
+                      margin: const EdgeInsets.only(right: 15),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F9D58), // Fundo verde sempre presente
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            if (roteiro.imagemCapa.trim().isNotEmpty)
+                              Image.network(
+                                roteiro.imagemCapa,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                              ),
+                            // Overlay escuro
+                            Container(color: Colors.black.withValues(alpha: 0.3)),
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Align(
+                                alignment: Alignment.bottomLeft,
+                                child: Text(
+                                  roteiro.titulo,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 Widget _buildListOption({required IconData icon, required String text, required VoidCallback onTap}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 11), // Margem externa ligeiramente maior (era 10)
@@ -474,7 +500,7 @@ Widget _buildListOption({required IconData icon, required String text, required 
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5)),
         ],
       ),
       child: ListTile(
@@ -490,7 +516,7 @@ Widget _buildListOption({required IconData icon, required String text, required 
 
         leading: Container(
           padding: const EdgeInsets.all(7), // Aumentei de 6 para 7 (o original era 8)
-          decoration: BoxDecoration(color: kPrimaryGreen.withOpacity(0.1), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: kPrimaryGreen.withValues(alpha: 0.1), shape: BoxShape.circle),
           child: Icon(icon, color: kPrimaryGreen, size: 20),
         ),
         title: Text(
@@ -523,7 +549,6 @@ Widget _buildListOption({required IconData icon, required String text, required 
               leading: Radio<String>(
                 value: entry.value,
                 groupValue: currentLang,
-                activeColor: kPrimaryGreen,
                 onChanged: (val) {
                   Navigator.pop(context);
                   _changeLanguage(context, val!, userId);
