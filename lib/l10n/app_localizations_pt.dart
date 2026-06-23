@@ -934,4 +934,34 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get invalidCredentialError => 'E-mail ou palavra-passe incorretos.';
+
+  @override
+  String get emailAlreadyInUseError =>
+      'Este e-mail já está associado a uma conta.';
+
+  @override
+  String get weakPasswordError =>
+      'A palavra-passe é demasiado fraca. Usa pelo menos 6 caracteres.';
+
+  @override
+  String get userNotFoundError => 'Não existe nenhuma conta com este e-mail.';
+
+  @override
+  String get networkRequestFailed =>
+      'Erro de ligação à internet. Verifica a tua rede.';
+
+  @override
+  String get tooManyRequestsError =>
+      'Demasiadas tentativas. Tenta novamente mais tarde.';
+
+  @override
+  String get userDisabledError =>
+      'Esta conta foi desativada. Contacta o suporte.';
+
+  @override
+  String get operationNotAllowedError =>
+      'Operação não permitida. Contacta o suporte.';
+
+  @override
+  String get genericAuthError => 'Ocorreu um erro. Tenta novamente.';
 }

@@ -1861,6 +1861,54 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'E-mail ou palavra-passe incorretos.'**
   String get invalidCredentialError;
+
+  /// No description provided for @emailAlreadyInUseError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Este e-mail já está associado a uma conta.'**
+  String get emailAlreadyInUseError;
+
+  /// No description provided for @weakPasswordError.
+  ///
+  /// In pt, this message translates to:
+  /// **'A palavra-passe é demasiado fraca. Usa pelo menos 6 caracteres.'**
+  String get weakPasswordError;
+
+  /// No description provided for @userNotFoundError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não existe nenhuma conta com este e-mail.'**
+  String get userNotFoundError;
+
+  /// No description provided for @networkRequestFailed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Erro de ligação à internet. Verifica a tua rede.'**
+  String get networkRequestFailed;
+
+  /// No description provided for @tooManyRequestsError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Demasiadas tentativas. Tenta novamente mais tarde.'**
+  String get tooManyRequestsError;
+
+  /// No description provided for @userDisabledError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta conta foi desativada. Contacta o suporte.'**
+  String get userDisabledError;
+
+  /// No description provided for @operationNotAllowedError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Operação não permitida. Contacta o suporte.'**
+  String get operationNotAllowedError;
+
+  /// No description provided for @genericAuthError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ocorreu um erro. Tenta novamente.'**
+  String get genericAuthError;
 }
 
 class _AppLocalizationsDelegate

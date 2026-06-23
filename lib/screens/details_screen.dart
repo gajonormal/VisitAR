@@ -91,7 +91,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
     try {
       var pano = await DatabaseService().getPanoramaForPoi(widget.poi.id);
       
-      if (pano == null) {
+      if (pano == null && FirebaseAuth.instance.currentUser != null) {
+        // Só tenta criar panorama de teste se o utilizador estiver autenticado
         await DatabaseService().seedTestPanorama(widget.poi.id);
         pano = await DatabaseService().getPanoramaForPoi(widget.poi.id);
       }
@@ -100,8 +101,13 @@ class _DetailsScreenState extends State<DetailsScreen> {
         setState(() => _panorama = pano);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro 360: $e")));
+      // Ignora erros de permissão do Firestore (utilizador não autenticado)
+      // para não mostrar mensagens de erro desnecessárias ao utilizador
+      final errStr = e.toString().toLowerCase();
+      if (!errStr.contains('permission') && !errStr.contains('denied')) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro 360: $e")));
+        }
       }
     }
   }
@@ -650,7 +656,11 @@ class _DetailsScreenState extends State<DetailsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _displayPoi.getDescription('pt').isEmpty ? AppLocalizations.of(context)!.noDescription : _displayPoi.getDescription('pt'),
+                              () {
+                                final lang = Localizations.localeOf(context).languageCode;
+                                final desc = _displayPoi.getDescription(lang);
+                                return desc.isEmpty ? AppLocalizations.of(context)!.noDescription : desc;
+                              }(),
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(fontSize: 15, height: 1.5, color: Colors.grey[800]),
@@ -1000,16 +1010,19 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
   @override
   void initState() {
     super.initState();
-    _loadGlobalLanguage();
+    _setupAudio();
   }
 
-  Future<void> _loadGlobalLanguage() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() {
-        _selectedLang = prefs.getString('global_language') ?? 'pt';
-      });
-      _setupAudio();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Lê a língua actual do LanguageProvider (reactivo)
+    final locale = Localizations.localeOf(context);
+    final newLang = locale.languageCode;
+    if (newLang != _selectedLang) {
+      _selectedLang = newLang;
+      // Recarrega o áudio para a nova língua
+      _loadAudioForLang(_selectedLang);
     }
   }
 

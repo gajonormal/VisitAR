@@ -936,4 +936,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invalidCredentialError => 'Incorrect email or password.';
+
+  @override
+  String get emailAlreadyInUseError =>
+      'This email is already associated with an account.';
+
+  @override
+  String get weakPasswordError =>
+      'The password is too weak. Use at least 6 characters.';
+
+  @override
+  String get userNotFoundError => 'No account found with this email.';
+
+  @override
+  String get networkRequestFailed =>
+      'Network error. Please check your connection.';
+
+  @override
+  String get tooManyRequestsError =>
+      'Too many attempts. Please try again later.';
+
+  @override
+  String get userDisabledError =>
+      'This account has been disabled. Contact support.';
+
+  @override
+  String get operationNotAllowedError =>
+      'Operation not allowed. Contact support.';
+
+  @override
+  String get genericAuthError => 'An error occurred. Please try again.';
 }
