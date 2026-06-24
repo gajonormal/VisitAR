@@ -512,6 +512,24 @@ abstract class AppLocalizations {
   /// **'Aponta a câmara e descobre.'**
   String get arBannerSubtitle;
 
+  /// No description provided for @vistas360.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vistas 360º'**
+  String get vistas360;
+
+  /// No description provided for @vistas360Title.
+  ///
+  /// In pt, this message translates to:
+  /// **'Explora os pontos de interesse'**
+  String get vistas360Title;
+
+  /// No description provided for @vistas360Subtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descobre vistas imersivas a 360 graus.'**
+  String get vistas360Subtitle;
+
   /// No description provided for @nearYou.
   ///
   /// In pt, this message translates to:
@@ -571,6 +589,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Nenhum roteiro disponível no momento.'**
   String get noItinerariesAvailable;
+
+  /// No description provided for @noPersonalItineraries.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda não criaste roteiros. Explora o mapa!'**
+  String get noPersonalItineraries;
 
   /// No description provided for @logout.
   ///
@@ -1328,11 +1352,11 @@ abstract class AppLocalizations {
   /// **'Apenas com Modelo 3D'**
   String get onlyWith3d;
 
-  /// No description provided for @onlyWithAudio.
+  /// No description provided for @onlyWith360.
   ///
   /// In pt, this message translates to:
-  /// **'Apenas com Áudio'**
-  String get onlyWithAudio;
+  /// **'Apenas com 360'**
+  String get onlyWith360;
 
   /// No description provided for @difficulty.
   ///

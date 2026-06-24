@@ -222,6 +222,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get arBannerSubtitle => 'Point the camera and discover.';
 
   @override
+  String get vistas360 => '360º Views';
+
+  @override
+  String get vistas360Title => 'Explore points of interest';
+
+  @override
+  String get vistas360Subtitle => 'Discover immersive 360 degree views.';
+
+  @override
   String get nearYou => 'Near you';
 
   @override
@@ -251,6 +260,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noItinerariesAvailable =>
       'No itineraries available at the moment.';
+
+  @override
+  String get noPersonalItineraries =>
+      'You haven\'t created any itineraries yet. Explore the map!';
 
   @override
   String get logout => 'Log out';
@@ -659,7 +672,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onlyWith3d => 'Only with 3D Model';
 
   @override
-  String get onlyWithAudio => 'Only with Audio';
+  String get onlyWith360 => 'Only with 360';
 
   @override
   String get difficulty => 'Difficulty';

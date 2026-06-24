@@ -8,12 +8,12 @@ class FavoritesService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Verifica se o utilizador está autenticado
+  // Verifica se o utilizador estÃ¡ autenticado
   String? get _uid => _auth.currentUser?.uid;
 
   /// Adiciona um POI aos favoritos do utilizador no Firestore
   Future<void> addFavorite(POI poi) async {
-    if (_uid == null) throw Exception("Utilizador não autenticado");
+    if (_uid == null) throw Exception("Utilizador nÃ£o autenticado");
 
     // Guardamos um subconjunto dos dados do POI nos favoritos para facilitar a listagem
     final data = {
@@ -47,7 +47,7 @@ class FavoritesService {
         .delete();
   }
 
-  /// Verifica se um dado POI é favorito
+  /// Verifica se um dado POI Ã© favorito
   Future<bool> isFavorite(String poiId) async {
     if (_uid == null) return false;
 
@@ -77,8 +77,6 @@ class FavoritesService {
         imagens: List<String>.from(data['images'] ?? []),
         mapaAudio: {},
         mapaDescricao: Map<String, dynamic>.from(data['descriptionMap'] ?? {}),
-        urlModeloAr: '', 
-        escalaAr: 1.0,
       );
     }).toList();
   }
@@ -86,7 +84,7 @@ class FavoritesService {
   // --- FAVORITOS ROTEIROS ---
 
   Future<void> addFavoriteRoteiro(Roteiro roteiro) async {
-    if (_uid == null) throw Exception("Utilizador não autenticado");
+    if (_uid == null) throw Exception("Utilizador nÃ£o autenticado");
 
     final data = roteiro.toMap();
     data['timestamp'] = FieldValue.serverTimestamp();
@@ -137,7 +135,7 @@ class FavoritesService {
         descricao: data['descricao'] ?? '',
         imagemCapa: data['imagemCapa'] ?? '',
         poiIds: List<String>.from(data['poiIds'] ?? []),
-        dificuldade: data['dificuldade'] ?? 'FÁCIL',
+        categoria: data['categoria'] ?? 'Histórico',
         duracao: data['duracao'] ?? '0h',
         distancia: (data['distancia'] ?? 0.0).toDouble(),
         criadorId: data['criadorId'] ?? '',
@@ -145,3 +143,5 @@ class FavoritesService {
     }).toList();
   }
 }
+
+

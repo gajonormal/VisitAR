@@ -9,6 +9,8 @@ class FilterBottomSheet extends StatefulWidget {
   final RoteiroFilter? initialRoteiroFilter;
   final bool showPoiFilters;
   final bool showRoteiroFilters;
+  final List<String> availablePoiCategories;
+  final List<String> availableRoteiroCategories;
   final Function(POIFilter? poiFilter, RoteiroFilter? roteiroFilter) onApply;
 
   const FilterBottomSheet({
@@ -17,6 +19,8 @@ class FilterBottomSheet extends StatefulWidget {
     this.initialRoteiroFilter,
     this.showPoiFilters = true,
     this.showRoteiroFilters = false,
+    this.availablePoiCategories = const [],
+    this.availableRoteiroCategories = const [],
     required this.onApply,
   });
 
@@ -28,15 +32,24 @@ class FilterBottomSheetState extends State<FilterBottomSheet> {
   late POIFilter _poiFilter;
   late RoteiroFilter _roteiroFilter;
   
-  // Categorias disponíveis
-  final List<String> _categorias = ['Tudo', 'Histórico', 'Natureza', 'Geológico', 'Trilho', 'Gastronomia'];
-  final List<String> _dificuldades = ['Qualquer', 'Fácil', 'Moderado', 'Difícil'];
+  late List<String> _categorias;
+  late List<String> _roteiroCategorias;
 
   @override
   void initState() {
     super.initState();
     _poiFilter = widget.initialPoiFilter ?? POIFilter();
     _roteiroFilter = widget.initialRoteiroFilter ?? RoteiroFilter();
+
+    _categorias = ['Tudo', ...widget.availablePoiCategories];
+    _roteiroCategorias = ['Qualquer', ...widget.availableRoteiroCategories];
+    
+    if (_categorias.length == 1) {
+      _categorias = ['Tudo', 'Histórico', 'Natureza', 'Geológico', 'Trilho', 'Gastronomia'];
+    }
+    if (_roteiroCategorias.length == 1) {
+      _roteiroCategorias = ['Qualquer', 'Histórico', 'Natureza', 'Geológico', 'Trilho'];
+    }
   }
 
   @override
@@ -151,18 +164,11 @@ class FilterBottomSheetState extends State<FilterBottomSheet> {
         ),
         SizedBox(height: 20),
         SwitchListTile(
-          title: Text(AppLocalizations.of(context)!.onlyWith3d),
-          value: _poiFilter.temModelo3D,
+          title: Text(AppLocalizations.of(context)!.onlyWith360),
+          value: _poiFilter.tem360,
           activeThumbColor: kPrimaryGreen,
           contentPadding: EdgeInsets.zero,
-          onChanged: (val) => setState(() => _poiFilter = _poiFilter.copyWith(temModelo3D: val)),
-        ),
-        SwitchListTile(
-          title: Text(AppLocalizations.of(context)!.onlyWithAudio),
-          value: _poiFilter.temAudio,
-          activeThumbColor: kPrimaryGreen,
-          contentPadding: EdgeInsets.zero,
-          onChanged: (val) => setState(() => _poiFilter = _poiFilter.copyWith(temAudio: val)),
+          onChanged: (val) => setState(() => _poiFilter = _poiFilter.copyWith(tem360: val)),
         ),
       ],
     );
@@ -172,21 +178,21 @@ class FilterBottomSheetState extends State<FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(AppLocalizations.of(context)!.difficulty, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(AppLocalizations.of(context)!.category, style: const TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 10),
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _dificuldades.map((dif) {
-            bool isSelected = _roteiroFilter.dificuldade == dif;
+          children: _roteiroCategorias.map((cat) {
+            bool isSelected = _roteiroFilter.categoria == cat;
             return ChoiceChip(
-              label: Text(_getDifficultyTranslation(context, dif)),
+              label: Text(cat == 'Qualquer' ? AppLocalizations.of(context)!.difAny : _getCategoryTranslation(context, cat)),
               selected: isSelected,
               showCheckmark: false,
               selectedColor: kPrimaryGreen.withValues(alpha: 0.2),
               labelStyle: TextStyle(color: isSelected ? kPrimaryGreen : Colors.black87),
               onSelected: (selected) {
-                if (selected) setState(() => _roteiroFilter = _roteiroFilter.copyWith(dificuldade: dif));
+                if (selected) setState(() => _roteiroFilter = _roteiroFilter.copyWith(categoria: cat));
               },
             );
           }).toList(),
@@ -214,18 +220,4 @@ class FilterBottomSheetState extends State<FilterBottomSheet> {
     }
   }
 
-  String _getDifficultyTranslation(BuildContext context, String difficulty) {
-    switch (difficulty) {
-      case 'Qualquer':
-        return AppLocalizations.of(context)!.difAny;
-      case 'Fácil':
-        return AppLocalizations.of(context)!.difEasy;
-      case 'Moderado':
-        return AppLocalizations.of(context)!.difMedium;
-      case 'Difícil':
-        return AppLocalizations.of(context)!.difHard;
-      default:
-        return difficulty;
-    }
-  }
 }

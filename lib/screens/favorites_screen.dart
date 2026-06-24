@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../models/poi.dart';
 import '../models/roteiro.dart';
 import '../widgets/poi_card.dart';
@@ -10,6 +11,7 @@ import '../models/filter_options.dart';
 import '../widgets/filter_bottom_sheet.dart';
 import 'services/favorites_service.dart';
 import 'services/roteiros_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'roteiro_details_screen.dart';
 import 'login_screen.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
@@ -32,11 +34,52 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   
   POIFilter _poiFilter = POIFilter();
   RoteiroFilter _roteiroFilter = RoteiroFilter();
+  
+  Position? _userPosition;
+
+  List<POI> _currentFavoritesPois = [];
+  List<Roteiro> _currentFavoritesRoteiros = [];
+  Set<String> _poisWith360 = {};
 
   @override
   void initState() {
     super.initState();
+    _getUserLocation();
     _cleanupInvalidFavorites();
+    _fetchPanoramas();
+  }
+
+  Future<void> _fetchPanoramas() async {
+    try {
+      final snap = await FirebaseFirestore.instance.collection('panoramas').get();
+      if (mounted) {
+        setState(() {
+          _poisWith360 = snap.docs.map((d) => d.id).toSet();
+        });
+      }
+    } catch (e) {
+      // ignorar
+    }
+  }
+
+  Future<void> _getUserLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      if (mounted) {
+        setState(() {
+          _userPosition = position;
+        });
+      }
+    } catch (e) {
+      debugPrint("Erro ao obter localização: $e");
+    }
   }
 
   Future<void> _cleanupInvalidFavorites() async {
@@ -282,6 +325,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   initialRoteiroFilter: _roteiroFilter,
                   showPoiFilters: true,
                   showRoteiroFilters: true,
+                  availablePoiCategories: _currentFavoritesPois.map((e) => e.categoria).where((e) => e.isNotEmpty).toSet().toList().cast<String>()..sort(),
+                  availableRoteiroCategories: _currentFavoritesRoteiros.map((r) => r.categoria).where((c) => c.isNotEmpty).toSet().toList().cast<String>()..sort(),
                   onApply: (poiF, rotF) {
                     setState(() {
                       if (poiF != null) _poiFilter = poiF;
@@ -325,6 +370,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         }
 
         final allFavorites = snapshot.data != null ? _favoritesService.mapPoisFromSnapshot(snapshot.data!) : <POI>[];
+        
+        for (var poi in allFavorites) {
+          poi.tem360 = _poisWith360.contains(poi.id);
+        }
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _currentFavoritesPois.length != allFavorites.length) {
+            _currentFavoritesPois = allFavorites;
+          }
+        });
 
         if (allFavorites.isEmpty && _searchQuery.isEmpty) {
           return Center(
@@ -384,7 +439,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     ));
                   }
                 },
-                child: PoiCard(poi: poi),
+                child: PoiCard(poi: poi, userPosition: _userPosition),
               );
             },
           ),
@@ -420,6 +475,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         }
 
         final allFavorites = snapshot.data != null ? _favoritesService.mapRoteirosFromSnapshot(snapshot.data!) : <Roteiro>[];
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _currentFavoritesRoteiros.length != allFavorites.length) {
+            _currentFavoritesRoteiros = allFavorites;
+          }
+        });
 
         if (allFavorites.isEmpty && _searchQuery.isEmpty) {
           return Center(
@@ -528,7 +588,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               borderRadius: BorderRadius.circular(10),
               child: coverImage != null && coverImage.isNotEmpty
                 ? (coverImage.startsWith('http') 
-                    ? Image.network(coverImage, fit: BoxFit.cover, errorBuilder: (_,__,___) => Icon(Icons.place, color: kPrimaryGreen, size: 22))
+                    ? CachedNetworkImage(imageUrl: coverImage, fit: BoxFit.cover, errorWidget: (_,__,___) => Icon(Icons.place, color: kPrimaryGreen, size: 22))
                     : Image.file(File(coverImage), fit: BoxFit.cover, errorBuilder: (_,__,___) => Icon(Icons.place, color: kPrimaryGreen, size: 22)))
                 : Icon(Icons.place, color: kPrimaryGreen, size: 22),
             ),

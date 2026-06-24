@@ -1,0 +1,5 @@
+﻿LATITUDE: 39.813588
+LONGITUDE: -7.493287
+CATEGORIA: Formação Geológica
+DESC_PT: Um ponto de interesse marcante que reflete a riqueza histórica e natural do Maciço Granítico de Castelo Branco, permitindo observar as impressionantes geoformas graníticas da região.
+DESC_EN: A striking point of interest reflecting the historical and natural richness of the Castelo Branco Granite Massif, offering a close-up view of the region's impressive granite landforms.

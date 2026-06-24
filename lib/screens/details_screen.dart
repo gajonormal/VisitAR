@@ -1,7 +1,8 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/poi.dart';
@@ -11,7 +12,6 @@ import '../screens/services/download_service.dart';
 import '../screens/services/favorites_service.dart';
 import '../screens/services/passport_service.dart';
 import '../../models/badge_model.dart';
-import 'model_viewer_screen.dart'; 
 import 'login_screen.dart';
 import 'panorama_screen.dart';
 import '../models/roteiro.dart';
@@ -89,11 +89,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
   Future<void> _checkPanorama() async {
     try {
-      var pano = await DatabaseService().getPanoramaForPoi(widget.poi.id);
+      Panorama? pano = await DownloadService().getOfflinePanorama(widget.poi.id);
       
-      if (pano == null && FirebaseAuth.instance.currentUser != null) {
-        // Só tenta criar panorama de teste se o utilizador estiver autenticado
-        await DatabaseService().seedTestPanorama(widget.poi.id);
+      if (pano == null) {
         pano = await DatabaseService().getPanoramaForPoi(widget.poi.id);
       }
       
@@ -441,6 +439,11 @@ class _DetailsScreenState extends State<DetailsScreen> {
       // Apagar Modelo 3D
       await downloadService.deleteFile("poi_${widget.poi.id}.glb");
       
+      // Apagar Panorama
+      await downloadService.deleteFile("poi_${widget.poi.id}_panorama.jpg");
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('offline_panorama_${widget.poi.id}');
+
       // Apagar Imagens (baseado no índice)
       for (int i = 0; i < widget.poi.imagens.length; i++) {
         await downloadService.deleteFile("poi_${widget.poi.id}_img_$i.jpg");
@@ -470,12 +473,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
     setState(() => isLoadingDownload = true);
     
     try {
-      // 1. Baixar Modelo 3D
-      String? localModelPath;
-      if (widget.poi.urlModeloAr.isNotEmpty) {
-        String modelFileName = "poi_${widget.poi.id}.glb";
-        localModelPath = await downloadService.downloadFile(widget.poi.urlModeloAr, modelFileName);
-      }
 
       // 2. Baixar Imagens
       List<String> localImagePaths = [];
@@ -493,9 +490,28 @@ class _DetailsScreenState extends State<DetailsScreen> {
         if (aUrl.isNotEmpty && aUrl.startsWith('http')) {
           String audioName = "poi_${widget.poi.id}_audio_$lang.mp3";
           String? localAudioPath = await downloadService.downloadFile(aUrl, audioName);
-          if (localAudioPath != null) localAudioMap[lang] = localAudioPath;
+          if (localAudioPath != null) {
+            localAudioMap[lang] = localAudioPath;
+          } else {
+            localAudioMap[lang] = aUrl; // fallback
+          }
         } else {
           localAudioMap[lang] = aUrl;
+        }
+      }
+
+      // 2.6 Baixar Panorama (se existir)
+      var panorama = await DatabaseService().getPanoramaForPoi(widget.poi.id);
+      if (panorama != null && panorama.urlImagem.isNotEmpty) {
+        String panoName = "poi_${widget.poi.id}_panorama.jpg";
+        String? localPanoPath = await downloadService.downloadFile(panorama.urlImagem, panoName);
+        if (localPanoPath != null) {
+          Panorama offlinePano = Panorama(
+            id: panorama.id,
+            urlImagem: localPanoPath,
+            marcadores: panorama.marcadores,
+          );
+          await downloadService.saveOfflinePanorama(offlinePano);
         }
       }
 
@@ -508,8 +524,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
         imagens: localImagePaths, // <--- Lista de caminhos no telemóvel
         mapaDescricao: widget.poi.mapaDescricao,
         mapaAudio: localAudioMap,
-        urlModeloAr: localModelPath ?? '', // <--- Caminho no telemóvel
-        escalaAr: widget.poi.escalaAr,
       );
 
       // 4. Guardar JSON
@@ -541,32 +555,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('nome_${widget.poi.id}');
   }
-
-  void _open3DViewer() {
-    String sourcePath;
-    
-    // Verifica se é caminho local (não começa por http) ou online
-    bool isLocalFile = !_displayPoi.urlModeloAr.startsWith('http');
-
-    if (isDownloaded && isLocalFile) {
-      sourcePath = _displayPoi.urlModeloAr;
-    } else if (_hasInternet && _displayPoi.urlModeloAr.isNotEmpty) {
-      sourcePath = _displayPoi.urlModeloAr; 
-    } else {
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ModelViewerScreen(
-          filePath: sourcePath,
-          title: _displayPoi.nome,
-        ),
-      ),
-    );
-  }
-
   void _openFullDescriptionPage() {
     showModalBottomSheet(
       context: context,
@@ -679,7 +667,6 @@ class _DetailsScreenState extends State<DetailsScreen> {
                       SizedBox(height: 25),
                       _buildNavigationButton(),
                       SizedBox(height: 15),
-                      _build3DButton(),
                       SizedBox(height: 40),
                     ],
                   ),
@@ -865,10 +852,11 @@ if (isLoadingDownload)
                   borderRadius: BorderRadius.circular(20),
                   child: isNetwork 
                     // SE FOR ONLINE
-                    ? Image.network(
-                        imgPath, fit: BoxFit.cover,
-                        loadingBuilder: (context, child, p) => p == null ? child : Center(child: CircularProgressIndicator(color: kPrimaryGreen)),
-                        errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300], child: Icon(Icons.broken_image)),
+                    ? CachedNetworkImage(
+                        imageUrl: imgPath,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Center(child: CircularProgressIndicator(color: kPrimaryGreen)),
+                        errorWidget: (context, url, error) => Container(color: Colors.grey[300], child: Icon(Icons.broken_image)),
                       )
                     // SE FOR LOCAL (OFFLINE)
                     : Image.file(
@@ -907,7 +895,7 @@ if (isLoadingDownload)
       descricao: _displayPoi.description,
       imagemCapa: _displayPoi.imagens.isNotEmpty ? _displayPoi.imagens.first : '',
       poiIds: [_displayPoi.id],
-      dificuldade: 'N/A',
+      categoria: 'Geral',
       duracao: 'N/A',
       distancia: 0.0,
       criadorId: 'app_navigation',
@@ -945,49 +933,7 @@ if (isLoadingDownload)
         ),
       ),
     );
-  }
-
-  Widget _build3DButton() {
-    bool hasModelUrl = _displayPoi.urlModeloAr.isNotEmpty;
-    bool isButtonEnabled = hasModelUrl && (isDownloaded || _hasInternet);
-
-    String buttonText;
-    if (!hasModelUrl) {
-      buttonText = AppLocalizations.of(context)!.no3dModel;
-    } else if (isButtonEnabled) {
-      buttonText = AppLocalizations.of(context)!.view3dModel;
-    } else {
-      buttonText = AppLocalizations.of(context)!.no3dModel;
-    }
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 5))],
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: ElevatedButton(
-        onPressed: isButtonEnabled ? _open3DViewer : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          disabledForegroundColor: Colors.grey, disabledBackgroundColor: Colors.grey[100], 
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.view_in_ar, color: isButtonEnabled ? kPrimaryGreen : Colors.grey),
-            SizedBox(width: 10),
-            Text(buttonText, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isButtonEnabled ? kPrimaryGreen : Colors.grey)),
-          ],
-        ),
-      ),
-    );
-  }
-}
+  }}
 // --- COLA ISTO NO FINAL DO FICHEIRO, FORA DA CLASSE DETAILSSCREEN ---
 
 class _FullDescriptionSheet extends StatefulWidget {
@@ -1073,7 +1019,15 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
     } else {
       String audioUrl = widget.poi.getAudioUrl(_selectedLang);
       if (audioUrl.isNotEmpty) {
-        await _audioPlayer.resume();
+        if (_position == Duration.zero) {
+          if (audioUrl.startsWith('http')) {
+            await _audioPlayer.play(UrlSource(audioUrl));
+          } else {
+            await _audioPlayer.play(DeviceFileSource(audioUrl));
+          }
+        } else {
+          await _audioPlayer.resume();
+        }
       }
     }
   }
@@ -1214,3 +1168,4 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
     );
   }
 }
+

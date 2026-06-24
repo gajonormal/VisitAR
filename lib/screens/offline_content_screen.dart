@@ -236,6 +236,8 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
                   initialRoteiroFilter: _roteiroFilter,
                   showPoiFilters: true,
                   showRoteiroFilters: true,
+                  availablePoiCategories: _offlinePois.map((e) => e.categoria).where((e) => e.isNotEmpty).toSet().toList().cast<String>()..sort(),
+                  availableRoteiroCategories: _offlineRoteiros.map((r) => r.categoria).where((c) => c.isNotEmpty).toSet().toList().cast<String>()..sort(),
                   onApply: (poiF, rotF) {
                     setState(() {
                       if (poiF != null) _poiFilter = poiF;

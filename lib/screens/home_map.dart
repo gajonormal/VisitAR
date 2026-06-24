@@ -1,10 +1,11 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui; // Necessário para desenhar os marcadores
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Para ByteData
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:geolocator/geolocator.dart';
 import '../screens/services/database_services.dart';
 import '../screens/services/download_service.dart';
@@ -19,7 +20,7 @@ import '../screens/services/routing_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/services/favorites_service.dart';
 import 'details_screen.dart';
-import 'ar_screen.dart';
+
 import 'profile_screen.dart';
 import 'explore_screen.dart';
 import 'favorites_screen.dart';
@@ -406,6 +407,7 @@ class _HomeMapState extends State<HomeMap> {
         _numberedMarkersNormal = numNormals;
         _numberedMarkersSelected = numSelected;
       });
+      _updateMarkers(); // Ensure markers are drawn if data loaded first
     }
   }
 
@@ -480,10 +482,13 @@ class _HomeMapState extends State<HomeMap> {
       }
     } else {
       for (var poi in _allPois) {
+        if (!_poiFilter.apply(poi)) continue;
+        
         bool isSelected = false;
         if (_selectedPoiIndex != -1 && _selectedPoiIndex < _visiblePois.length) {
           isSelected = _visiblePois[_selectedPoiIndex].id == poi.id;
         }
+
         newMarkers.add(Marker(
           markerId: MarkerId(poi.id),
           position: poi.localizacao,
@@ -572,7 +577,7 @@ class _HomeMapState extends State<HomeMap> {
       descricao: poi.description,
       imagemCapa: poi.imagens.isNotEmpty ? poi.imagens.first : '',
       poiIds: [poi.id],
-      dificuldade: 'N/A',
+      categoria: 'Geral',
       duracao: 'N/A',
       distancia: 0.0,
       criadorId: 'app_navigation',
@@ -647,10 +652,12 @@ class _HomeMapState extends State<HomeMap> {
     // 2. Os cartões só aparecem se o teclado estiver FECHADO
     bool areCardsVisible = _selectedPoiIndex != -1 && _visiblePois.isNotEmpty && !isKeyboardOpen;
 
-    return Scaffold(
-      extendBody: true,
-      // 3. Isto impede que o layout suba quando o teclado abre
-      resizeToAvoidBottomInset: false, 
+    return Focus(
+      autofocus: true,
+      child: Scaffold(
+        extendBody: true,
+        // 3. Isto impede que o layout suba quando o teclado abre
+        resizeToAvoidBottomInset: false, 
       
       body: IndexedStack(
         index: _selectedIndex,
@@ -662,7 +669,7 @@ class _HomeMapState extends State<HomeMap> {
           Stack(
             children: [
               GoogleMap(
-                initialCameraPosition: CameraPosition(target: _initialPosition, zoom: 16),
+                initialCameraPosition: CameraPosition(target: _initialPosition, zoom: 17.5),
                 markers: _markers,
                 polylines: _polylines,
                 style: _mapStyle,
@@ -702,19 +709,6 @@ class _HomeMapState extends State<HomeMap> {
                 ),
               ),
 
-              // BOTÃO AR
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,
-                bottom: activeRoteiroNotifier.value != null ? 220 : 100, 
-                // Se teclado aberto, cartões visíveis OU em modo navegação, esconde botão AR
-                right: (areCardsVisible || isKeyboardOpen || activeRoteiroNotifier.value != null) ? -200 : 20, 
-                child: FloatingActionButton.extended(
-                  heroTag: "ar_btn", backgroundColor: kPrimaryGreen,
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ArScreen())),
-                  icon: Icon(Icons.camera_alt, color: Colors.white),
-                  label: Text(AppLocalizations.of(context)!.arMode, style: TextStyle(color: Colors.white)),
-                ),
-              ),
 
               // BOTÃO NAVEGAR — aparece quando há POI selecionado
               AnimatedPositioned(
@@ -737,16 +731,35 @@ class _HomeMapState extends State<HomeMap> {
                             padding: const EdgeInsets.symmetric(horizontal: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
+                            // Buscar sempre a versão mais recente do 360 antes de abrir para ter os marcadores atualizados!
+                            var freshPano = await DatabaseService().getPanoramaForPoi(_visiblePois[_selectedPoiIndex].id);
+                            if (!mounted) return;
+                            
+                            var panoToPass = _selectedPanorama!;
+                            if (freshPano != null) {
+                              panoToPass = freshPano;
+                              setState(() {
+                                _selectedPanorama = freshPano;
+                                _panoramasCache[_visiblePois[_selectedPoiIndex].id] = freshPano;
+                              });
+                            }
+                            
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => PanoramaScreen(
-                                  panorama: _selectedPanorama!,
+                                  panorama: panoToPass,
                                   initialPoiId: _visiblePois[_selectedPoiIndex].id,
                                 ),
                               ),
-                            );
+                            ).then((_) {
+                              if (mounted) {
+                                FocusScope.of(context).unfocus();
+                                _searchFocusNode.unfocus();
+                                setState(() { _isSearchFocused = false; });
+                              }
+                            });
                           },
                           icon: Icon(Icons.threesixty, size: 18),
                           label: Text(AppLocalizations.of(context)!.view360, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -821,6 +834,7 @@ class _HomeMapState extends State<HomeMap> {
         ],
       ),
       bottomNavigationBar: activeRoteiroNotifier.value != null ? null : _buildBottomNav(),
+    ),
     );
   }
 
@@ -1084,6 +1098,7 @@ class _HomeMapState extends State<HomeMap> {
                           initialPoiFilter: _poiFilter,
                           showPoiFilters: true,
                           showRoteiroFilters: false,
+                          availablePoiCategories: _allPois.map((e) => e.categoria).where((e) => e.isNotEmpty).toSet().toList().cast<String>()..sort(),
                           onApply: (poiF, rotF) {
                             if (poiF != null) {
                               setState(() {
@@ -1311,12 +1326,12 @@ class _HomeMapState extends State<HomeMap> {
                     children: [
                        ClipRRect(
                          borderRadius: BorderRadius.circular(10),
-                         child: Image.network(
-                           _selectedTopPoi!.imagens.isNotEmpty ? _selectedTopPoi!.imagens.first : '', 
+                         child: CachedNetworkImage(
+                           imageUrl: _selectedTopPoi!.imagens.isNotEmpty ? _selectedTopPoi!.imagens.first : '', 
                            width: 50, 
                            height: 50, 
                            fit: BoxFit.cover, 
-                           errorBuilder: (_,__,___) => Container(
+                           errorWidget: (_,__,___) => Container(
                              width: 50, height: 50, color: Colors.grey.shade200,
                              child: Icon(Icons.image_not_supported, color: Colors.grey),
                            )
@@ -1499,7 +1514,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
         color: Colors.grey[200],
       );
     } else if (imagePath.startsWith('http')) {
-      imageWidget = Image.network(imagePath, fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.grey[200]));
+      imageWidget = CachedNetworkImage(imageUrl: imagePath, fit: BoxFit.cover, errorWidget: (c,e,s) => Container(color: Colors.grey[200]));
     } else {
       imageWidget = Image.file(File(imagePath), fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(color: Colors.grey[200]));
     }

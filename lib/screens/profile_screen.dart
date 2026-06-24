@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import 'services/language_provider.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
 import 'services/roteiros_service.dart';
+import 'services/download_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/roteiro.dart';
 import 'roteiro_details_screen.dart';
 
@@ -110,7 +112,7 @@ class ProfileScreen extends StatelessWidget {
                       child: CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.grey[200],
-                        backgroundImage: foto.isNotEmpty ? NetworkImage(foto) : null,
+                        backgroundImage: foto.isNotEmpty ? CachedNetworkImageProvider(foto) : null,
                         child: foto.isEmpty
                             ? Icon(Icons.person, size: 50, color: Colors.grey[400])
                             : null,
@@ -399,6 +401,10 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
     return StreamBuilder<List<Roteiro>>(
       stream: RoteirosService().getUserRoteiros(),
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF0F9D58)));
+        }
+
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           // Se não houver roteiros, mostramos um placeholder apelativo
           return Column(
@@ -419,7 +425,7 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
                     SizedBox(width: 15),
                     Expanded(
                       child: Text(
-                        AppLocalizations.of(context)!.opening, // Ou um texto como "Ainda não criaste roteiros"
+                        AppLocalizations.of(context)!.noPersonalItineraries,
                         style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ),
@@ -459,10 +465,10 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
                           fit: StackFit.expand,
                           children: [
                             if (roteiro.imagemCapa.trim().isNotEmpty)
-                              Image.network(
-                                roteiro.imagemCapa,
+                              CachedNetworkImage(
+                                imageUrl: roteiro.imagemCapa,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                                errorWidget: (context, url, error) => const SizedBox.shrink(),
                               ),
                             // Overlay escuro
                             Container(color: Colors.black.withValues(alpha: 0.3)),

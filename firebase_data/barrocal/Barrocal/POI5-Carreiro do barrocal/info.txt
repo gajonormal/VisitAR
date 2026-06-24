@@ -1,0 +1,5 @@
+﻿LATITUDE: 39.813725
+LONGITUDE: -7.493682
+CATEGORIA: Carreiro
+DESC_PT: Caminho desenhado no sítio, adaptando-se às singularidades topográficas e geológicas do lugar, permitindo contemplar e viver a paisagem do Barrocal.
+DESC_EN: A path laid out on site, adapting to the area's topographical and geological features, allowing visitors to contemplate and experience the Barrocal landscape.

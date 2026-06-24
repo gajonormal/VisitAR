@@ -1,59 +1,58 @@
+import 'package:visitar_teste/models/roteiro.dart';
+
 class POIFilter {
   final String categoria;
-  final bool temModelo3D;
-  final bool temAudio;
+  final bool tem360;
 
   POIFilter({
     this.categoria = 'Tudo',
-    this.temModelo3D = false,
-    this.temAudio = false,
+    this.tem360 = false,
   });
 
-  bool get isActive => categoria != 'Tudo' || temModelo3D || temAudio;
+  bool get isActive => categoria != 'Tudo' || tem360;
 
   POIFilter copyWith({
     String? categoria,
-    bool? temModelo3D,
-    bool? temAudio,
+    bool? tem360,
   }) {
     return POIFilter(
       categoria: categoria ?? this.categoria,
-      temModelo3D: temModelo3D ?? this.temModelo3D,
-      temAudio: temAudio ?? this.temAudio,
+      tem360: tem360 ?? this.tem360,
     );
   }
 
-  // Novo método para verificar se um POI passa no filtro
+  // Novo mÃ©todo para verificar se um POI passa no filtro
   bool apply(dynamic poi) {
     if (!isActive) return true;
     if (categoria != 'Tudo' && poi.categoria.toLowerCase() != categoria.toLowerCase()) return false;
-    if (temModelo3D && (poi.urlModeloAr == null || poi.urlModeloAr.isEmpty)) return false;
-    if (temAudio && (poi.mapaAudio == null || poi.mapaAudio.isEmpty)) return false;
+    if (tem360 && !poi.tem360) return false;
     return true;
   }
 }
 
 class RoteiroFilter {
-  final String dificuldade;
+  final String categoria;
+  final bool offlineOnly;
 
   RoteiroFilter({
-    this.dificuldade = 'Qualquer',
+    this.categoria = 'Qualquer',
+    this.offlineOnly = false,
   });
 
-  bool get isActive => dificuldade != 'Qualquer';
+  bool get isActive => categoria != 'Qualquer' || offlineOnly;
 
   RoteiroFilter copyWith({
-    String? dificuldade,
+    String? categoria,
+    bool? offlineOnly,
   }) {
     return RoteiroFilter(
-      dificuldade: dificuldade ?? this.dificuldade,
+      categoria: categoria ?? this.categoria,
+      offlineOnly: offlineOnly ?? this.offlineOnly,
     );
   }
 
-  // Novo método para verificar se um Roteiro passa no filtro
-  bool apply(dynamic roteiro) {
-    if (!isActive) return true;
-    if (dificuldade != 'Qualquer' && roteiro.dificuldade.toLowerCase() != dificuldade.toLowerCase()) return false;
+  bool apply(Roteiro roteiro) {
+    if (categoria != 'Qualquer' && roteiro.categoria.toLowerCase() != categoria.toLowerCase()) return false;
     return true;
   }
 }

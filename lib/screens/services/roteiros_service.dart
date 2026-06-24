@@ -80,7 +80,7 @@ class RoteirosService {
       descricao: roteiro.descricao,
       imagemCapa: roteiro.imagemCapa,
       poiIds: roteiro.poiIds,
-      dificuldade: roteiro.dificuldade,
+      categoria: roteiro.categoria,
       duracao: roteiro.duracao,
       distancia: roteiro.distancia,
       criadorId: _uid!,

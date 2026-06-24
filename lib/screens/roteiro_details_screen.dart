@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/roteiro.dart';
 import '../../models/poi.dart';
 import '../widgets/custom_button.dart';
@@ -528,10 +529,11 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
         width: double.infinity,
         child: _currentRoteiro.imagemCapa.isNotEmpty
             ? (_currentRoteiro.imagemCapa.startsWith('http')
-                ? Image.network(
-                    _currentRoteiro.imagemCapa, 
+                ? CachedNetworkImage(
+                    imageUrl: _currentRoteiro.imagemCapa, 
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
+                    placeholder: (context, url) => Center(child: CircularProgressIndicator(color: kPrimaryGreen)),
+                    errorWidget: (context, url, error) => Container(color: Colors.grey[300], child: Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
                   )
                 : Image.file(
                     File(_currentRoteiro.imagemCapa), 
@@ -650,7 +652,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                             width: 45, height: 45,
                             child: img != null 
                               ? (img.startsWith('http') 
-                                  ? Image.network(img, fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(color: Colors.grey[200], child: Icon(Icons.place, color: Colors.grey, size: 20))) 
+                                  ? CachedNetworkImage(imageUrl: img, fit: BoxFit.cover, errorWidget: (_,__,___) => Container(color: Colors.grey[200], child: Icon(Icons.place, color: Colors.grey, size: 20)))
                                   : Image.file(File(img), fit: BoxFit.cover, errorBuilder: (_,__,___) => Container(color: Colors.grey[200], child: Icon(Icons.place, color: Colors.grey, size: 20))))
                               : Container(color: Colors.grey[200]),
                           ),

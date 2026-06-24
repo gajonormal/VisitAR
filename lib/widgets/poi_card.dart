@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/poi.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../screens/details_screen.dart';
 
 class PoiCard extends StatelessWidget {
@@ -15,7 +16,7 @@ class PoiCard extends StatelessWidget {
   });
 
   String _formatDistance(POI poi) {
-    if (userPosition == null) return 'â€” km';
+    if (userPosition == null) return '- km';
     double dist = Geolocator.distanceBetween(
         userPosition!.latitude, userPosition!.longitude,
         poi.localizacao.latitude, poi.localizacao.longitude);
@@ -59,7 +60,7 @@ class PoiCard extends StatelessWidget {
                 child: imagePath == null || imagePath.isEmpty
                     ? Container(color: Colors.grey[200], child: Icon(Icons.landscape, color: Colors.grey[400]))
                     : imagePath.startsWith('http')
-                        ? Image.network(imagePath, fit: BoxFit.cover, errorBuilder: (_, __, e) => Container(color: Colors.grey[200]))
+                        ? CachedNetworkImage(imageUrl: imagePath, fit: BoxFit.cover, errorWidget: (_, __, ___) => Container(color: Colors.grey[200]))
                         : Image.file(File(imagePath), fit: BoxFit.cover, errorBuilder: (_, __, e) => Container(color: Colors.grey[200])),
               ),
             ),

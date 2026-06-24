@@ -1,0 +1,5 @@
+﻿LATITUDE: 39.813944
+LONGITUDE: -7.493452
+CATEGORIA: Mirante
+DESC_PT: Eis que nos surge a “cereja” granítica no topo do domo do Barrocal! A 425 metros de altitude e a mais de 40 metros acima da Meseta, as paisagens são extensas e variadas, culminando nas montanhas que as limitam a ocidente, norte e oriente, e no infinito horizonte para sul. O vértice geodésico, conhecido popularmente como talefe, que nos surge no ponto mais elevado, é um sinal que indica uma posição cartográfica exacta e que forma parte de uma rede de triangulação que começou a ser construída em Portugal em 1790.
+DESC_EN: Here rises the granite “cherry on top” of the Barrocal dome! At 425 metres of altitude, and over 40 metres above the surrounding plateau, the views are vast and varied, culminating in the mountains that border it to the west, north and east, and the endless horizon to the south. The geodesic marker at the highest point, popularly known as the “talefe”, indicates an exact cartographic position and is part of a triangulation network whose construction began in Portugal in 1790.

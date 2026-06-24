@@ -1,0 +1,5 @@
+﻿LATITUDE: 39.812508
+LONGITUDE: -7.492710
+CATEGORIA: Mirante
+DESC_PT: Local de vista sobre o Santuário de Nossa Senhora de Mércoles, com origens templárias que remontam ao século XIII. O santuário é o centro de uma das romarias mais afamadas da região, iniciada em 1601 para cumprimento de promessa após uma epidemia.
+DESC_EN: A viewpoint overlooking the Sanctuary of Nossa Senhora de Mércoles, with Templar origins dating back to the 13th century. The sanctuary is the centre of one of the region's most famous pilgrimages, begun in 1601 in fulfilment of a vow made after an epidemic.

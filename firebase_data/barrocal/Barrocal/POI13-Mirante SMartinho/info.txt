@@ -1,0 +1,5 @@
+﻿LATITUDE: 39.811253
+LONGITUDE: -7.492143
+CATEGORIA: Mirante
+DESC_PT: Rompendo do plano de Castelo Branco, cresce o monte de S. Martinho aos 435 metros de altitude. Com ocupação humana desde o Neolítico, foi um povoado fortificado até ao período Romano. No cimo, observa-se a Capela de S. Martinho, de origem medieval.
+DESC_EN: Rising from the plain of Castelo Branco, the hill of S. Martinho stands at 435 metres. Inhabited since the Neolithic period, it was a fortified settlement up until Roman times. At the top stands the Chapel of S. Martinho, of medieval origin.
