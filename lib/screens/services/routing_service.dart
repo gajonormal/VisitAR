@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -80,5 +82,37 @@ class RoutingService {
     }
     
     return fullRoute;
+  }
+
+  /// Carrega um trilho pré-feito a partir de um asset GeoJSON local.
+  /// O GeoJSON deve ter uma feature do tipo LineString.
+  /// Retorna a lista de pontos (LatLng) que formam o trilho.
+  static Future<List<LatLng>> loadTrailFromAsset(String assetPath) async {
+    try {
+      final String jsonStr = await rootBundle.loadString(assetPath);
+      final Map<String, dynamic> geoJson = json.decode(jsonStr);
+
+      final features = geoJson['features'] as List;
+      if (features.isEmpty) return [];
+
+      // Procura a primeira feature com geometria LineString
+      for (final feature in features) {
+        final geometry = feature['geometry'] as Map<String, dynamic>?;
+        if (geometry == null) continue;
+
+        if (geometry['type'] == 'LineString') {
+          final coords = geometry['coordinates'] as List;
+          return coords.map((c) {
+            // GeoJSON usa [longitude, latitude]
+            return LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble());
+          }).toList();
+        }
+      }
+
+      return [];
+    } catch (e) {
+      debugPrint('Erro ao carregar trilho do asset $assetPath: $e');
+      return [];
+    }
   }
 }

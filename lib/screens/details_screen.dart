@@ -766,12 +766,6 @@ Widget _buildHeaderContent() {
                     onTap: _toggleFavorite,
                   ),
             SizedBox(width: 8),
-            _buildCircleButton(
-              icon: isInItinerary ? Icons.playlist_add_check : Icons.playlist_add,
-              color: isInItinerary ? kPrimaryGreen : Colors.grey,
-              onTap: _toggleItinerary,
-            ),
-            SizedBox(width: 8),
             // BOTÃO PASSAPORTE
             _isRegisteringVisit
                 ? SizedBox(width: 35, height: 35, child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))

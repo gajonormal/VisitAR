@@ -53,7 +53,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
   Future<void> _checkAndFetchFullRoteiro() async {
     // Se o Roteiro foi carregado a partir de favoritos antigos ou offline,
     // o criadorId pode estar vazio. Precisamos de ir buscar a versão completa.
-    if (_currentRoteiro.criadorId.isEmpty || _currentRoteiro.criadorId == 'admin' && _currentRoteiro.descricao.isEmpty) {
+    if (_currentRoteiro.criadorId.isEmpty || _currentRoteiro.criadorId == 'admin' && _currentRoteiro.mapaDescricao.isEmpty) {
       try {
         final doc = await FirebaseFirestore.instance.collection('roteiros').doc(_currentRoteiro.id).get();
         if (doc.exists && mounted) {
@@ -364,7 +364,11 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                   Text(AppLocalizations.of(context)!.descriptionLabel, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                   SizedBox(height: 10),
                   Text(
-                    _currentRoteiro.descricao.isEmpty ? AppLocalizations.of(context)!.noDescription : _currentRoteiro.descricao,
+                    () {
+                      final lang = Localizations.localeOf(context).languageCode;
+                      final desc = _currentRoteiro.getDescricao(lang);
+                      return desc.isEmpty ? AppLocalizations.of(context)!.noDescription : desc;
+                    }(),
                     style: TextStyle(fontSize: 15, height: 1.5, color: Colors.grey[800]),
                   ),
                 ],

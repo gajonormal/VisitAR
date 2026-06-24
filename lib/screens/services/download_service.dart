@@ -196,7 +196,7 @@ class DownloadService {
       final localRoteiro = Roteiro(
         id: roteiro.id,
         titulo: roteiro.titulo,
-        descricao: roteiro.descricao,
+        mapaDescricao: roteiro.mapaDescricao,
         imagemCapa: localCapa,
         poiIds: roteiro.poiIds,
         categoria: roteiro.categoria,
@@ -205,6 +205,7 @@ class DownloadService {
         criadorId: roteiro.criadorId,
         dataCriacao: roteiro.dataCriacao,
         routePoints: fullRoute.isNotEmpty ? fullRoute : null,
+        trailAsset: roteiro.trailAsset,
       );
       await saveOfflineRoteiroData(localRoteiro);
 
