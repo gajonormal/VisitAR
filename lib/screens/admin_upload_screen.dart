@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 
 class AdminUploadScreen extends StatefulWidget {
   const AdminUploadScreen({super.key});
@@ -16,6 +17,15 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
   int _current = 0;
   int _total = 0;
   List<String> _logs = [];
+  File? _capaBarcocalFile; // Imagem de capa para o roteiro do Barrocal
+
+  Future<void> _pickCapaBarrocal() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (picked != null) {
+      setState(() => _capaBarcocalFile = File(picked.path));
+    }
+  }
 
   void _addLog(String msg) {
     setState(() {
@@ -167,6 +177,95 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
     });
   }
 
+  Future<void> _criarRoteiroBarrocal() async {
+    setState(() {
+      _isUploading = true;
+      _status = 'A criar roteiro do Barrocal...';
+      _logs.clear();
+    });
+
+    try {
+      // IDs dos POIs na ordem definida pelo utilizador
+      // (gerados pelo upload: folderName.replaceAll(' ', '_').toLowerCase())
+      final List<String> poiIds = [
+        'poi1-chave_do_barrocal',
+        'poi2-mirante_de_castelo_branco',
+        'poi3-pedra_da_rondoa',
+        'poi17-cogumelo_gigante_do_barrocal',
+        'poi4-mirante_do_barrocal',
+        'poi5-carreiro_do_barrocal',
+        'poi6-santuario_rupestre',
+        'poi7-tunel_do_lagarto',
+        'poi8-circulo_do_domo',
+        'poi9-carreiro_do_lagarto',
+        'poi10-mirante_do_carvalhal',
+        'poi11-observatorio_dos_abelharucos',
+        'poi12-mirante_da_raia',
+        'poi13-mirante_smartinho',
+        'poi18-bloco_pedestal',
+        'poi14-caminho_dos_penedos',
+        'poi15-mirante_da_sr_de_mercules',
+        'poi16-atalho_da_quinta',
+      ];
+
+      _addLog('A verificar se os POIs existem no Firestore...');
+      // Verificar que os POIs existem
+      int found = 0;
+      for (final id in poiIds) {
+        final doc = await FirebaseFirestore.instance.collection('pois').doc(id).get();
+        if (doc.exists) {
+          found++;
+        } else {
+          _addLog('AVISO: POI "$id" não encontrado no Firestore!');
+        }
+      }
+      _addLog('$found/${poiIds.length} POIs encontrados.');
+
+      _addLog('A criar documento do roteiro...');
+
+      // Upload da imagem de capa (se selecionada)
+      String capaUrl = '';
+      if (_capaBarcocalFile != null) {
+        _addLog('A enviar imagem de capa...');
+        final fileName = 'roteiros/barrocal_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final ref = FirebaseStorage.instance.ref().child(fileName);
+        await ref.putFile(_capaBarcocalFile!);
+        capaUrl = await ref.getDownloadURL();
+        _addLog('Imagem de capa enviada.');
+      }
+
+      await FirebaseFirestore.instance.collection('roteiros').add({
+        'titulo': 'Roteiro do Parque do Barrocal',
+        'mapaDescricao': {
+          'pt': 'Percorra os pontos mais emblemáticos do Parque do Barrocal, descobrindo as suas formações geológicas únicas, mirantes panorâmicos e a rica biodiversidade deste espaço natural de Castelo Branco.',
+          'en': 'Explore the most iconic spots of Barrocal Park, discovering its unique geological formations, panoramic viewpoints and the rich biodiversity of this natural space in Castelo Branco.',
+        },
+        'categoria': 'Trilho',
+        'duracao': '1h 30m',
+        'distancia': 2.5,
+        'criadorId': 'admin',
+        'imagemCapa': capaUrl,
+        'poiIds': poiIds,
+        'trailAsset': 'assets/roteiros/barrocal_trail.geojson',
+        'dataCriacao': DateTime.now(),
+      });
+
+      _addLog('✅ Roteiro do Barrocal criado com sucesso!');
+      _addLog('ℹ️ Lembra-te de atualizar o campo "imagemCapa" no Firebase Console com a URL da imagem.');
+
+      setState(() {
+        _status = 'Roteiro criado com sucesso!';
+        _isUploading = false;
+      });
+    } catch (e) {
+      _addLog('ERRO ao criar roteiro: $e');
+      setState(() {
+        _isUploading = false;
+        _status = 'Erro!';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,6 +279,56 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
             ElevatedButton(
               onPressed: _isUploading ? null : _startUpload,
               child: Text(_isUploading ? 'A enviar $_current de $_total...' : 'Iniciar Upload do Barrocal'),
+            ),
+            SizedBox(height: 12),
+            // Seleção de imagem de capa para o roteiro
+            GestureDetector(
+              onTap: _isUploading ? null : _pickCapaBarrocal,
+              child: Container(
+                height: 120,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade400),
+                  image: _capaBarcocalFile != null
+                      ? DecorationImage(
+                          image: FileImage(_capaBarcocalFile!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: _capaBarcocalFile == null
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_photo_alternate_outlined, size: 36, color: Colors.grey),
+                          SizedBox(height: 6),
+                          Text('Selecionar imagem de capa do roteiro', style: TextStyle(color: Colors.grey)),
+                        ],
+                      )
+                    : Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: CircleAvatar(
+                            radius: 14,
+                            backgroundColor: Colors.black54,
+                            child: Icon(Icons.edit, color: Colors.white, size: 14),
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+            SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _isUploading ? null : _criarRoteiroBarrocal,
+              icon: Icon(Icons.route),
+              label: Text('Criar Roteiro do Barrocal'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade700,
+                foregroundColor: Colors.white,
+              ),
             ),
             SizedBox(height: 20),
             Text(_status, style: TextStyle(fontWeight: FontWeight.bold)),

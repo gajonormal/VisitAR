@@ -1,11 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/foundation.dart';
-import 'admin_upload_screen.dart';import 'services/language_provider.dart';
-// import '../screens/services/auth_service.dart'; // Descomenta se precisares
+import 'admin_upload_screen.dart';
+import 'services/language_provider.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -22,11 +22,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   User? user = FirebaseAuth.instance.currentUser;
 
-  // --- AÃ‡Ã•ES ---
+  // --- AÇÕES ---
 
   Future<void> _clearCache() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2)); // SimulaÃ§Ã£o
+    await Future.delayed(const Duration(seconds: 2)); // Simulação
     if (mounted) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -100,7 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 _buildSectionTitle(AppLocalizations.of(context)!.general),
                 
-                // 1. Gerir PermissÃµes
+                // 1. Gerir Permissões
                 _buildListOption(
                   icon: Icons.security_rounded,
                   text: AppLocalizations.of(context)!.managePermissions,
@@ -117,7 +117,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        currentLang == 'pt' ? 'PortuguÃªs' : 'English',
+                        currentLang == 'pt' ? 'Português' : 'English',
                         style: TextStyle(color: Colors.grey[600], fontSize: 14.5, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(width: 5),
@@ -148,13 +148,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.cleaning_services_rounded,
                   text: AppLocalizations.of(context)!.clearCache,
                   iconColor: Colors.orange, // Cor personalizada
-                  iconBgColor: Colors.orange.withValues(alpha: 0.1),
+                  iconBgColor: Colors.orange.withOpacity(0.1),
                   onTap: _clearCache,
                 ),
 
                 SizedBox(height: 20),
 
-                // SECÃ‡ÃƒO CONTA (Se tiver login)
+                // SECÇÃO CONTA (Se tiver login)
                 if (user != null) ...[
                   _buildSectionTitle(AppLocalizations.of(context)!.account),
                   
@@ -163,7 +163,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.delete_forever_rounded,
                     text: AppLocalizations.of(context)!.deleteAccount,
                     iconColor: Colors.red,
-                    iconBgColor: Colors.red.withValues(alpha: 0.1),
+                    iconBgColor: Colors.red.withOpacity(0.1),
                     textColor: Colors.red, // Texto vermelho para destaque
                     onTap: _deleteAccount,
                   ),
@@ -180,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SizedBox(height: 10),
                 Center(
                   child: Text(
-                    "VersÃ£o 1.0.0",
+                    "Versão 1.0.0",
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ),
@@ -190,7 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           if (_isLoading)
             Container(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withOpacity(0.3),
               child: Center(child: CircularProgressIndicator()),
             ),
         ],
@@ -198,7 +198,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // TÃ­tulo da SecÃ§Ã£o (Pequeno e cinza)
+  // Título da Secção (Pequeno e cinza)
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15, left: 5, top: 10),
@@ -209,20 +209,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- O WIDGET MÃGICO (IGUAL AO PERFIL) ---
-  // Adicionei parÃ¢metros opcionais para cores e widget final (trailing)
+  // --- O WIDGET MÁGICO (IGUAL AO PERFIL) ---
+  // Adicionei parâmetros opcionais para cores e widget final (trailing)
   Widget _buildListOption({
     required IconData icon, 
     required String text, 
     required VoidCallback onTap,
-    Widget? trailing, // Para pÃ´r o Switch
+    Widget? trailing, // Para pôr o Switch
     Color? iconColor, 
     Color? iconBgColor,
     Color? textColor,
   }) {
-    // Cores padrÃ£o (Verde) se nÃ£o forem especificadas
+    // Cores padrão (Verde) se não forem especificadas
     final Color finalIconColor = iconColor ?? kPrimaryGreen;
-    final Color finalBgColor = iconBgColor ?? kPrimaryGreen.withValues(alpha: 0.1);
+    final Color finalBgColor = iconBgColor ?? kPrimaryGreen.withOpacity(0.1);
     final Color finalTextColor = textColor ?? Colors.black;
 
     return Container(
@@ -232,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
-          BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
         ],
       ),
       child: ListTile(
@@ -241,7 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 2),
         horizontalTitleGap: 10,
 
-        // Ãcone Ã  esquerda (Bola colorida)
+        // Ícone à esquerda (Bola colorida)
         leading: Container(
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(color: finalBgColor, shape: BoxShape.circle),
@@ -254,7 +254,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5, color: finalTextColor) 
         ),
         
-        // Ãcone Ã  direita (Seta ou Switch)
+        // Ícone à direita (Seta ou Switch)
         trailing: trailing ?? Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
         
         onTap: onTap,
@@ -265,7 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Dialog para escolher idioma
   void _showLanguageDialog(BuildContext context, String currentLang, String? userId) {
     final Map<String, String> languages = {
-      'PortuguÃªs': 'pt',
+      'Português': 'pt',
       'English': 'en',
     };
 
@@ -299,7 +299,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // FunÃ§Ã£o para alterar idioma
+  // Função para alterar idioma
   void _changeLanguage(BuildContext context, String newLang, String? userId) async {
     Provider.of<LanguageProvider>(context, listen: false).changeLanguage(newLang);
 
@@ -322,5 +322,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 }
-
-

@@ -75,9 +75,9 @@ class RoteirosService {
     
     // Garantir que o criador é o utilizador atual (a não ser que seja admin a usar outro fluxo, mas para users normais é assim)
     final newRoteiro = Roteiro(
-      id: '', // Firebase gera isto
+      id: '',
       titulo: roteiro.titulo,
-      descricao: roteiro.descricao,
+      mapaDescricao: roteiro.mapaDescricao,
       imagemCapa: roteiro.imagemCapa,
       poiIds: roteiro.poiIds,
       categoria: roteiro.categoria,

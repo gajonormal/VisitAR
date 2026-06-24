@@ -287,8 +287,12 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
 
                   final filteredRoteiros = roteiros.where((roteiro) {
                     if (!_roteiroFilter.apply(roteiro)) return false;
-                    return roteiro.titulo.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                           roteiro.descricao.toLowerCase().contains(_searchQuery.toLowerCase());
+                    final q = _searchQuery.toLowerCase();
+                    final descPt = roteiro.mapaDescricao['pt']?.toLowerCase() ?? '';
+                    final descEn = roteiro.mapaDescricao['en']?.toLowerCase() ?? '';
+                    return roteiro.titulo.toLowerCase().contains(q) ||
+                           descPt.contains(q) ||
+                           descEn.contains(q);
                   }).toList();
 
                   if (filteredRoteiros.isEmpty && _searchQuery.isNotEmpty) {

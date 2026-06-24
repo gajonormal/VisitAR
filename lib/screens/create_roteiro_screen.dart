@@ -26,7 +26,8 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
 
   final _formKey = GlobalKey<FormState>();
   final _tituloController = TextEditingController();
-  final _descricaoController = TextEditingController();
+  final _descricaoPtController = TextEditingController();
+  final _descricaoEnController = TextEditingController();
   final _searchController = TextEditingController();
   
   String _categoria = 'Histórico';
@@ -49,7 +50,8 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
     super.initState();
     if (widget.roteiroToEdit != null) {
       _tituloController.text = widget.roteiroToEdit!.titulo;
-      _descricaoController.text = widget.roteiroToEdit!.descricao;
+      _descricaoPtController.text = widget.roteiroToEdit!.mapaDescricao['pt'] ?? '';
+      _descricaoEnController.text = widget.roteiroToEdit!.mapaDescricao['en'] ?? '';
       _categoria = widget.roteiroToEdit!.categoria;
     }
     _loadPois();
@@ -58,7 +60,8 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
   @override
   void dispose() {
     _tituloController.dispose();
-    _descricaoController.dispose();
+    _descricaoPtController.dispose();
+    _descricaoEnController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -176,15 +179,18 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
       }
 
       final novoRoteiro = Roteiro(
-        id: widget.roteiroToEdit?.id ?? '', // Firebase gera isto se for vazio
+        id: widget.roteiroToEdit?.id ?? '',
         titulo: _tituloController.text.trim(),
-        descricao: _descricaoController.text.trim(),
+        mapaDescricao: {
+          'pt': _descricaoPtController.text.trim(),
+          'en': _descricaoEnController.text.trim(),
+        },
         imagemCapa: capa,
         poiIds: _selectedPois.map((e) => e.id).toList(),
         categoria: _categoria,
         duracao: duracaoFinal,
         distancia: distKm,
-        criadorId: widget.roteiroToEdit?.criadorId ?? '', // Vai ser substituído no service
+        criadorId: widget.roteiroToEdit?.criadorId ?? '',
       );
       
       if (widget.roteiroToEdit != null) {
@@ -369,8 +375,12 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                     ),
                     SizedBox(height: 15),
 
-                    // Descrição
-                    _buildTextField(_descricaoController, AppLocalizations.of(context)!.descriptionLabel, maxLines: 4),
+                    // Descrição PT
+                    _buildTextField(_descricaoPtController, '${AppLocalizations.of(context)!.descriptionLabel} (PT)', maxLines: 4),
+                    SizedBox(height: 15),
+
+                    // Descrição EN
+                    _buildTextField(_descricaoEnController, '${AppLocalizations.of(context)!.descriptionLabel} (EN)', maxLines: 4),
                     SizedBox(height: 30),
 
                     // PONTOS DE INTERESSE ADICIONADOS

@@ -207,7 +207,15 @@ class _HomeMapState extends State<HomeMap> {
     
     List<LatLng> points = [];
 
-    if (hasNet && currentPos != null) {
+    // Trilho pré-feito (GeoJSON asset): ignora OSRM e carrega direto do ficheiro
+    if (roteiro.trailAsset != null && roteiro.trailAsset!.isNotEmpty) {
+      points = await RoutingService.loadTrailFromAsset(roteiro.trailAsset!);
+      if (points.isEmpty) {
+        debugPrint('Aviso: trailAsset definido mas GeoJSON vazio ou inválido. Usando OSRM como fallback.');
+        List<LatLng> waypoints = roteiroPois.map((p) => p.localizacao).toList();
+        points = await RoutingService.getFullRoteiroRoute(waypoints);
+      }
+    } else if (hasNet && currentPos != null) {
       // Temos internet e posição: reordenar de forma inteligente!
       roteiroPois = _optimizeRouteOrder(roteiroPois, currentPos);
       List<LatLng> waypoints = roteiroPois.map((p) => p.localizacao).toList();
@@ -878,7 +886,7 @@ class _HomeMapState extends State<HomeMap> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(formatTime(_roteiroElapsedSeconds), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                    Text("Tempo", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(AppLocalizations.of(context)!.time, style: TextStyle(color: Colors.grey, fontSize: 12)),
                   ],
                 ),
                 Expanded(
@@ -1573,8 +1581,6 @@ class _PoiMapCardState extends State<PoiMapCard> {
                             _isLoadingFavorite
                                 ? SizedBox(width: 36, height: 36, child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)))
                                 : _buildIconButton(icon: isFavorite ? Icons.favorite : Icons.favorite_border, activeColor: Colors.red, isActive: isFavorite, onTap: _toggleFavorite),
-                            SizedBox(width: 8),
-                            _buildIconButton(icon: isInItinerary ? Icons.playlist_add_check : Icons.playlist_add, activeColor: kPrimaryGreen, isActive: isInItinerary, onTap: () => setState(() => isInItinerary = !isInItinerary)),
                           ],
                         )
                       ],
