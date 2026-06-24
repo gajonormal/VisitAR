@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -107,22 +108,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final inputDecoration = InputDecoration(
       filled: true,
       fillColor: Colors.grey[100], 
-      // Aumentei o padding vertical para 12 (era 8) para dar mais ar
-      contentPadding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
-      
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: kPrimaryGreen, width: 2)),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: Colors.red, width: 1.5)),
-      labelStyle: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold, fontSize: 14),
-      floatingLabelBehavior: FloatingLabelBehavior.auto,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: kPrimaryGreen, width: 2)),
+      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.red, width: 1.5)),
+      hintStyle: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.w500, fontSize: 14),
     );
 
     ImageProvider? backgroundImage;
     if (_selectedImage != null) {
       backgroundImage = FileImage(_selectedImage!);
     } else if (widget.userData['urlFoto'] != null && widget.userData['urlFoto'].isNotEmpty) {
-      backgroundImage = NetworkImage(widget.userData['urlFoto']);
+      backgroundImage = CachedNetworkImageProvider(widget.userData['urlFoto']);
     }
 
     return Scaffold(
@@ -169,79 +167,113 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 SizedBox(height: 25), // <--- Mais espaço
 
                 // NOME
-                TextFormField(
-                  controller: _nameController,
-                  style: const TextStyle(fontSize: 15),
-                  decoration: inputDecoration.copyWith(
-                    labelText: "Nome", 
-                    prefixIcon: Icon(Icons.person_outline, color: kPrimaryGreen)
-                  ),
-                  validator: (val) => val!.isEmpty ? AppLocalizations.of(context)!.nameCannotBeEmpty : null,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 15, bottom: 5),
+                      child: Text(AppLocalizations.of(context)!.name, style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                    TextFormField(
+                      controller: _nameController,
+                      style: const TextStyle(fontSize: 15),
+                      decoration: inputDecoration.copyWith(
+                        hintText: AppLocalizations.of(context)!.name, 
+                        prefixIcon: Icon(Icons.person_outline, color: kPrimaryGreen)
+                      ),
+                      validator: (val) => val!.isEmpty ? AppLocalizations.of(context)!.nameCannotBeEmpty : null,
+                    ),
+                  ],
                 ),
                 SizedBox(height: 15), // <--- Espaço de 15px
 
                 // EMAIL
-                TextFormField(
-                  controller: _emailController,
-                  readOnly: true,
-                  style: const TextStyle(fontSize: 15),
-                  decoration: inputDecoration.copyWith(
-                    labelText: AppLocalizations.of(context)!.email, 
-                    prefixIcon: Icon(Icons.email_outlined, color: Colors.grey), 
-                    fillColor: Colors.grey[200]
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 15, bottom: 5),
+                      child: Text(AppLocalizations.of(context)!.email, style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                    TextFormField(
+                      controller: _emailController,
+                      readOnly: true,
+                      style: const TextStyle(fontSize: 15),
+                      decoration: inputDecoration.copyWith(
+                        hintText: AppLocalizations.of(context)!.email, 
+                        prefixIcon: Icon(Icons.email_outlined, color: Colors.grey), 
+                        fillColor: Colors.grey[200]
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 15),
 
                 // GÉNERO
-                ButtonTheme(
-                  alignedDropdown: true,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _selectedGender,
-                    borderRadius: BorderRadius.circular(20),
-                    isExpanded: true,
-                    // Removi a restrição de altura fixa para ele crescer com o padding
-                    decoration: inputDecoration.copyWith(
-                      labelText: AppLocalizations.of(context)!.gender,
-                      prefixIcon: Icon(Icons.people_outline, color: kPrimaryGreen),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 15, bottom: 5),
+                      child: Text(AppLocalizations.of(context)!.gender, style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
-                    icon: Icon(Icons.arrow_drop_down, color: Colors.grey),
-                    dropdownColor: Colors.white,
-                    items: _genders.map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value, style: const TextStyle(fontSize: 15))
-                      );
-                    }).toList(),
-                    onChanged: (val) => setState(() => _selectedGender = val!),
-                  ),
+                    ButtonTheme(
+                      alignedDropdown: true,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedGender,
+                        borderRadius: BorderRadius.circular(20),
+                        isExpanded: true,
+                        // Removi a restrição de altura fixa para ele crescer com o padding
+                        decoration: inputDecoration.copyWith(
+                          hintText: AppLocalizations.of(context)!.gender,
+                          prefixIcon: Icon(Icons.people_outline, color: kPrimaryGreen),
+                        ),
+                        icon: Icon(Icons.arrow_drop_down, color: Colors.grey),
+                        dropdownColor: Colors.white,
+                        items: _genders.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value, style: const TextStyle(fontSize: 15))
+                          );
+                        }).toList(),
+                        onChanged: (val) => setState(() => _selectedGender = val!),
+                      ),
+                    ),
+                  ],
                 ),
                 
                 SizedBox(height: 15),
 
                 // NACIONALIDADE
-                ButtonTheme(
-                  alignedDropdown: true,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _selectedLanguage,
-                    borderRadius: BorderRadius.circular(20),
-                    isExpanded: true,
-                    decoration: inputDecoration.copyWith(
-                      labelText: AppLocalizations.of(context)!.nationality,
-                      prefixIcon: Icon(Icons.flag_outlined, color: kPrimaryGreen),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 15, bottom: 5),
+                      child: Text(AppLocalizations.of(context)!.nationality, style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
-                    icon: Icon(Icons.arrow_drop_down, color: Colors.grey),
-                    dropdownColor: Colors.white,
-                    items: _languageMap.keys.map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value, style: const TextStyle(fontSize: 15))
-                      );
-                    }).toList(),
-                    onChanged: (val) => setState(() => _selectedLanguage = val!),
-                  ),
+                    ButtonTheme(
+                      alignedDropdown: true,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedLanguage,
+                        borderRadius: BorderRadius.circular(20),
+                        isExpanded: true,
+                        decoration: inputDecoration.copyWith(
+                          hintText: AppLocalizations.of(context)!.nationality,
+                          prefixIcon: Icon(Icons.flag_outlined, color: kPrimaryGreen),
+                        ),
+                        icon: Icon(Icons.arrow_drop_down, color: Colors.grey),
+                        dropdownColor: Colors.white,
+                        items: _languageMap.keys.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value, style: const TextStyle(fontSize: 15))
+                          );
+                        }).toList(),
+                        onChanged: (val) => setState(() => _selectedLanguage = val!),
+                      ),
+                    ),
+                  ],
                 ),
                 
                 SizedBox(height: 25),
@@ -257,7 +289,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   obscureText: true,
                   style: const TextStyle(fontSize: 15),
                   decoration: inputDecoration.copyWith(
-                    labelText: AppLocalizations.of(context)!.newPassword, 
+                    hintText: AppLocalizations.of(context)!.newPassword, 
                     prefixIcon: Icon(Icons.lock_outline, color: kPrimaryGreen)
                   ),
                 ),
@@ -269,7 +301,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   obscureText: true,
                   style: const TextStyle(fontSize: 15),
                   decoration: inputDecoration.copyWith(
-                    labelText: AppLocalizations.of(context)!.confirmNewPassword, 
+                    hintText: AppLocalizations.of(context)!.confirmNewPassword, 
                     prefixIcon: Icon(Icons.lock_outline, color: kPrimaryGreen)
                   ),
                   validator: (val) {

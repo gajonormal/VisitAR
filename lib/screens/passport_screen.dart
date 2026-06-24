@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'services/passport_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class PassportScreen extends StatefulWidget {
@@ -72,9 +73,9 @@ class _PassportScreenState extends State<PassportScreen> {
   }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ————————————————————————————————————————————————
 // TAB: CARIMBOS (Visitas)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ————————————————————————————————————————————————
 class _StampsTab extends StatelessWidget {
   final String uid;
   const _StampsTab({required this.uid});
@@ -213,11 +214,11 @@ class _StampsTab extends StatelessWidget {
 
 String _getCategoryTranslation(BuildContext context, String category) {
   switch (category) {
-    case 'HistÃ³rico':
+    case 'Histórico':
       return AppLocalizations.of(context)!.catHistoric;
     case 'Natureza':
       return AppLocalizations.of(context)!.catNature;
-    case 'GeolÃ³gico':
+    case 'Geológico':
       return AppLocalizations.of(context)!.catGeologic;
     case 'Trilho':
       return AppLocalizations.of(context)!.catTrail;
@@ -254,8 +255,7 @@ class _StampCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   image.isNotEmpty
-                      ? Image.network(image, fit: BoxFit.cover,
-                          errorBuilder: (_, __, e) => _placeholder())
+                      ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (_,__,___) => _placeholder())
                       : _placeholder(),
                   // Carimbo overlay
                   Positioned(

@@ -1,7 +1,11 @@
+import 'dart:io';
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/poi.dart';
 import '../models/filter_options.dart';
 import '../widgets/filter_bottom_sheet.dart';
@@ -12,7 +16,6 @@ import '../models/roteiro.dart';
 import '../widgets/poi_card.dart';
 import 'details_screen.dart';
 import 'roteiro_details_screen.dart';
-import 'ar_screen.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -53,6 +56,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final GlobalKey _headerKey = GlobalKey();
   double _headerHeight = 220.0;
 
+  // --- SLIDESHOW 360 ---
+  Timer? _slideshowTimer;
+  String? _current360Image;
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +72,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   @override
   void dispose() {
+    _slideshowTimer?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -99,6 +107,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
           _isLoading = false;
         });
         _applyFilter();
+        _startSlideshow();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _measureHeaderHeight();
+        });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -147,6 +159,24 @@ class _ExploreScreenState extends State<ExploreScreen> {
     setState(() => _nearbyPois = filtered);
   }
 
+  void _startSlideshow() {
+    _slideshowTimer?.cancel();
+    final images = _allPois.where((p) => p.tem360 && p.imagens.isNotEmpty).map((p) => p.imagens.first).toList();
+    
+    if (images.isNotEmpty && mounted) {
+      setState(() {
+        _current360Image = images[Random().nextInt(images.length)];
+      });
+      _slideshowTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+        if (mounted) {
+          setState(() {
+            _current360Image = images[Random().nextInt(images.length)];
+          });
+        }
+      });
+    }
+  }
+
   // --- LÓGICA DE PESQUISA (igual ao home_map) ---
   void _onSearchChanged() {
     final query = _searchController.text.trim().toLowerCase();
@@ -177,15 +207,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
 
 
-  Color _difficultyColor(String difficulty) {
-    switch (difficulty) {
-      case 'Fácil':    return const Color(0xFF27AE60);
-      case 'Moderado': return const Color(0xFFE67E22);
-      case 'Difícil':  return const Color(0xFFC0392B);
-      default:         return Colors.grey;
-    }
-  }
-
   // ---------------------------------------------------------------
   // BUILD
   // ---------------------------------------------------------------
@@ -198,8 +219,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final double headerH = topPadding + 16 + 60 + 12; // padding + header approx + search bar + margin
     final double availableDropdownHeight =
         (screenHeight - keyboardHeight - headerH - 12).clamp(100, 300);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeaderHeight());
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F0), // Fundo principal
@@ -218,7 +237,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildArBanner(),
+                    _build360Banner(),
                     _buildCategoryFilters(),
                     _buildNearbySection(),
                     _buildItinerariesSection(),
@@ -311,6 +330,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                       initialPoiFilter: _poiFilter,
                                       showPoiFilters: true,
                                       showRoteiroFilters: false,
+                                      availablePoiCategories: _allPois.map((e) => e.categoria).where((e) => e.isNotEmpty).toSet().toList().cast<String>()..sort(),
                                       onApply: (poiF, rotF) {
                                         if (poiF != null) {
                                           setState(() => _poiFilter = poiF);
@@ -486,26 +506,39 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   // ---------------------------------------------------------------
-  // BANNER AR
+  // BANNER 360
   // ---------------------------------------------------------------
-  Widget _buildArBanner() {
+  Widget _build360Banner() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArScreen())),
+        onTap: () {},
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Stack(
             children: [
               SizedBox(
                 height: 180, width: double.infinity,
-                child: Image.network(
-                  'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800',
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, e) => Container(
-                    color: const Color(0xFF1B4332),
-                    child: Center(child: Icon(Icons.landscape, color: Colors.white54, size: 60)),
-                  ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 1000),
+                  child: _current360Image != null
+                      ? CachedNetworkImage(
+                          key: ValueKey(_current360Image),
+                          imageUrl: _current360Image!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorWidget: (_, __, ___) => Container(
+                            key: const ValueKey('error_360'),
+                            color: const Color(0xFF1B4332),
+                            child: Center(child: Icon(Icons.threesixty, color: Colors.white54, size: 60)),
+                          ),
+                        )
+                      : Container(
+                          key: const ValueKey('empty_360'),
+                          color: const Color(0xFF1B4332),
+                          child: Center(child: Icon(Icons.threesixty, color: Colors.white54, size: 60)),
+                        ),
                 ),
               ),
               Container(
@@ -525,26 +558,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                        color: kPrimaryGreen.withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.auto_awesome, color: Colors.white, size: 13),
+                          Icon(Icons.threesixty, color: Colors.white, size: 16),
                           SizedBox(width: 5),
-                          Text(AppLocalizations.of(context)!.arMode.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+                          Text(AppLocalizations.of(context)!.vistas360, style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
-                    SizedBox(height: 15),
+                    SizedBox(height: 8),
                     Text(
-                      AppLocalizations.of(context)!.arBannerTitle,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      AppLocalizations.of(context)!.vistas360Title,
+                      style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'GoogleSans'),
                     ),
-                    SizedBox(height: 15),
-                    Text(AppLocalizations.of(context)!.arBannerSubtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
+                    SizedBox(height: 4),
+                    Text(AppLocalizations.of(context)!.vistas360Subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
                   ],
                 ),
               ),
@@ -725,10 +757,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (roteiro.imagemCapa.isNotEmpty)
-                Image.network(roteiro.imagemCapa, fit: BoxFit.cover, errorBuilder: (_, __, e) => Container(color: kPrimaryGreen))
-              else
-                Container(color: kPrimaryGreen),
+              roteiro.imagemCapa.startsWith('http')
+                  ? CachedNetworkImage(
+                      imageUrl: roteiro.imagemCapa,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => Container(color: kPrimaryGreen),
+                    )
+                  : Image.file(
+                      File(roteiro.imagemCapa),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(color: kPrimaryGreen),
+                    ),
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -742,7 +781,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), borderRadius: BorderRadius.circular(12)),
-                  child: Text(_getDifficultyTranslation(context, roteiro.dificuldade), style: TextStyle(color: _difficultyColor(roteiro.dificuldade), fontSize: 11, fontWeight: FontWeight.w700)),
+                  child: Text(_getCategoryTranslation(context, roteiro.categoria), style: TextStyle(color: kPrimaryGreen, fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
               ),
               Positioned(
@@ -790,19 +829,5 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
-  String _getDifficultyTranslation(BuildContext context, String difficulty) {
-    switch (difficulty) {
-      case 'Qualquer':
-        return AppLocalizations.of(context)!.difAny;
-      case 'Fácil':
-        return AppLocalizations.of(context)!.difEasy;
-      case 'Moderado':
-        return AppLocalizations.of(context)!.difMedium;
-      case 'Difícil':
-        return AppLocalizations.of(context)!.difHard;
-      default:
-        return difficulty;
-    }
-  }
 }
 

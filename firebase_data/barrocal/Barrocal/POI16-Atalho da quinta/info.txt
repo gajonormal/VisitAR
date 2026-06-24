@@ -1,0 +1,5 @@
+﻿LATITUDE: 39.813075
+LONGITUDE: -7.492023
+CATEGORIA: Carreiro
+DESC_PT: Passadiço desenhado em harmonia com a paisagem, oferecendo uma rota alternativa para desfrutar da natureza e da campina com tempo.
+DESC_EN: A path designed in harmony with the landscape, offering an alternative route to enjoy nature and the countryside at a relaxed pace.

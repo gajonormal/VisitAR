@@ -1,0 +1,5 @@
+﻿LATITUDE: 39.815540
+LONGITUDE: -7.492532
+CATEGORIA: Passadiço
+DESC_PT: A chave do Barrocal transporta o visitante para uma natureza com tempo para ser desfrutada.
+DESC_EN: The key to Barrocal carries visitors into a natural setting meant to be enjoyed at leisure.

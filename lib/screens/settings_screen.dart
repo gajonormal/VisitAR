@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'services/language_provider.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter/foundation.dart';
+import 'admin_upload_screen.dart';import 'services/language_provider.dart';
 // import '../screens/services/auth_service.dart'; // Descomenta se precisares
 import 'package:visitar_teste/l10n/app_localizations.dart';
 
@@ -20,11 +22,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   User? user = FirebaseAuth.instance.currentUser;
 
-  // --- AÇÕES ---
+  // --- AÃ‡Ã•ES ---
 
   Future<void> _clearCache() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2)); // Simulação
+    await Future.delayed(const Duration(seconds: 2)); // SimulaÃ§Ã£o
     if (mounted) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -98,12 +100,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 _buildSectionTitle(AppLocalizations.of(context)!.general),
                 
-                // 1. Gerir Permissões
+                // 1. Gerir PermissÃµes
                 _buildListOption(
                   icon: Icons.security_rounded,
                   text: AppLocalizations.of(context)!.managePermissions,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.openingSettings)));
+                    Geolocator.openAppSettings();
                   },
                 ),
 
@@ -115,7 +117,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        currentLang == 'pt' ? 'Português' : 'English',
+                        currentLang == 'pt' ? 'PortuguÃªs' : 'English',
                         style: TextStyle(color: Colors.grey[600], fontSize: 14.5, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(width: 5),
@@ -152,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 SizedBox(height: 20),
 
-                // SECÇÃO CONTA (Se tiver login)
+                // SECÃ‡ÃƒO CONTA (Se tiver login)
                 if (user != null) ...[
                   _buildSectionTitle(AppLocalizations.of(context)!.account),
                   
@@ -168,9 +170,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
 
                 SizedBox(height: 30),
+                if (kDebugMode)
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminUploadScreen())),
+                      child: Text('Admin Upload'),
+                    ),
+                  ),
+                SizedBox(height: 10),
                 Center(
                   child: Text(
-                    "Versão 1.0.0",
+                    "VersÃ£o 1.0.0",
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ),
@@ -188,7 +198,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Título da Secção (Pequeno e cinza)
+  // TÃ­tulo da SecÃ§Ã£o (Pequeno e cinza)
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15, left: 5, top: 10),
@@ -199,18 +209,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- O WIDGET MÁGICO (IGUAL AO PERFIL) ---
-  // Adicionei parâmetros opcionais para cores e widget final (trailing)
+  // --- O WIDGET MÃGICO (IGUAL AO PERFIL) ---
+  // Adicionei parÃ¢metros opcionais para cores e widget final (trailing)
   Widget _buildListOption({
     required IconData icon, 
     required String text, 
     required VoidCallback onTap,
-    Widget? trailing, // Para pôr o Switch
+    Widget? trailing, // Para pÃ´r o Switch
     Color? iconColor, 
     Color? iconBgColor,
     Color? textColor,
   }) {
-    // Cores padrão (Verde) se não forem especificadas
+    // Cores padrÃ£o (Verde) se nÃ£o forem especificadas
     final Color finalIconColor = iconColor ?? kPrimaryGreen;
     final Color finalBgColor = iconBgColor ?? kPrimaryGreen.withValues(alpha: 0.1);
     final Color finalTextColor = textColor ?? Colors.black;
@@ -231,7 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 2),
         horizontalTitleGap: 10,
 
-        // Ícone à esquerda (Bola colorida)
+        // Ãcone Ã  esquerda (Bola colorida)
         leading: Container(
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(color: finalBgColor, shape: BoxShape.circle),
@@ -244,7 +254,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5, color: finalTextColor) 
         ),
         
-        // Ícone à direita (Seta ou Switch)
+        // Ãcone Ã  direita (Seta ou Switch)
         trailing: trailing ?? Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
         
         onTap: onTap,
@@ -255,7 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Dialog para escolher idioma
   void _showLanguageDialog(BuildContext context, String currentLang, String? userId) {
     final Map<String, String> languages = {
-      'Português': 'pt',
+      'PortuguÃªs': 'pt',
       'English': 'en',
     };
 
@@ -289,7 +299,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Função para alterar idioma
+  // FunÃ§Ã£o para alterar idioma
   void _changeLanguage(BuildContext context, String newLang, String? userId) async {
     Provider.of<LanguageProvider>(context, listen: false).changeLanguage(newLang);
 
@@ -312,3 +322,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 }
+
+

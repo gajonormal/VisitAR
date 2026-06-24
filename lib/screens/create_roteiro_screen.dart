@@ -29,8 +29,8 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
   final _descricaoController = TextEditingController();
   final _searchController = TextEditingController();
   
-  String _dificuldade = 'FÁCIL';
-  final List<String> _dificuldades = ['FÁCIL', 'MODERADO', 'DIFÍCIL'];
+  String _categoria = 'Histórico';
+  final List<String> _categorias = ['Histórico', 'Natureza', 'Geológico', 'Trilho'];
 
   bool _isLoadingPois = true;
   bool _isSaving = false;
@@ -50,7 +50,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
     if (widget.roteiroToEdit != null) {
       _tituloController.text = widget.roteiroToEdit!.titulo;
       _descricaoController.text = widget.roteiroToEdit!.descricao;
-      _dificuldade = widget.roteiroToEdit!.dificuldade;
+      _categoria = widget.roteiroToEdit!.categoria;
     }
     _loadPois();
   }
@@ -181,7 +181,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
         descricao: _descricaoController.text.trim(),
         imagemCapa: capa,
         poiIds: _selectedPois.map((e) => e.id).toList(),
-        dificuldade: _dificuldade,
+        categoria: _categoria,
         duracao: duracaoFinal,
         distancia: distKm,
         criadorId: widget.roteiroToEdit?.criadorId ?? '', // Vai ser substituído no service
@@ -342,9 +342,9 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                     ),
                     SizedBox(height: 15),
 
-                    // Categoria / Dificuldade
+                    // Categoria
                     DropdownButtonFormField<String>(
-                      value: _dificuldade,
+                      value: _categoria,
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                         filled: true,
@@ -360,11 +360,11 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                         hintText: AppLocalizations.of(context)!.category,
                       ),
                       icon: Icon(Icons.arrow_drop_down, color: kPrimaryGreen),
-                      items: _dificuldades.map((String dif) {
-                        return DropdownMenuItem(value: dif, child: Text(_getDifficultyTranslation(context, dif)));
+                      items: _categorias.map((String cat) {
+                        return DropdownMenuItem(value: cat, child: Text(cat));
                       }).toList(),
                       onChanged: (val) {
-                        if (val != null) setState(() => _dificuldade = val);
+                        if (val != null) setState(() => _categoria = val);
                       },
                     ),
                     SizedBox(height: 15),

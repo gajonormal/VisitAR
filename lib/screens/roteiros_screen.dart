@@ -5,6 +5,8 @@ import '../models/roteiro.dart';
 import '../models/filter_options.dart';
 import '../widgets/filter_bottom_sheet.dart';
 import '../widgets/custom_button.dart';
+import 'services/database_services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'services/roteiros_service.dart';
 import 'roteiro_details_screen.dart';
 import 'create_roteiro_screen.dart';
@@ -30,6 +32,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
+  List<Roteiro> _currentRoteiros = [];
 
   @override
   void dispose() {
@@ -176,6 +179,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                   initialRoteiroFilter: _roteiroFilter,
                   showPoiFilters: false,
                   showRoteiroFilters: true,
+                  availableRoteiroCategories: _currentRoteiros.map((r) => r.categoria).where((c) => c.isNotEmpty).toSet().toList().cast<String>()..sort(),
                   onApply: (poiF, rotF) {
                     if (rotF != null) {
                       setState(() {
@@ -275,6 +279,12 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                   
                   final roteiros = snapshot.data ?? [];
                   
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted && _currentRoteiros.length != roteiros.length) {
+                      _currentRoteiros = roteiros;
+                    }
+                  });
+
                   final filteredRoteiros = roteiros.where((roteiro) {
                     if (!_roteiroFilter.apply(roteiro)) return false;
                     return roteiro.titulo.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -444,10 +454,11 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                     width: double.infinity,
                     child: roteiro.imagemCapa.isNotEmpty
                         ? (roteiro.imagemCapa.startsWith('http')
-                            ? Image.network(
-                                roteiro.imagemCapa, 
+                            ? CachedNetworkImage(
+                                imageUrl: roteiro.imagemCapa, 
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200], child: Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
+                                placeholder: (context, url) => Center(child: CircularProgressIndicator(color: kPrimaryGreen)),
+                                errorWidget: (context, url, error) => Container(color: Colors.grey[200], child: Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40))),
                               )
                             : Image.file(
                                 File(roteiro.imagemCapa), 
@@ -474,7 +485,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                     ),
                   ),
                 ),
-                // BADGE DIFICULDADE
+                // BADGE CATEGORIA
                 Positioned(
                   top: 15,
                   left: 15,
@@ -485,7 +496,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      roteiro.dificuldade.toUpperCase(),
+                      roteiro.categoria.toUpperCase(),
                       style: TextStyle(
                         color: kPrimaryGreen,
                         fontSize: 10,

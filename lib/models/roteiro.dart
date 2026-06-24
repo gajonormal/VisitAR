@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 class Roteiro {
   final String id;
   final String titulo;
   final String descricao;
   final String imagemCapa;
   final List<String> poiIds; // Lista de IDs dos POIs neste roteiro
-  final String dificuldade; // "FÁCIL", "MODERADO", "DIFÍCIL"
+  final String categoria; // "Histórico", "Natureza", "Geológico", "Trilho"
   final String duracao; // ex: "2h 30m"
   final double distancia; // em km
   final String criadorId; // 'admin' ou ID do utilizador autenticado
@@ -19,7 +20,7 @@ class Roteiro {
     required this.descricao,
     required this.imagemCapa,
     required this.poiIds,
-    required this.dificuldade,
+    required this.categoria,
     required this.duracao,
     required this.distancia,
     required this.criadorId,
@@ -36,7 +37,7 @@ class Roteiro {
       descricao: data['descricao'] ?? 'Sem descrição.',
       imagemCapa: data['imagemCapa'] ?? '',
       poiIds: List<String>.from(data['poiIds'] ?? []),
-      dificuldade: data['dificuldade'] ?? 'FÁCIL',
+      categoria: data['categoria'] ?? 'Histórico',
       duracao: data['duracao'] ?? '0h 0m',
       distancia: (data['distancia'] ?? 0.0).toDouble(),
       criadorId: data['criadorId'] ?? 'admin',
@@ -53,7 +54,7 @@ class Roteiro {
       'descricao': descricao,
       'imagemCapa': imagemCapa,
       'poiIds': poiIds,
-      'dificuldade': dificuldade,
+      'categoria': categoria,
       'duracao': duracao,
       'distancia': distancia,
       'criadorId': criadorId,
@@ -69,7 +70,7 @@ class Roteiro {
       descricao: data['descricao'] ?? 'Sem descrição.',
       imagemCapa: data['imagemCapa'] ?? '',
       poiIds: List<String>.from(data['poiIds'] ?? []),
-      dificuldade: data['dificuldade'] ?? 'FÁCIL',
+      categoria: data['categoria'] ?? 'Histórico',
       duracao: data['duracao'] ?? '0h 0m',
       distancia: (data['distancia'] ?? 0.0).toDouble(),
       criadorId: data['criadorId'] ?? 'admin',
@@ -88,7 +89,7 @@ class Roteiro {
       'descricao': descricao,
       'imagemCapa': imagemCapa,
       'poiIds': poiIds,
-      'dificuldade': dificuldade,
+      'categoria': categoria,
       'duracao': duracao,
       'distancia': distancia,
       'criadorId': criadorId,

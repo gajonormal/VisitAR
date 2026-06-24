@@ -10,9 +10,7 @@ class POI {
   
   final Map<String, dynamic> mapaDescricao; 
   final Map<String, dynamic> mapaAudio; 
-  
-  final String urlModeloAr;
-  final double escalaAr;
+  bool tem360;
 
   POI({
     required this.id,
@@ -22,8 +20,7 @@ class POI {
     required this.imagens,
     required this.mapaDescricao,
     required this.mapaAudio,
-    required this.urlModeloAr,
-    this.escalaAr = 1.0,
+    this.tem360 = false,
   });
 
   // --- 1. LER DO FIREBASE (Já tinhas isto) ---
@@ -68,8 +65,6 @@ class POI {
       imagens: listaImagens,
       mapaDescricao: descMap,
       mapaAudio: audMap,
-      urlModeloAr: arMap['modelUrl'] ?? '',
-      escalaAr: (arMap['scale'] ?? 1.0).toDouble(),
     );
   }
 
@@ -84,8 +79,6 @@ class POI {
       'imagens': imagens,
       'mapaDescricao': mapaDescricao,
       'mapaAudio': mapaAudio,
-      'urlModeloAr': urlModeloAr,
-      'escalaAr': escalaAr,
     };
   }
 
@@ -99,8 +92,6 @@ class POI {
       imagens: List<String>.from(map['imagens']),
       mapaDescricao: Map<String, dynamic>.from(map['mapaDescricao'] ?? {}),
       mapaAudio: Map<String, dynamic>.from(map['mapaAudio'] ?? {}),
-      urlModeloAr: map['urlModeloAr'] ?? '',
-      escalaAr: (map['escalaAr'] ?? 1.0).toDouble(),
     );
   }
 

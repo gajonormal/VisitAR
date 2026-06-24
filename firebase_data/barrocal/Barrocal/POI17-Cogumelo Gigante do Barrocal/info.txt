@@ -1,0 +1,5 @@
+﻿LATITUDE: 39.814125
+LONGITUDE: -7.493522
+CATEGORIA: Formação Geológica
+DESC_PT: Um impressionante exemplo de bolas e blocos pedunculados. Estas geoformas graníticas foram moldadas pela erosão e águas subterrâneas após a rocha ter sido trazida à superfície pela tectónica de placas.
+DESC_EN: An impressive example of balanced boulders on pedestals. These granite landforms were shaped by erosion and groundwater after the rock was brought to the surface by plate tectonics.

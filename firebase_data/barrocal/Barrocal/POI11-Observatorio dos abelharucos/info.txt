@@ -1,0 +1,5 @@
+﻿LATITUDE: 39.810544
+LONGITUDE: -7.493609
+CATEGORIA: Observatório
+DESC_PT: Espaço dedicado à observação da avifauna do Barrocal ao longo do ano. A Primavera é a época mais rica, com cantos nupciais e nidificação. No Verão a atividade é mais subtil, recomendando-se a observação nas primeiras horas da manhã. Já no Outono e Inverno, o local é excelente para assistir à passagem de espécies migratórias e chegada de invernantes do Norte da Europa.
+DESC_EN: A space dedicated to observing Barrocal's birdlife throughout the year. Spring is the richest season, with mating calls and nesting. In summer, activity is more subtle, so early morning observation is recommended. In autumn and winter, the site is excellent for watching migratory species pass through and winter visitors arriving from northern Europe.

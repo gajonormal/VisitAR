@@ -1,0 +1,5 @@
+﻿LATITUDE: 39.811147
+LONGITUDE: -7.493806
+CATEGORIA: Mirante
+DESC_PT: No Parque do Barrocal, o Carvalho-negral ou Carvalho-pardo-das-beiras é a árvore dominante. A envolvente mantém uma rica associação vegetal repartida por vários estratos, desde arbustos como o Pilriteiro e a Pereira-brava, até clareiras de Giesta-amarela e um estrato herbáceo variado com Erva-bicha, Jacinto-dos-campos e Hipericão.	
+DESC_EN: In Barrocal Park, the Pyrenean oak (locally known as “Carvalho-negral” or “Carvalho-pardo-das-beiras”) is the dominant tree. The surrounding vegetation forms a rich, multi-layered community, ranging from shrubs such as hawthorn and wild pear, to clearings of yellow broom and a varied herbaceous layer including bristle grass, grape hyacinth and St. John's wort.
