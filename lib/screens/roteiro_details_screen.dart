@@ -131,23 +131,26 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             ),
             SizedBox(height: 24),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CustomButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  text: AppLocalizations.of(context)!.notNow,
-                  backgroundColor: Colors.grey[200]!,
-                  textColor: Colors.grey[700]!,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                Expanded(
+                  child: CustomButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    text: AppLocalizations.of(context)!.notNow,
+                    backgroundColor: Colors.grey[200]!,
+                    textColor: Colors.grey[700]!,
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+                  ),
                 ),
                 SizedBox(width: 10),
-                CustomButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-                  },
-                  text: AppLocalizations.of(context)!.login,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                Expanded(
+                  child: CustomButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                    },
+                    text: AppLocalizations.of(context)!.login,
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+                  ),
                 ),
               ],
             ),

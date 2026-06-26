@@ -17,6 +17,12 @@ class DatabaseService {
       for (var doc in snapshot.docs) {
         try {
           POI p = POI.fromFirestore(doc);
+          
+          // IGNORAR PONTOS FALSOS/MOCKS (que ainda estejam no Firestore)
+          if (p.id.startsWith('mock_') || p.id.contains('dummy')) {
+            continue; 
+          }
+
           // Adiciona se não for duplicado
           if (!pois.any((existing) => existing.id == p.id)) {
             pois.add(p);

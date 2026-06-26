@@ -189,6 +189,9 @@ class DownloadService {
         String? localPath = await downloadFile(roteiro.imagemCapa, fileName);
         if (localPath != null) {
           localCapa = localPath;
+        } else {
+          // Se falhou o download (ex: Modo Avião), abortamos o Roteiro inteiro!
+          throw Exception("Falha de Rede (SocketException) no download da capa");
         }
       }
 
@@ -357,6 +360,11 @@ class DownloadService {
             await deleteFile("poi_${poi.id}_audio_$lang.mp3");
           }
           await deleteFile("poi_${poi.id}_audio.mp3");
+          
+          // Apagar Panorama (Correção do Bug do Modo Offline)
+          await deleteFile("poi_${poi.id}_panorama.jpg");
+          await prefs.remove('offline_panorama_${poi.id}');
+
           // Remover dados offline
           await removeOfflinePoiData(poi.id);
           await prefs.remove('nome_$poiId'); // remove nome guardado localmente

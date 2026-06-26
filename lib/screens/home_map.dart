@@ -4,6 +4,7 @@ import 'dart:ui' as ui; // Necessário para desenhar os marcadores
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Para ByteData
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:geolocator/geolocator.dart';
@@ -111,6 +112,13 @@ class _HomeMapState extends State<HomeMap> {
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.92);
+    
+    // LIMPEZA FORÇADA DE CACHE (Para apagar os pontos "fantasma")
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.clear(); 
+      debugPrint("CACHE LOCAL TOTALMENTE APAGADA!");
+    });
+
     _loadCustomMarkerIcons().then((_) => _initData());
     _searchController.addListener(_onSearchChanged);
     _searchFocusNode.addListener(() {
@@ -1460,29 +1468,34 @@ class _PoiMapCardState extends State<PoiMapCard> {
             ),
             SizedBox(height: 24),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
-                    foregroundColor: Colors.grey[700],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[200],
+                      foregroundColor: Colors.grey[700],
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                    child: FittedBox(fit: BoxFit.scaleDown, child: Text(AppLocalizations.of(context)!.notNow)),
                   ),
-                  child: Text(AppLocalizations.of(context)!.notNow),
                 ),
                 SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                    child: FittedBox(fit: BoxFit.scaleDown, child: Text(AppLocalizations.of(context)!.login)),
                   ),
-                  child: Text(AppLocalizations.of(context)!.login),
                 ),
               ],
             ),
