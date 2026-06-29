@@ -452,27 +452,6 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                     child: Icon(Icons.arrow_back, color: Colors.black, size: 22),
                   ),
                 ),
-                InkWell(
-                  onTap: () {
-                    setState(() {
-                      _isAdminMode = !_isAdminMode;
-                      if (_isAdminMode) {
-                        _isAutoRotateEnabled = false; // Parar rotação ao editar
-                        _panoramaController.setAnimSpeed(0.0);
-                      }
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(_isAdminMode ? 'Modo Edição Ativado! Toque em qualquer lado.' : 'Modo Edição Desativado.'),
-                      duration: Duration(seconds: 2),
-                    ));
-                  },
-                  borderRadius: BorderRadius.circular(50),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: _isAdminMode ? Colors.red : Colors.grey[100], shape: BoxShape.circle),
-                    child: Icon(_isAdminMode ? Icons.edit_off : Icons.edit, color: _isAdminMode ? Colors.white : Colors.black, size: 22),
-                  ),
-                ),
               ],
             ),
           ),

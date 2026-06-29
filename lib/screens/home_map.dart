@@ -90,6 +90,7 @@ class _HomeMapState extends State<HomeMap> {
   // --- PANORAMA CACHE ---
   Panorama? _selectedPanorama;
   final Map<String, Panorama?> _panoramasCache = {};
+  bool _isSatellite = false;
 
   final String _mapStyle = '''
     [
@@ -688,7 +689,8 @@ class _HomeMapState extends State<HomeMap> {
                 initialCameraPosition: CameraPosition(target: _initialPosition, zoom: 17.5),
                 markers: _markers,
                 polylines: _polylines,
-                style: _mapStyle,
+                mapType: _isSatellite ? MapType.satellite : MapType.normal,
+                style: _isSatellite ? null : _mapStyle,
                 onMapCreated: (controller) {
                   _mapController = controller;
                   // Aplica o estilo para limpar o mapa
@@ -722,6 +724,22 @@ class _HomeMapState extends State<HomeMap> {
                 child: FloatingActionButton.small(
                   heroTag: "gps_btn", backgroundColor: Colors.white, onPressed: _locateUser,
                   child: Icon(Icons.my_location, color: Colors.black54),
+                ),
+              ),
+
+              // BOTÃO MAP TYPE (SATÉLITE / NORMAL)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 250), curve: Curves.easeInOut,
+                top: (_selectedTopPoi != null && activeRoteiroNotifier.value != null) ? 210 : 160,
+                right: (_isSearchFocused || _isSearching) ? -80 : 20,
+                child: FloatingActionButton.small(
+                  heroTag: "map_type_btn", backgroundColor: Colors.white,
+                  onPressed: () {
+                    setState(() {
+                      _isSatellite = !_isSatellite;
+                    });
+                  },
+                  child: Icon(_isSatellite ? Icons.map_outlined : Icons.satellite_outlined, color: Colors.black54),
                 ),
               ),
 

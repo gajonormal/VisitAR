@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/foundation.dart';
-import 'admin_upload_screen.dart';
 import 'services/language_provider.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
 
@@ -170,14 +169,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
 
                 SizedBox(height: 30),
-                if (kDebugMode)
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminUploadScreen())),
-                      child: Text('Admin Upload'),
-                    ),
-                  ),
-                SizedBox(height: 10),
                 Center(
                   child: Text(
                     "Versão 1.0.0",
