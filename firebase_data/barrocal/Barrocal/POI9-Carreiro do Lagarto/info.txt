@@ -1,5 +1,0 @@
-﻿LATITUDE: 39.812119
-LONGITUDE: -7.493510
-CATEGORIA: Carreiro
-DESC_PT: Percurso desenhado no sítio que acompanha as singularidades topográficas e geológicas do parque, ideal para explorar a natureza envolvente.
-DESC_EN: A path laid out on site, following the area's topographical and geological features, ideal for exploring the surrounding nature.

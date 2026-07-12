@@ -11,7 +11,7 @@ import 'package:provider/provider.dart';
 import 'services/language_provider.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
 import 'services/roteiros_service.dart';
-import 'services/download_service.dart';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/roteiro.dart';
 import 'roteiro_details_screen.dart';
@@ -30,19 +30,19 @@ class ProfileScreen extends StatelessWidget {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
-        // SE TEM USER LOGADO
+        // Utilizador autenticado: perfil completo
         if (snapshot.hasData) {
           final User user = snapshot.data!;
           return _buildProfileWithData(context, user);
         }
 
-        // SE NÃO TEM USER (VISITANTE)
+        // Visitante: perfil restrito
         return _buildGuestProfile(context);
       },
     );
   }
 
-  // PERFIL PARA UTILIZADOR AUTENTICADO
+  /// Constrói o ecrã de perfil para utilizadores autenticados
   Widget _buildProfileWithData(BuildContext context, User user) {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
@@ -73,7 +73,7 @@ class ProfileScreen extends StatelessWidget {
               style: TextButton.styleFrom(padding: const EdgeInsets.only(left: 15)),
             ),
             actions: [
-              // ... (Os teus botões de linguagem e definições mantêm-se iguais)
+
               Padding(
                 padding: const EdgeInsets.only(right: 7.0),
                 child: TextButton.icon(
@@ -99,7 +99,7 @@ class ProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10),
             child: Column(
               children: [
-                // FOTO DE PERFIL
+                // Foto de perfil
                 Stack(
                   alignment: Alignment.center,
                   children: [
@@ -125,12 +125,12 @@ class ProfileScreen extends StatelessWidget {
                 Text(nome, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 Text(email, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
 
-                SizedBox(height: 15), // Espaço antes do botão
+                SizedBox(height: 15),
 
-                // --- NOVO BOTÃO EDITAR PERFIL (MAIS PEQUENO E POR BAIXO DO NOME) ---
+                // Botão de editar perfil
                 SizedBox(
-                  height: 35, // Altura reduzida (era padrão ~45-50)
-                  width: 140, // Largura controlada para não ocupar o ecrã todo
+                  height: 35,
+                  width: 140,
                   child: ElevatedButton(
                     onPressed: () {
                       if (userData != null) {
@@ -141,8 +141,8 @@ class ProfileScreen extends StatelessWidget {
                       backgroundColor: kPrimaryGreen,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), // Mais arredondado
-                      padding: EdgeInsets.zero, // Remove padding interno para o texto caber bem na altura pequena
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: EdgeInsets.zero,
                     ),
                     child: Text(AppLocalizations.of(context)!.editProfile, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
@@ -150,12 +150,12 @@ class ProfileScreen extends StatelessWidget {
 
                 SizedBox(height: 25),
 
-                // ─── SECÇÃO BADGES ───
+                // Secção de conquistas (badges)
                 _buildBadgesSection(context, user.uid),
 
                 SizedBox(height: 25),
 
-                // ─── SECÇÃO MEUS ROTEIROS ───
+                // Secção de roteiros criados
                 _buildMyRoteirosSection(context, user.uid),
 
                 SizedBox(height: 20),
@@ -178,19 +178,18 @@ class ProfileScreen extends StatelessWidget {
                 ),
 
 
-                SizedBox(height: 100), // Espaço extra para scrollar além da NavigationBar
+                SizedBox(height: 100),
               ],
             ),
           ),
-          // REMOVIDO O BOTTOM NAVIGATION BAR
         );
       },
     );
   }
 
-  // PERFIL PARA VISITANTE (NÃO AUTENTICADO)
+  /// Constrói o ecrã de perfil para visitantes não autenticados
   Widget _buildGuestProfile(BuildContext context) {
-    // Linguagem padrão para visitante (pode ser guardada em SharedPreferences)
+    // Lê o idioma atual do provider
     String guestLangCode = Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode;
 
     return Scaffold(
@@ -239,7 +238,7 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10),
         child: Column(
           children: [
-            // ÍCONE DE VISITANTE
+            // Avatar genérico para visitantes
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -259,7 +258,7 @@ class ProfileScreen extends StatelessWidget {
 
             SizedBox(height: 40),
 
-            // INFO: Visitantes têm acesso limitado
+            // Aviso sobre funcionalidades restritas
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
@@ -283,7 +282,7 @@ class ProfileScreen extends StatelessWidget {
 
             SizedBox(height: 20),
 
-            // Opções disponíveis para visitante
+            // Opções disponíveis para visitantes
             _buildListOption(
               icon: Icons.download_done_rounded,
               text: AppLocalizations.of(context)!.offlineDownloads,
@@ -310,8 +309,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-Widget _buildBadgesSection(BuildContext context, String uid) {
-    // Icons para cada badge (mantém a coerência com a PassportScreen)
+  /// Constrói a secção de badges recentes do utilizador
+  Widget _buildBadgesSection(BuildContext context, String uid) {
+    // Ícones dos badges
     const Map<String, IconData> badgeIcons = {
       'primeiro_carimbo': Icons.pin_drop_outlined,
       'conhecedor': Icons.account_balance_outlined,
@@ -363,7 +363,7 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
                       child: Center(child: Icon(icon, color: const Color(0xFFD4AF37), size: 26)),
                     );
                   }),
-                  // Placeholders cinzento se tiver menos de 4
+                  // Slots para os badges por desbloquear
                   ...List.generate(earnedDocs.length < 4 ? 4 - earnedDocs.length : 0, (_) => Container(
                     margin: const EdgeInsets.only(right: 10),
                     width: 50, height: 50,
@@ -375,7 +375,7 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
                     child: Center(child: Icon(Icons.lock_outline_rounded, color: Colors.grey[400], size: 22)),
                   )),
                   const Spacer(),
-                  // Botão "+"
+                  // Botão para ver todas as conquistas
                   GestureDetector(
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PassportScreen())),
                     child: Container(
@@ -406,7 +406,7 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
         }
 
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          // Se não houver roteiros, mostramos um placeholder apelativo
+          // Sem roteiros: mostra um placeholder
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -456,7 +456,7 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
                       width: 140,
                       margin: const EdgeInsets.only(right: 15),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F9D58), // Fundo verde sempre presente
+                        color: const Color(0xFF0F9D58), // Fundo verde por omissão
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: ClipRRect(
@@ -470,7 +470,7 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
                                 fit: BoxFit.cover,
                                 errorWidget: (context, url, error) => const SizedBox.shrink(),
                               ),
-                            // Overlay escuro
+                            // Overlay para destacar o título
                             Container(color: Colors.black.withValues(alpha: 0.3)),
                             Padding(
                               padding: const EdgeInsets.all(12),
@@ -498,9 +498,10 @@ Widget _buildBadgesSection(BuildContext context, String uid) {
     );
   }
 
-Widget _buildListOption({required IconData icon, required String text, required VoidCallback onTap}) {
+  /// Constrói uma opção de lista reutilizável (ícone + texto + seta)
+  Widget _buildListOption({required IconData icon, required String text, required VoidCallback onTap}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 11), // Margem externa ligeiramente maior (era 10)
+      margin: const EdgeInsets.only(bottom: 11),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -512,22 +513,19 @@ Widget _buildListOption({required IconData icon, required String text, required 
       child: ListTile(
         dense: true, 
         
-        // Ajuste fino: -0.5 (antes era -1). Dá um pouquinho mais de altura natural.
         visualDensity: const VisualDensity(vertical: -0.5), 
         
-        // Padding vertical: 2 (antes era 0). Dá um pequeno respiro nas bordas.
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 2),
         
         horizontalTitleGap: 10,
 
         leading: Container(
-          padding: const EdgeInsets.all(7), // Aumentei de 6 para 7 (o original era 8)
+          padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(color: kPrimaryGreen.withValues(alpha: 0.1), shape: BoxShape.circle),
           child: Icon(icon, color: kPrimaryGreen, size: 20),
         ),
         title: Text(
           text, 
-          // Aumentei de 14 para 14.5 para encher melhor o espaço
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5) 
         ),
         trailing: Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
@@ -536,7 +534,7 @@ Widget _buildListOption({required IconData icon, required String text, required 
     );
   }
 
-  // Dialog para escolher idioma
+  /// Exibe o diálogo de seleção de idioma
   void _showLanguageDialog(BuildContext context, String currentLang, String? userId) {
     final Map<String, String> languages = {
       'Português': 'pt',
@@ -573,12 +571,12 @@ Widget _buildListOption({required IconData icon, required String text, required 
     );
   }
 
-  // Função para alterar idioma
+  /// Aplica a mudança de idioma no provider e persiste no Firestore (se autenticado)
   void _changeLanguage(BuildContext context, String newLang, String? userId) async {
     Provider.of<LanguageProvider>(context, listen: false).changeLanguage(newLang);
 
       if (userId != null) {
-      // Utilizador autenticado: guarda no Firestore
+        // Guarda o idioma no Firestore
       await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'linguagem': newLang,
       });

@@ -21,11 +21,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   User? user = FirebaseAuth.instance.currentUser;
 
-  // --- AÇÕES ---
-
   Future<void> _clearCache() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2)); // Simulação
+    await Future.delayed(const Duration(seconds: 2)); // Simula atraso na limpeza de cache
     if (mounted) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,7 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final currentLang = languageProvider.currentLocale.languageCode;
 
     return Scaffold(
-      backgroundColor: Colors.white, // Fundo branco como no Perfil
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.settings, style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
@@ -99,7 +97,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 _buildSectionTitle(AppLocalizations.of(context)!.general),
                 
-                // 1. Gerir Permissões
                 _buildListOption(
                   icon: Icons.security_rounded,
                   text: AppLocalizations.of(context)!.managePermissions,
@@ -108,7 +105,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
 
-                // 2. Idioma
                 _buildListOption(
                   icon: Icons.translate_rounded,
                   text: AppLocalizations.of(context)!.language,
@@ -126,12 +122,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: () => _showLanguageDialog(context, currentLang, user?.uid),
                 ),
 
-                // 2. Modo Escuro (Com Switch)
+                // Alterna entre modo claro e escuro (funcionalidade futura)
                 _buildListOption(
                   icon: _isDarkMode ? Icons.dark_mode : Icons.light_mode,
                   text: AppLocalizations.of(context)!.darkMode,
                   onTap: () => setState(() => _isDarkMode = !_isDarkMode),
-                  // Aqui passamos o Switch como widget "trailing"
                   trailing: Transform.scale(
                     scale: 0.8,
                     child: Switch(
@@ -142,28 +137,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
 
-                // 3. Limpar Cache
                 _buildListOption(
                   icon: Icons.cleaning_services_rounded,
                   text: AppLocalizations.of(context)!.clearCache,
-                  iconColor: Colors.orange, // Cor personalizada
+                  iconColor: Colors.orange,
                   iconBgColor: Colors.orange.withOpacity(0.1),
                   onTap: _clearCache,
                 ),
 
                 SizedBox(height: 20),
 
-                // SECÇÃO CONTA (Se tiver login)
+                // Apresenta opções de conta apenas se o utilizador estiver autenticado
                 if (user != null) ...[
                   _buildSectionTitle(AppLocalizations.of(context)!.account),
                   
-                  // 4. Excluir Conta (Vermelho)
+                  // Ação destrutiva para eliminar a conta
                   _buildListOption(
                     icon: Icons.delete_forever_rounded,
                     text: AppLocalizations.of(context)!.deleteAccount,
                     iconColor: Colors.red,
                     iconBgColor: Colors.red.withOpacity(0.1),
-                    textColor: Colors.red, // Texto vermelho para destaque
+                    textColor: Colors.red,
                     onTap: _deleteAccount,
                   ),
                 ],
@@ -189,7 +183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Título da Secção (Pequeno e cinza)
+  /// Constrói o título de uma secção de definições
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15, left: 5, top: 10),
@@ -200,18 +194,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- O WIDGET MÁGICO (IGUAL AO PERFIL) ---
-  // Adicionei parâmetros opcionais para cores e widget final (trailing)
+  /// Constrói um item de lista para as definições
   Widget _buildListOption({
     required IconData icon, 
     required String text, 
     required VoidCallback onTap,
-    Widget? trailing, // Para pôr o Switch
+    Widget? trailing,
     Color? iconColor, 
     Color? iconBgColor,
     Color? textColor,
   }) {
-    // Cores padrão (Verde) se não forem especificadas
     final Color finalIconColor = iconColor ?? kPrimaryGreen;
     final Color finalBgColor = iconBgColor ?? kPrimaryGreen.withOpacity(0.1);
     final Color finalTextColor = textColor ?? Colors.black;
@@ -232,20 +224,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 2),
         horizontalTitleGap: 10,
 
-        // Ícone à esquerda (Bola colorida)
         leading: Container(
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(color: finalBgColor, shape: BoxShape.circle),
           child: Icon(icon, color: finalIconColor, size: 20),
         ),
         
-        // Texto
         title: Text(
           text, 
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5, color: finalTextColor) 
         ),
         
-        // Ícone à direita (Seta ou Switch)
         trailing: trailing ?? Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
         
         onTap: onTap,
@@ -253,7 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Dialog para escolher idioma
+  /// Exibe o diálogo de seleção de idioma
   void _showLanguageDialog(BuildContext context, String currentLang, String? userId) {
     final Map<String, String> languages = {
       'Português': 'pt',
@@ -290,12 +279,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Função para alterar idioma
+  /// Aplica a mudança de idioma no provider e persiste no Firestore (se autenticado)
   void _changeLanguage(BuildContext context, String newLang, String? userId) async {
     Provider.of<LanguageProvider>(context, listen: false).changeLanguage(newLang);
 
     if (userId != null) {
-      // Utilizador autenticado: guarda no Firestore
+      // Atualiza a preferência de idioma no Firestore
       await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'linguagem': newLang,
       });

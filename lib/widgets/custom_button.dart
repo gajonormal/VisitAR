@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Botão personalizado reutilizável, com suporte opcional para ícone à esquerda do texto.
 class CustomButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
@@ -13,7 +14,7 @@ class CustomButton extends StatelessWidget {
     super.key,
     required this.onPressed,
     required this.text,
-    this.backgroundColor = const Color(0xFF1E8050), // kPrimaryGreen
+    this.backgroundColor = const Color(0xFF1E8050), // cor primária verde da app (kPrimaryGreen)
     this.textColor = Colors.white,
     this.padding = const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
     this.borderRadius = 20.0,

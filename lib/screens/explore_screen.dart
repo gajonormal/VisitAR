@@ -19,7 +19,7 @@ import 'roteiro_details_screen.dart';
 import 'package:visitar_teste/l10n/app_localizations.dart';
 
 class ExploreScreen extends StatefulWidget {
-  /// Callback para mudar o tab ativo na navbar (e.g. ir para o Mapa)
+  /// Callback para alterar o separador ativo na navegação principal
   final Function(int) onTabChange;
 
   const ExploreScreen({super.key, required this.onTabChange});
@@ -29,34 +29,34 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class _ExploreScreenState extends State<ExploreScreen> {
-  // --- CORES ---
+  // Cores
   final Color kPrimaryGreen = const Color(0xFF0F9D58);
 
-  // --- DADOS ---
+  // Dados
   List<POI> _allPois = [];
   List<POI> _nearbyPois = [];
   bool _isLoading = true;
   Position? _userPosition;
 
-  // --- FILTROS ---
+  // Filtros
   final List<String> _categories = ['Tudo', 'Histórico', 'Natureza', 'Geológico', 'Trilho'];
   POIFilter _poiFilter = POIFilter();
 
-  // --- PESQUISA ---
+  // Pesquisa
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   List<POI> _searchResults = [];
   bool _isSearching = false;
   bool _isSearchFocused = false;
 
-  // --- ROTEIROS ---
+  // Roteiros
   final RoteirosService _roteirosService = RoteirosService();
 
-  // --- LAYOUT ---
+  // Layout
   final GlobalKey _headerKey = GlobalKey();
   double _headerHeight = 220.0;
 
-  // --- SLIDESHOW 360 ---
+  // Slideshow 360
   Timer? _slideshowTimer;
   String? _current360Image;
 
@@ -92,6 +92,24 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
+      // Timeout de 8 segundos para evitar bloqueio no carregamento
+      await Future.any([
+        _doLoadData(),
+        Future.delayed(const Duration(seconds: 8)),
+      ]);
+    } catch (e) {
+      // Ignora erros; o estado de loading é gerido no finally
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        // Inicia o slideshow para garantir que o banner tem conteúdo
+        _startSlideshow();
+      }
+    }
+  }
+
+  Future<void> _doLoadData() async {
+    try {
       List<POI> rawPois = await DatabaseService().getPOIs();
       final downloadService = DownloadService();
       List<POI> processedPois = [];
@@ -126,7 +144,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       }
       
       return await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high))
-          .timeout(const Duration(seconds: 10), onTimeout: () {
+          .timeout(const Duration(seconds: 5), onTimeout: () {
         throw Exception('Location timeout');
       });
     } catch (e) {
@@ -138,7 +156,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     List<POI> filtered = _allPois.where((p) => _poiFilter.apply(p)).toList();
     
     if (_userPosition != null) {
-      // 1. Filter out POIs that are further than 50km (50,000 meters)
+      // Exclui POIs a mais de 50 km do utilizador
       filtered = filtered.where((poi) {
         double dist = Geolocator.distanceBetween(
             _userPosition!.latitude, _userPosition!.longitude, 
@@ -146,14 +164,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
         return dist <= 50000;
       }).toList();
 
-      // 2. Sort the remaining nearby POIs by distance
+      // Ordena os POIs por distância crescente
       filtered.sort((a, b) {
         double dA = Geolocator.distanceBetween(_userPosition!.latitude, _userPosition!.longitude, a.localizacao.latitude, a.localizacao.longitude);
         double dB = Geolocator.distanceBetween(_userPosition!.latitude, _userPosition!.longitude, b.localizacao.latitude, b.localizacao.longitude);
         return dA.compareTo(dB);
       });
     } else {
-      // If we don't have the user's location, there's nothing "near" them
+      // Sem localização, a lista de POIs próximos fica vazia
       filtered = [];
     }
     setState(() => _nearbyPois = filtered);
@@ -161,7 +179,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   void _startSlideshow() {
     _slideshowTimer?.cancel();
-    final images = _allPois.where((p) => p.tem360 && p.imagens.isNotEmpty).map((p) => p.imagens.first).toList();
+    // Usa a primeira imagem de cada POI no slideshow do banner
+    final images = _allPois
+        .where((p) => p.imagens.isNotEmpty)
+        .map((p) => p.imagens.first)
+        .toList();
     
     if (images.isNotEmpty && mounted) {
       setState(() {
@@ -177,7 +199,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
-  // --- LÓGICA DE PESQUISA (igual ao home_map) ---
+  // Filtra os POIs por nome e categoria em tempo real
   void _onSearchChanged() {
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) {
@@ -207,28 +229,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
 
 
-  // ---------------------------------------------------------------
-  // BUILD
-  // ---------------------------------------------------------------
+  // Construção da Interface
   @override
   Widget build(BuildContext context) {
     final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double topPadding = MediaQuery.of(context).padding.top;
-    // Espaço disponível para o dropdown abaixo da barra de pesquisa
-    final double headerH = topPadding + 16 + 60 + 12; // padding + header approx + search bar + margin
+    // Calcula a altura do dropdown de resultados
+    final double headerH = topPadding + 16 + 60 + 12;
     final double availableDropdownHeight =
         (screenHeight - keyboardHeight - headerH - 12).clamp(100, 300);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F0), // Fundo principal
+      backgroundColor: const Color(0xFFF5F5F0),
       resizeToAvoidBottomInset: false,
       body: GestureDetector(
         onTap: _clearSearch,
         behavior: HitTestBehavior.translucent,
         child: Stack(
           children: [
-            // ── CONTEÚDO SCROLLÁVEL (Por baixo) ──
+            // Conteúdo principal (com scroll, sob o cabeçalho)
             RefreshIndicator(
               color: kPrimaryGreen,
               onRefresh: _loadData,
@@ -247,7 +267,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               ),
             ),
 
-            // ── CAIXA VERDE (Header + Pesquisa, Fixa no Topo) ──
+            // Cabeçalho fixo com saudação e pesquisa
             Positioned(
               top: 0, left: 0, right: 0,
               child: Material(
@@ -268,17 +288,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Header saudão
+                      // Saudação
                       _buildHeader(),
 
-                // Barra de pesquisa + dropdown
+                // Pesquisa e dropdown
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Barra principal — mesmo estilo do home_map mas com sombra mais suave sobre o verde
+                      // Barra de pesquisa
                       Container(
                         padding: const EdgeInsets.only(left: 15, right: 5),
                         height: 50,
@@ -347,21 +367,21 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         ),
                       ),
 
-                      // Dropdown: locais próximos quando focado sem texto
+                      // Sugestões de locais próximos
                       if (_isSearchFocused && !_isSearching && _nearbyPois.isNotEmpty)
                         _buildDropdownContainer(
                           maxHeight: availableDropdownHeight,
                           child: _buildNearbyRecommendations(),
                         ),
 
-                      // Dropdown: resultados de pesquisa
+                      // Resultados da pesquisa
                       if (_isSearching && _searchResults.isNotEmpty)
                         _buildDropdownContainer(
                           maxHeight: availableDropdownHeight,
                           child: _buildResultsList(_searchResults),
                         ),
 
-                      // Dropdown: sem resultados
+                      // Mensagem de pesquisa sem resultados
                       if (_isSearching && _searchResults.isEmpty)
                         Container(
                           margin: const EdgeInsets.only(top: 6),
@@ -383,14 +403,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ),
                 ),
               ],
-            ), // fim Column
-          ), // fim Container
-        ), // fim Material
-      ), // fim Positioned
-    ], // fim Stack children
-  ), // fim Stack
-  ), // fim GestureDetector
-); // fim Scaffold
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+  ),
+);
 }
 
   Widget _buildDropdownContainer({required Widget child, required double maxHeight}) {
@@ -448,9 +468,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  // ---------------------------------------------------------------
-  // HEADER — Saudação
-  // ---------------------------------------------------------------
+  // Cabeçalho e Saudação
   Widget _buildHeader() {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
@@ -505,9 +523,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  // ---------------------------------------------------------------
-  // BANNER 360
-  // ---------------------------------------------------------------
+  // Banner 360
   Widget _build360Banner() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -587,9 +603,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  // ---------------------------------------------------------------
-  // FILTROS DE CATEGORIA
-  // ---------------------------------------------------------------
+  // Filtros de Categoria
   Widget _buildCategoryFilters() {
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 4),
@@ -630,9 +644,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  // ---------------------------------------------------------------
-  // SECÇÃO "PERTO DE TI"
-  // ---------------------------------------------------------------
+  // Secção Perto de Ti
   Widget _buildNearbySection() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -690,9 +702,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
 
 
-  // ---------------------------------------------------------------
-  // SECÇÃO "ROTEIROS SUGERIDOS"
-  // ---------------------------------------------------------------
+  // Secção Roteiros Sugeridos
   Widget _buildItinerariesSection() {
     return Padding(
       padding: const EdgeInsets.only(top: 20, bottom: 30),
@@ -707,7 +717,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               children: [
                 Text(AppLocalizations.of(context)!.suggestedItineraries, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                 GestureDetector(
-                  onTap: () => widget.onTabChange(2), // Roteiros é o índice 2
+                  onTap: () => widget.onTabChange(2), // Navega para o separador de Roteiros
                   child: Text(AppLocalizations.of(context)!.viewAll, style: TextStyle(color: kPrimaryGreen, fontSize: 14, fontWeight: FontWeight.w700)),
                 ),
               ],
@@ -717,7 +727,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           SizedBox(
             height: 200,
             child: StreamBuilder<List<Roteiro>>(
-              stream: _roteirosService.getExploreRoteiros(), // Mostra apenas os do utilizador + admin
+              stream: _roteirosService.getExploreRoteiros(), // Roteiros do utilizador e do admin
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());

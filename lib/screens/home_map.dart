@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' as ui; // Necessário para desenhar os marcadores
+import 'dart:ui' as ui; // Necessário para renderizar os marcadores personalizados no mapa
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Para ByteData
+import 'package:flutter/services.dart'; // Para ByteData (conversão de imagens dos marcadores)
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -43,7 +43,7 @@ class _HomeMapState extends State<HomeMap> {
   List<POI> _allPois = [];
   List<POI> _visiblePois = [];
   Set<Marker> _markers = {}; 
-  Set<Polyline> _polylines = {}; // <-- Novo: Polylines para  // Ícones do mapa
+  Set<Polyline> _polylines = {}; // Linhas de rota desenhadas no mapa
   BitmapDescriptor? _markerIconNormal;
   BitmapDescriptor? _markerIconSelected;
   Map<int, BitmapDescriptor> _numberedMarkersNormal = {};
@@ -56,7 +56,7 @@ class _HomeMapState extends State<HomeMap> {
   late PageController _pageController;
   GoogleMapController? _mapController;
   final Color kPrimaryGreen = const Color(0xFF0F9D58);
-  final double _filterRadiusMeters = 5000.0; // 5km — alcance equilibrado para turismo e caminhadas
+  final double _filterRadiusMeters = 5000.0; // Raio de 5 km — equilíbrio entre turismo e caminhadas
 
   // --- NAVEGAÇÃO ROTEIRO ---
   Timer? _roteiroTimer;
@@ -69,11 +69,11 @@ class _HomeMapState extends State<HomeMap> {
   List<POI> _currentRoteiroPois = [];
   int _nextPoiIndex = 0;
   
-  // Throttle para requisições do OSRM da linha dinâmica
+  // Controlo de frequência das requisições ao OSRM para a linha de navegação dinâmica
   DateTime? _lastRouteFetch;
   List<LatLng> _currentDynamicRoute = [];
   
-  // Cartão de topo na navegação
+  // POI selecionado no mini cartão de topo (durante navegação ativa)
   POI? _selectedTopPoi;
 
   // --- PESQUISA ---
@@ -113,11 +113,10 @@ class _HomeMapState extends State<HomeMap> {
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.92);
-    
-    // LIMPEZA FORÇADA DE CACHE (Para apagar os pontos "fantasma")
+
+    // Limpa a cache local para evitar POIs "fantasma" de sessões anteriores
     SharedPreferences.getInstance().then((prefs) {
-      prefs.clear(); 
-      debugPrint("CACHE LOCAL TOTALMENTE APAGADA!");
+      prefs.clear();
     });
 
     _loadCustomMarkerIcons().then((_) => _initData());
@@ -126,7 +125,7 @@ class _HomeMapState extends State<HomeMap> {
       setState(() { _isSearchFocused = _searchFocusNode.hasFocus; });
     });
 
-    // Escutar Roteiro Ativo
+    // Reage a mudanças no roteiro ativo (inicia/termina navegação)
     activeRoteiroNotifier.addListener(_onActiveRoteiroChanged);
   }
 
@@ -190,47 +189,48 @@ class _HomeMapState extends State<HomeMap> {
       return;
     }
 
-    // Mudar para a tab do mapa
+    // Muda para o separador do mapa
     setState(() => _selectedIndex = 1);
 
-    // Fechar qualquer cartão de POI aberto
+    // Fecha qualquer cartão de POI aberto para focar no roteiro
     setState(() {
       _selectedPoiIndex = -1;
-      _visiblePois.clear(); // Opcional: limpar cartões para focar no roteiro
+      _visiblePois.clear();
     });
 
-    // Obter os POIs do roteiro
+    // Carrega os POIs associados ao roteiro
     List<POI> roteiroPois = await DatabaseService().getPOIsByIds(roteiro.poiIds);
     if (roteiroPois.isEmpty) return;
 
-    // 1. Obter a localização atual do utilizador para reordenar
+    // Obtém a localização atual para otimizar a ordem de visita
     Position? currentPos;
     try {
       currentPos = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
     } catch (e) {
-      debugPrint("Erro ao obter posição atual para ordenar roteiro: $e");
+      debugPrint('Erro ao obter posição para ordenar roteiro: $e');
     }
 
-    // 2. Verificar se temos internet para calcular a rota da nova ordem
+    // Verifica conectividade para calcular a rota pela nova ordem
     bool hasNet = await _hasInternet();
-    
+
     List<LatLng> points = [];
 
-    // Trilho pré-feito (GeoJSON asset): ignora OSRM e carrega direto do ficheiro
+    // Trilho pré-definido em GeoJSON: carrega diretamente do asset, ignorando o OSRM
     if (roteiro.trailAsset != null && roteiro.trailAsset!.isNotEmpty) {
       points = await RoutingService.loadTrailFromAsset(roteiro.trailAsset!);
       if (points.isEmpty) {
-        debugPrint('Aviso: trailAsset definido mas GeoJSON vazio ou inválido. Usando OSRM como fallback.');
+        // GeoJSON inválido ou vazio — fallback para o OSRM
+        debugPrint('trailAsset definido mas GeoJSON vazio. A usar OSRM como alternativa.');
         List<LatLng> waypoints = roteiroPois.map((p) => p.localizacao).toList();
         points = await RoutingService.getFullRoteiroRoute(waypoints);
       }
     } else if (hasNet && currentPos != null) {
-      // Temos internet e posição: reordenar de forma inteligente!
+      // Com internet e GPS: reordena os POIs pelo vizinho mais próximo
       roteiroPois = _optimizeRouteOrder(roteiroPois, currentPos);
       List<LatLng> waypoints = roteiroPois.map((p) => p.localizacao).toList();
       points = await RoutingService.getFullRoteiroRoute(waypoints);
     } else {
-      // Offline ou sem GPS: Usar ordem original e carregar rota cache (se houver)
+      // Sem internet ou GPS: usa a ordem original e a rota em cache, se disponível
       List<LatLng> waypoints = roteiroPois.map((p) => p.localizacao).toList();
       if (roteiro.routePoints != null && roteiro.routePoints!.isNotEmpty) {
         points = roteiro.routePoints!;
@@ -251,17 +251,17 @@ class _HomeMapState extends State<HomeMap> {
       };
     });
 
-    // Mover câmara para o início do roteiro
+    // Centra a câmara no primeiro ponto da rota
     if (_mapController != null) {
       _mapController!.animateCamera(CameraUpdate.newLatLngZoom(points.first, 15));
     }
-    
-    // Iniciar Navegação Ativa
+
+    // Inicia o tracking ativo do roteiro
     _startRoteiroTracking(roteiroPois);
   }
 
   void _startRoteiroTracking(List<POI> roteiroPois) {
-    WakelockPlus.enable(); // Manter ecrã ligado
+    WakelockPlus.enable(); // Mantém o ecrã sempre ligado durante a navegação
     _isRoteiroPaused = false;
     _roteiroElapsedSeconds = 0;
     _roteiroDistanceCovered = 0.0;
@@ -272,7 +272,7 @@ class _HomeMapState extends State<HomeMap> {
     _currentDynamicRoute = [];
     _selectedTopPoi = null;
 
-    _updateMarkers(); // <-- CRUCIAL PARA MOSTRAR OS NÚMEROS!
+    _updateMarkers(); // Atualiza os marcadores para mostrar os números de ordem do roteiro
     _updateDistanceToNextPoi();
 
     _roteiroTimer?.cancel();
@@ -314,7 +314,7 @@ class _HomeMapState extends State<HomeMap> {
         nextPoi.localizacao.latitude, nextPoi.localizacao.longitude,
       );
       
-      // Se estiver muito perto (ex: 20 metros), avança para o próximo POI
+      // Se o utilizador estiver a menos de 20 metros, considera o POI como visitado e avança
       if (dist < 20.0) {
         _nextPoiIndex++;
         if (_nextPoiIndex < _currentRoteiroPois.length) {
@@ -324,17 +324,18 @@ class _HomeMapState extends State<HomeMap> {
             nextPoi.localizacao.latitude, nextPoi.localizacao.longitude,
           );
         } else {
-          dist = 0.0; // Chegou ao fim
+          dist = 0.0; // Roteiro concluído
         }
       }
       
       setState(() {
         _distanceToNextPoi = dist;
         
-        // Atualizar a linha entre o utilizador e o próximo POI
+        // Atualiza a linha de navegação entre a posição atual e o próximo POI
         _polylines.removeWhere((p) => p.polylineId.value == 'user_to_next');
         if (_nextPoiIndex < _currentRoteiroPois.length) {
           
+          // Só busca nova rota se passaram mais de 10 segundos desde a última requisição
           bool shouldFetch = _lastRouteFetch == null || DateTime.now().difference(_lastRouteFetch!).inSeconds > 10;
           
           if (shouldFetch || _currentDynamicRoute.isEmpty) {
@@ -347,6 +348,7 @@ class _HomeMapState extends State<HomeMap> {
                 setState(() {
                   _currentDynamicRoute = route;
                   // Atualizar polyline com a nova rota
+                  // Substitui a polyline dinâmica com a rota atualizada
                   _polylines.removeWhere((p) => p.polylineId.value == 'user_to_next');
                   _polylines.add(
                     Polyline(
@@ -361,7 +363,7 @@ class _HomeMapState extends State<HomeMap> {
               }
             });
           } else {
-            // Se não formos buscar à net, apenas atualizamos o ponto de partida da rota existente
+            // Sem nova requisição: atualiza apenas o ponto de partida da rota existente
             if (_currentDynamicRoute.isNotEmpty) {
               _currentDynamicRoute[0] = LatLng(position.latitude, position.longitude);
             }
@@ -382,7 +384,7 @@ class _HomeMapState extends State<HomeMap> {
         }
       });
     } catch (e) {
-      debugPrint("Erro ao atualizar distância do POI: $e");
+      debugPrint('Erro ao calcular distância para o próximo POI: $e');
     }
   }
 
@@ -402,14 +404,13 @@ class _HomeMapState extends State<HomeMap> {
     });
   }
 
-  // ... (MANTÉM AS FUNÇÕES DE DADOS IGUAIS: _loadCustomMarkerIcons, _initData, _updateCardsContext, _updateMarkers, _onPageChanged, _getUserLocation, _locateUser, _onItemTapped) ...
-  // (Omiti para poupar espaço, já que não mudaram)
+
 
   Future<void> _loadCustomMarkerIcons() async {
     final normal = await getCustomMarker(color: Colors.white, iconColor: kPrimaryGreen, isSelected: false);
     final selected = await getCustomMarker(color: kPrimaryGreen, iconColor: Colors.white, isSelected: true);
     
-    // Gerar marcadores de 1 a 20 para os roteiros
+    // Pré-gera marcadores numerados de 1 a 20 para os POIs dos roteiros
     Map<int, BitmapDescriptor> numNormals = {};
     Map<int, BitmapDescriptor> numSelected = {};
     for (int i = 1; i <= 20; i++) {
@@ -424,7 +425,7 @@ class _HomeMapState extends State<HomeMap> {
         _numberedMarkersNormal = numNormals;
         _numberedMarkersSelected = numSelected;
       });
-      _updateMarkers(); // Ensure markers are drawn if data loaded first
+      _updateMarkers(); // Garante que os marcadores são desenhados mesmo que os dados já estivessem carregados
     }
   }
 
@@ -446,6 +447,7 @@ class _HomeMapState extends State<HomeMap> {
     }
   }
 
+  /// Atualiza a lista de POIs visíveis e os cartões com base num ponto central.
   void _updateCardsContext(LatLng centerPoint) {
     List<POI> nearby = _allPois.where((poi) {
       if (!_poiFilter.apply(poi)) return false;
@@ -578,8 +580,9 @@ class _HomeMapState extends State<HomeMap> {
 
   void _onItemTapped(int index) { setState(() { _selectedIndex = index; }); }
 
+  /// Inicia a navegação para um POI individual, criando um roteiro temporário.
   void _startNavigation(POI poi) {
-    // Fecha qualquer cartão selecionado e limpa o mapa
+    // Limpa o estado visual do mapa antes de iniciar
     setState(() {
       _selectedPoiIndex = -1;
       _selectedTopPoi = null;
@@ -587,7 +590,7 @@ class _HomeMapState extends State<HomeMap> {
       _polylines.clear();
     });
 
-    // Cria um roteiro temporário apenas com este destino para ativar o Tracking
+    // Cria um roteiro temporário com um único destino para ativar o tracking
     final tempRoteiro = Roteiro(
       id: 'single_poi_${poi.id}',
       titulo: 'Destino: ${poi.nome}',
@@ -599,12 +602,12 @@ class _HomeMapState extends State<HomeMap> {
       distancia: 0.0,
       criadorId: 'app_navigation',
     );
-    
-    // Atualiza o estado global que gere a navegação
+
+    // Publica o roteiro no notifier global para ativar a navegação
     activeRoteiroNotifier.value = tempRoteiro;
   }
 
-  // --- LÓGICA DE PESQUISA ---
+  // --- PESQUISA ---
   void _onSearchChanged() {
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) {
@@ -625,15 +628,14 @@ class _HomeMapState extends State<HomeMap> {
     });
   }
 
+  /// Seleciona um resultado de pesquisa, centra o mapa nele e mostra os cartões próximos.
   void _selectSearchResult(POI poi) {
-    // Fechar teclado e limpar pesquisa
     _searchFocusNode.unfocus();
     _searchController.clear();
     setState(() {
       _searchResults = [];
       _isSearching = false;
     });
-    // Navegar o mapa para o POI selecionado
     if (_mapController != null) {
       _mapController!.animateCamera(
         CameraUpdate.newCameraPosition(
@@ -641,7 +643,6 @@ class _HomeMapState extends State<HomeMap> {
         ),
       );
     }
-    // Mostrar os cartões em torno desse POI
     _updateCardsContext(poi.localizacao);
   }
 
@@ -654,26 +655,22 @@ class _HomeMapState extends State<HomeMap> {
     });
   }
 
-  // ---------------------------------------------------------------
-  // --- BUILD ATUALIZADO ---
-  // ---------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     const double cardHeight = 220.0;
     const double visibleBottom = 100.0;
     const double hiddenBottom = -300.0;
 
-    // 1. Verificar se o teclado está aberto
+    // Os cartões só são visíveis quando o teclado está fechado e há um POI selecionado
     bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
-
-    // 2. Os cartões só aparecem se o teclado estiver FECHADO
     bool areCardsVisible = _selectedPoiIndex != -1 && _visiblePois.isNotEmpty && !isKeyboardOpen;
 
     return Focus(
       autofocus: true,
       child: Scaffold(
         extendBody: true,
-        // 3. Isto impede que o layout suba quando o teclado abre
+        // Impede que o layout suba quando o teclado abre
         resizeToAvoidBottomInset: false, 
       
       body: IndexedStack(
@@ -693,30 +690,28 @@ class _HomeMapState extends State<HomeMap> {
                 style: _isSatellite ? null : _mapStyle,
                 onMapCreated: (controller) {
                   _mapController = controller;
-                  // Aplica o estilo para limpar o mapa
-                  
                 },
                 mapToolbarEnabled: false,
                 myLocationEnabled: true,
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
                 padding: EdgeInsets.only(bottom: areCardsVisible ? 300 : 100, top: 100),
-                onTap: (_) { 
-                  // 4. Fechar o teclado ao clicar no mapa
+                onTap: (_) {
+                  // Fechar teclado e desselecionar o POI ativo ao tocar no mapa
                   FocusScope.of(context).unfocus();
-                  setState(() { 
-                    _selectedPoiIndex = -1; 
+                  setState(() {
+                    _selectedPoiIndex = -1;
                     _selectedTopPoi = null;
-                  }); 
-                  _updateMarkers(); 
+                  });
+                  _updateMarkers();
                 },
               ),
               
-              // BARRA DE PESQUISA ATUALIZADA
+              // Barra de pesquisa (só visível fora da navegação)
               if (activeRoteiroNotifier.value == null)
                 _buildSearchBar(),
               
-              // BOTÃO GPS — esconde quando a pesquisa está ativa ou move para baixo se o mini cartão estiver visível
+              // Botão GPS — esconde durante pesquisa e desce quando o mini cartão está visível
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 250), curve: Curves.easeInOut,
                 top: (_selectedTopPoi != null && activeRoteiroNotifier.value != null) ? 160 : 110,
@@ -727,7 +722,7 @@ class _HomeMapState extends State<HomeMap> {
                 ),
               ),
 
-              // BOTÃO MAP TYPE (SATÉLITE / NORMAL)
+              // Botão de alternância entre mapa normal e vista de satélite
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 250), curve: Curves.easeInOut,
                 top: (_selectedTopPoi != null && activeRoteiroNotifier.value != null) ? 210 : 160,
@@ -744,7 +739,7 @@ class _HomeMapState extends State<HomeMap> {
               ),
 
 
-              // BOTÃO NAVEGAR — aparece quando há POI selecionado
+              // Botões de ação (360° e Navegar) — surgem quando há um POI selecionado
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300), curve: Curves.easeInOut,
                 bottom: areCardsVisible ? (visibleBottom + cardHeight + 15) : 100,
@@ -766,7 +761,7 @@ class _HomeMapState extends State<HomeMap> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
                           ),
                           onPressed: () async {
-                            // Buscar sempre a versão mais recente do 360 antes de abrir para ter os marcadores atualizados!
+                            // Recarrega o panorama antes de abrir para garantir marcadores atualizados
                             var freshPano = await DatabaseService().getPanoramaForPoi(_visiblePois[_selectedPoiIndex].id);
                             if (!mounted) return;
                             
@@ -825,19 +820,19 @@ class _HomeMapState extends State<HomeMap> {
                 ),
               ),
 
-              // PAINEL DE NAVEGAÇÃO ATIVA
+              // Painel inferior de navegação ativa (cronómetro, distância, pausar/terminar)
               if (activeRoteiroNotifier.value != null)
                 _buildActiveNavigationPanel(),
 
-              // MINI CARTÃO DE TOPO (Sempre na árvore, animado para fora do ecrã quando invisível)
+              // Mini cartão de topo: sempre presente na árvore, desliza para fora do ecrã quando vazio
               _buildTopMiniCard(),
 
-              // CARROSSEL
+              // Carrossel de cartões dos POIs próximos
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 400), curve: Curves.easeInOutCubic,
-                left: 0, right: 0, 
+                left: 0, right: 0,
                 height: cardHeight,
-                // Se teclado aberto, manda para baixo
+                // Quando o teclado está aberto, empurra os cartões para fora do ecrã
                 bottom: areCardsVisible ? visibleBottom : hiddenBottom, 
                 child: PageView.builder(
                   controller: _pageController,
@@ -861,7 +856,7 @@ class _HomeMapState extends State<HomeMap> {
               ),
             ],
           ),
-          // 2. ROTEIROS
+          // Ecrãs dos restantes separadores da barra de navegação
           const RoteirosScreen(),
           const FavoritesScreen(),
           const ProfileScreen(),
@@ -872,7 +867,7 @@ class _HomeMapState extends State<HomeMap> {
     );
   }
 
-  // --- PAINEL DE NAVEGAÇÃO ATIVA ---
+  /// Constrói o painel inferior com as estatísticas e controlos da navegação ativa.
   Widget _buildActiveNavigationPanel() {
     String formatTime(int seconds) {
       int m = seconds ~/ 60;
@@ -982,9 +977,9 @@ class _HomeMapState extends State<HomeMap> {
     );
   }
 
-  // --- ECRÃ DE RESUMO DO ROTEIRO ---
+  /// Mostra o diálogo de confirmação para terminar o roteiro, com o resumo da sessão.
   void _showEndRoteiroDialog() {
-    // Pausar tracking temporariamente
+    // Pausa o tracking enquanto o utilizador confirma a ação
     setState(() => _isRoteiroPaused = true);
     
     showDialog(
@@ -1030,7 +1025,7 @@ class _HomeMapState extends State<HomeMap> {
                 child: TextButton(
                   onPressed: () {
                     Navigator.pop(ctx);
-                    setState(() => _isRoteiroPaused = false); // Continuar
+                    setState(() => _isRoteiroPaused = false); // Retoma o tracking
                   },
                   child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: Colors.grey)),
                 ),
@@ -1052,30 +1047,28 @@ class _HomeMapState extends State<HomeMap> {
     );
   }
 
+  /// Termina o roteiro ativo, limpando a UI e parando o tracking via [_onActiveRoteiroChanged].
   void _finishRoteiro() {
-    activeRoteiroNotifier.value = null; // Isto chama o _onActiveRoteiroChanged que limpa a UI e para o tracking
+    activeRoteiroNotifier.value = null;
   }
 
-  // --- BARRA DE PESQUISA FUNCIONAL ---
+  /// Constrói a barra de pesquisa com sugestões e lista de resultados.
   Widget _buildSearchBar() {
-    // Altura do teclado (0 se estiver fechado)
     final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    // Altura total do ecrã
     final double screenHeight = MediaQuery.of(context).size.height;
-    // Espaço disponível para a lista de resultados:
-    // ecrã - teclado - top da barra (50) - altura da barra (50) - margem (12) - padding de segurança extra (16)
+    // Espaço disponível para a lista de resultados (desconta teclado, barra e margens)
     final double availableDropdownHeight =
         screenHeight - keyboardHeight - 50 - 50 - 12 - 16;
 
     return Positioned(
       top: 50, left: 20, right: 20,
-      // Limitar a altura total ao espaço disponível acima do teclado
+      // Limita a altura da coluna ao espaço disponível acima do teclado
       bottom: keyboardHeight > 0 ? keyboardHeight + 8 : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // -- Barra principal --
+          // Barra de pesquisa principal
           Container(
             padding: const EdgeInsets.only(left: 15, right: 5),
             height: 50,
@@ -1087,10 +1080,10 @@ class _HomeMapState extends State<HomeMap> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Ícone de pesquisa
+                // Ícone de lupa (fica verde quando há pesquisa ativa)
                 Icon(Icons.search, color: _isSearching ? kPrimaryGreen : Colors.grey),
                 SizedBox(width: 10),
-                // Campo de texto
+                // Campo de entrada de texto
                 Expanded(
                   child: TextField(
                     controller: _searchController,
@@ -1110,7 +1103,7 @@ class _HomeMapState extends State<HomeMap> {
                     },
                   ),
                 ),
-                // Botão X para limpar (só aparece enquanto pesquisa)
+                // Botão para limpar (só aparece durante pesquisa ativa)
                 if (_isSearching)
                   IconButton(
                     icon: Icon(Icons.close, color: Colors.grey),
@@ -1155,7 +1148,7 @@ class _HomeMapState extends State<HomeMap> {
               ],
             ),
           ),
-          // -- Recomendações de locais próximos (quando focado e sem texto) --
+          // Sugestões de locais próximos (quando o campo está focado mas sem texto)
           if (_isSearchFocused && !_isSearching && _visiblePois.isNotEmpty)
             _buildNearbyRecommendations(maxHeight: availableDropdownHeight.clamp(100, 300)),
 
@@ -1163,7 +1156,7 @@ class _HomeMapState extends State<HomeMap> {
           if (_isSearching && _searchResults.isNotEmpty)
             _buildResultsList(_searchResults, maxHeight: availableDropdownHeight.clamp(100, 260)),
 
-          // -- Mensagem quando não há resultados --
+          // Mensagem de "sem resultados"
           if (_isSearching && _searchResults.isEmpty)
             Container(
               margin: const EdgeInsets.only(top: 6),
@@ -1185,10 +1178,9 @@ class _HomeMapState extends State<HomeMap> {
       ),
     );
   }
-  // --- RECOMENDAÇÕES DE LOCAIS PRÓXIMOS ---
+  /// Constrói a lista de sugestões de locais próximos (máximo 5, ordenados por distância).
   Widget _buildNearbyRecommendations({double maxHeight = 300}) {
-    // Mostra até 5 POIs próximos (já ordenados por distância em _visiblePois)
-    final nearby = _visiblePois.take(5).toList();
+    final nearby = _visiblePois.take(5).toList(); // Limita a 5 POIs
     return Container(
       margin: const EdgeInsets.only(top: 6),
       decoration: BoxDecoration(
@@ -1203,7 +1195,7 @@ class _HomeMapState extends State<HomeMap> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cabeçalho
+            // Cabeçalho da lista de sugestões
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
               child: Row(
@@ -1223,7 +1215,7 @@ class _HomeMapState extends State<HomeMap> {
               ),
             ),
             Divider(height: 1, color: Colors.grey[200]),
-            // Lista scrollable para caber no espaço disponível
+            // Lista com scroll para caber no espaço disponível acima do teclado
             Flexible(
               child: ListView.separated(
                 padding: EdgeInsets.zero,
@@ -1259,7 +1251,7 @@ class _HomeMapState extends State<HomeMap> {
     );
   }
 
-  // --- LISTA DE RESULTADOS (PESQUISA) ---
+  /// Constrói a lista de resultados de pesquisa com altura máxima configurável.
   Widget _buildResultsList(List<POI> pois, {double maxHeight = 260}) {
     return Container(
       margin: const EdgeInsets.only(top: 6),
@@ -1322,9 +1314,8 @@ class _HomeMapState extends State<HomeMap> {
       ),
     );
   }
-// -----------------------------------------------------------
-// --- HELPER: MINI CARTÃO DE TOPO (Navegação Ativa) ---
-// -----------------------------------------------------------
+
+  /// Constrói o mini cartão animado de topo que mostra o POI selecionado durante a navegação.
   Widget _buildTopMiniCard() {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
@@ -1391,9 +1382,7 @@ class _HomeMapState extends State<HomeMap> {
     );
   }
 }
-// -----------------------------------------------------------
-// --- NOVO WIDGET DO CARTÃO (CARD) ---
-// -----------------------------------------------------------
+// Widget do cartão de POI exibido no carrossel do mapa
 
 class PoiMapCard extends StatefulWidget {
   final POI poi;
@@ -1570,15 +1559,15 @@ class _PoiMapCardState extends State<PoiMapCard> {
           Expanded(
             child: Column(
               children: [
-                // IMAGEM (40% Altura)
+                // Imagem de capa do POI (40% da altura do cartão)
                 Expanded(
-                  flex: 4, 
+                  flex: 4,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                     child: SizedBox(width: double.infinity, child: imageWidget),
                   ),
                 ),
-                // CONTEÚDO (60% Altura)
+                // Conteúdo textual e botões (60% da altura do cartão)
                 Expanded(
                   flex: 6,
                   child: Padding(
@@ -1596,7 +1585,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
                         Text("${widget.poi.categoria} • Aprox. ${_formatDistance()}", style: TextStyle(color: Colors.grey[600], fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                         Row(
                           children: [
-                            // Botão Detalhes (Stadium)
+                            // Botão principal de acesso aos detalhes do POI
                             Expanded(
                               child: SizedBox(
                                 height: 36,
@@ -1608,7 +1597,7 @@ class _PoiMapCardState extends State<PoiMapCard> {
                               ),
                             ),
                             SizedBox(width: 12),
-                            // Botões Ícone (Limpos)
+                            // Botão de favorito
                             _isLoadingFavorite
                                 ? SizedBox(width: 36, height: 36, child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)))
                                 : _buildIconButton(icon: isFavorite ? Icons.favorite : Icons.favorite_border, activeColor: Colors.red, isActive: isFavorite, onTap: _toggleFavorite),
@@ -1639,9 +1628,8 @@ class _PoiMapCardState extends State<PoiMapCard> {
   }
 }
 
-// -----------------------------------------------------------
-// --- HELPER: DESENHAR MARCADOR PERSONALIZADO ---
-// -----------------------------------------------------------
+/// Gera um [BitmapDescriptor] com um marcador circular personalizado,
+/// podendo exibir um número (para roteiros) ou o ícone de localização.
 Future<BitmapDescriptor> getCustomMarker({required Color color, required Color iconColor, required bool isSelected, String? text}) async {
   final double size = isSelected ? 120.0 : 90.0;
   final double iconSize = isSelected ? 70.0 : 50.0;
@@ -1651,17 +1639,14 @@ Future<BitmapDescriptor> getCustomMarker({required Color color, required Color i
   final Canvas canvas = Canvas(pictureRecorder);
   final Paint paint = Paint()..color = color;
 
-  // --- ALTERAÇÃO AQUI ---
-  // Se selecionado = Branco (destaque), Se não = Verde (marca da app)
+  // Borda branca quando selecionado, verde (cor da app) quando não selecionado
   final Paint borderPaint = Paint()
     ..color = isSelected ? Colors.white : const Color(0xFF0F9D58); 
 
   final double radius = size / 2;
 
-  // Desenha a Borda (Círculo exterior)
-  canvas.drawCircle(Offset(radius, radius), radius, borderPaint); 
-  
-  // Desenha o Fundo (Círculo interior)
+  // Círculo exterior (borda) e círculo interior (fundo)
+  canvas.drawCircle(Offset(radius, radius), radius, borderPaint);
   canvas.drawCircle(Offset(radius, radius), radius - borderSize, paint); 
 
   TextPainter textPainter = TextPainter(textDirection: TextDirection.ltr);

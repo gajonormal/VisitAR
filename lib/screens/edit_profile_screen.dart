@@ -104,7 +104,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ESTILO CONFORTÁVEL ---
+    // Estilo partilhado para os campos de texto
     final inputDecoration = InputDecoration(
       filled: true,
       fillColor: Colors.grey[100], 
@@ -143,7 +143,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // FOTO DE PERFIL (Voltou ao tamanho normal: 50)
                 Stack(
                   alignment: Alignment.center,
                   children: [
@@ -153,7 +152,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: kPrimaryGreen, width: 2)),
                         child: CircleAvatar(
-                          radius: 50, // <--- MAIOR
+                          radius: 50,
                           backgroundColor: Colors.grey[200],
                           backgroundImage: backgroundImage,
                           child: backgroundImage == null
@@ -164,9 +163,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 25), // <--- Mais espaço
+                SizedBox(height: 25),
 
-                // NOME
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -185,9 +183,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 15), // <--- Espaço de 15px
+                SizedBox(height: 15),
 
-                // EMAIL
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -209,7 +206,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 SizedBox(height: 15),
 
-                // GÉNERO
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -220,10 +216,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ButtonTheme(
                       alignedDropdown: true,
                       child: DropdownButtonFormField<String>(
-                        initialValue: _selectedGender,
+                        value: _selectedGender,
                         borderRadius: BorderRadius.circular(20),
                         isExpanded: true,
-                        // Removi a restrição de altura fixa para ele crescer com o padding
                         decoration: inputDecoration.copyWith(
                           hintText: AppLocalizations.of(context)!.gender,
                           prefixIcon: Icon(Icons.people_outline, color: kPrimaryGreen),
@@ -244,7 +239,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 
                 SizedBox(height: 15),
 
-                // NACIONALIDADE
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -255,7 +249,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ButtonTheme(
                       alignedDropdown: true,
                       child: DropdownButtonFormField<String>(
-                        initialValue: _selectedLanguage,
+                        value: _selectedLanguage,
                         borderRadius: BorderRadius.circular(20),
                         isExpanded: true,
                         decoration: inputDecoration.copyWith(
@@ -283,7 +277,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Text(AppLocalizations.of(context)!.changePassword, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 SizedBox(height: 15),
 
-                // PASSWORD 1
                 TextFormField(
                   controller: _newPassController,
                   obscureText: true,
@@ -295,7 +288,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 SizedBox(height: 15),
                 
-                // PASSWORD 2
                 TextFormField(
                   controller: _confirmPassController,
                   obscureText: true,
@@ -311,12 +303,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 SizedBox(height: 30),
 
-                // BOTÃO
                 isLoading 
                 ? CircularProgressIndicator(color: kPrimaryGreen)
                 : SizedBox(
                   width: double.infinity,
-                  height: 50, // Altura confortável para o dedo
+                  height: 50,
                   child: ElevatedButton(
                     onPressed: _saveProfile,
                     style: ElevatedButton.styleFrom(

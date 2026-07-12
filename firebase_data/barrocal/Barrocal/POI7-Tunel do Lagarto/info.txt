@@ -1,5 +1,0 @@
-﻿LATITUDE: 39.813009
-LONGITUDE: -7.493495
-CATEGORIA: Tunel
-DESC_PT: Este túnel com a forma de um lagarto ondulante entre penedos faz a transição entre a zona do parque mais próxima da cidade e a do seu interior, onde os mirantes se espraiam em contemplação da paisagem do Barrocal e da sua envolvente rural. Sendo um percurso ensombrado, permite ainda a paragem e descanso dos visitantes e a contemplação dos jogos de luz e de sombra, que vão variando ao longo do dia e com as estações do ano.
-DESC_EN: This tunnel, shaped like a winding lizard between boulders, marks the transition between the part of the park closest to the city and its interior, where the viewpoints open onto the Barrocal landscape and surrounding countryside. Being a shaded route, it also offers visitors a place to stop and rest, taking in the interplay of light and shadow that shifts throughout the day and across the seasons.

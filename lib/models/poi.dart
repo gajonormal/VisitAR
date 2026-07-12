@@ -23,7 +23,7 @@ class POI {
     this.tem360 = false,
   });
 
-  // --- 1. LER DO FIREBASE (Já tinhas isto) ---
+  /// Constrói um [POI] a partir de um documento do Firestore.
   factory POI.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
@@ -68,7 +68,7 @@ class POI {
     );
   }
 
-  // --- 2. NOVO: CONVERTER PARA MAPA (Para o DownloadService guardar offline) ---
+  /// Serializa o [POI] para um mapa, usado pelo DownloadService ao guardar dados offline.
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -82,7 +82,7 @@ class POI {
     };
   }
 
-  // --- 3. NOVO: LER DO MAPA (Para o DownloadService ler do offline) ---
+  /// Constrói um [POI] a partir de um mapa JSON, usado pelo DownloadService ao ler dados offline.
   factory POI.fromMap(Map<String, dynamic> map) {
     return POI(
       id: map['id'],
@@ -95,16 +95,19 @@ class POI {
     );
   }
 
-  // --- Helpers ---
+  /// Devolve a descrição no idioma indicado por [langCode].
+  /// Usa português como fallback e, se não existir, devolve o primeiro idioma disponível.
   String getDescription(String langCode) {
     if (mapaDescricao.containsKey(langCode)) return mapaDescricao[langCode];
-    if (mapaDescricao.containsKey('pt')) return mapaDescricao['pt']; // fallback
-    if (mapaDescricao.isNotEmpty) return mapaDescricao.values.first; // qualquer uma
+    if (mapaDescricao.containsKey('pt')) return mapaDescricao['pt'];
+    if (mapaDescricao.isNotEmpty) return mapaDescricao.values.first;
     return 'Descrição indisponível.';
   }
 
   String get description => getDescription('pt');
 
+  /// Devolve o URL do áudio no idioma indicado por [langCode].
+  /// Usa português como fallback; devolve string vazia se não houver áudio disponível.
   String getAudioUrl(String langCode) {
     if (mapaAudio.containsKey(langCode)) return mapaAudio[langCode];
     if (mapaAudio.containsKey('pt')) return mapaAudio['pt'];

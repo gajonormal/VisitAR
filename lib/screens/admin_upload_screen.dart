@@ -13,13 +13,14 @@ class AdminUploadScreen extends StatefulWidget {
 
 class _AdminUploadScreenState extends State<AdminUploadScreen> {
   bool _isUploading = false;
-  String _status = 'Pronto para iniciar.';
+  String _status = '';
   int _current = 0;
   int _total = 0;
   List<String> _logs = [];
-  File? _capaBarcocalFile; // Imagem de capa para o roteiro do Barrocal
+  File? _capaBarcocalFile;
 
   Future<void> _pickCapaBarrocal() async {
+    /// Abre o seletor para escolher a imagem de capa
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (picked != null) {
@@ -65,7 +66,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
         String id = folderName.replaceAll(' ', '_').toLowerCase();
         String nome = folderName.contains('-') ? folderName.split('-').last.trim() : folderName;
 
-        // Ler info.txt
+        // Extrai informações do ficheiro info.txt
         final infoFile = File('${folder.path}/info.txt');
         double lat = 0.0;
         double lng = 0.0;
@@ -84,8 +85,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
           }
         }
 
-        // Procurar Ficheiros
-        List<File> images = [];
+        List<dynamic> existingImages = [];
         Map<String, File> audios = {};
         File? panoramaFile;
 
@@ -93,14 +93,13 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
         for (var f in files) {
           final lower = f.path.toLowerCase();
           if (lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.jpeg')) {
-            images.add(f);
+            existingImages.add(f);
           } else if (lower.endsWith('.mp3')) {
             if (lower.contains('en ')) audios['en'] = f;
             else audios['pt'] = f;
           }
         }
 
-        // Ver se há panoramas
         final panoDir = Directory('${folder.path}/360');
         if (await panoDir.exists()) {
           final panoFiles = panoDir.listSync().whereType<File>();
@@ -112,11 +111,10 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
           }
         }
 
-        // 1. Upload Imagens
         List<String> imageUrls = [];
-        for (int j = 0; j < images.length; j++) {
-          var img = images[j];
-          _addLog('      Enviando imagem ${j+1}/${images.length}...');
+        for (int j = 0; j < existingImages.length; j++) {
+          var img = existingImages[j];
+          _addLog('      Enviando imagem ${j+1}/${existingImages.length}...');
           String filename = img.path.split(Platform.pathSeparator).last;
           final ref = FirebaseStorage.instance.ref().child('pois/$id/imagens/$filename');
           await ref.putFile(img);
@@ -125,7 +123,6 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
         }
         _addLog('   ${imageUrls.length} imagens enviadas.');
 
-        // 2. Upload Audios
         Map<String, String> audioUrls = {};
         int audIndex = 1;
         for (var key in audios.keys) {
@@ -138,21 +135,20 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
         }
         _addLog('   ${audioUrls.length} audios enviados.');
 
-        // 3. Upload Panorama
+        // Efetua o upload da imagem panorama a 360 graus
         if (panoramaFile != null) {
           String filename = panoramaFile.path.split(Platform.pathSeparator).last;
           final ref = FirebaseStorage.instance.ref().child('panoramas/$id/$filename');
           await ref.putFile(panoramaFile);
           String url = await ref.getDownloadURL();
 
-          // Guardar Panorama no Firestore sem apagar os marcadores que já existem!
           await FirebaseFirestore.instance.collection('panoramas').doc(id).set({
             'imageUrl': url,
           }, SetOptions(merge: true));
           _addLog('   Panorama enviado.');
         }
 
-        // 4. Guardar POI no Firestore
+        // Regista os dados do POI no Firestore
         await FirebaseFirestore.instance.collection('pois').doc(id).set({
           'nome': nome,
           'categoria': categoria,
@@ -173,7 +169,6 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
 
     setState(() {
       _isUploading = false;
-      _status = 'Processo concluído!';
     });
   }
 
@@ -185,8 +180,6 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
     });
 
     try {
-      // IDs dos POIs na ordem definida pelo utilizador
-      // (gerados pelo upload: folderName.replaceAll(' ', '_').toLowerCase())
       final List<String> poiIds = [
         'poi1-chave_do_barrocal',
         'poi2-mirante_de_castelo_branco',
@@ -209,7 +202,6 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
       ];
 
       _addLog('A verificar se os POIs existem no Firestore...');
-      // Verificar que os POIs existem
       int found = 0;
       for (final id in poiIds) {
         final doc = await FirebaseFirestore.instance.collection('pois').doc(id).get();
@@ -223,11 +215,11 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
 
       _addLog('A criar documento do roteiro...');
 
-      // Upload da imagem de capa (se selecionada)
       String capaUrl = '';
       if (_capaBarcocalFile != null) {
         _addLog('A enviar imagem de capa...');
         final fileName = 'roteiros/barrocal_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        // Efetua o upload do ficheiro e guarda o URL de acesso
         final ref = FirebaseStorage.instance.ref().child(fileName);
         await ref.putFile(_capaBarcocalFile!);
         capaUrl = await ref.getDownloadURL();
@@ -281,7 +273,6 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
               child: Text(_isUploading ? 'A enviar $_current de $_total...' : 'Iniciar Upload do Barrocal'),
             ),
             SizedBox(height: 12),
-            // Seleção de imagem de capa para o roteiro
             GestureDetector(
               onTap: _isUploading ? null : _pickCapaBarrocal,
               child: Container(

@@ -1,5 +1,0 @@
-﻿LATITUDE: 39.812412
-LONGITUDE: -7.494403
-CATEGORIA: Ponto de Encontro
-DESC_PT: Chegou ao Círculo do Domo, o ponto de encontro no centro do Parque do Barrocal! Este círculo convida ao descanso e a pequenas reuniões, eventos culturais, aulas e palestras, onde se pode aprender sobre o Barrocal, enquanto se contempla a vista privilegiada pela encosta abaixo, até à Sierra de San Pedro, em Espanha.
-DESC_EN: Welcome to the Círculo do Domo, the meeting point at the heart of Barrocal Park! This circle invites rest and small gatherings, cultural events, classes and talks, where visitors can learn about Barrocal while taking in the privileged view down the hillside, all the way to the Sierra de San Pedro in Spain.

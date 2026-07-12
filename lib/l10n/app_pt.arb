@@ -36,8 +36,8 @@
   "alreadyVisited": "Já visitaste este local!",
   "youAreAt": "Estás a ",
   "approachToRegister": " deste local. Aproxima-te para registar a visita.",
-  "visitRegistered": "✅ Visita registada no teu Passaporte!",
-  "congratsCompletedItinerary": "🎉 Parabéns! Concluíste o roteiro",
+  "visitRegistered": "Visita registada no teu Passaporte!",
+  "congratsCompletedItinerary": "Parabéns! Concluíste o roteiro",
   "achievementUnlocked": "Conquista Desbloqueada!",
   "fantastic": "Fantástico!",
   
@@ -107,9 +107,9 @@
   "languageChangedTo": "Idioma alterado para",
   "local": "(local)",
   "loginRegister": "Login/Registo",
-  "badgesCreated": "✅ Badges criadas no Firestore!",
-  "achievementsDeleted": "🗑️ Todas as tuas conquistas foram apagadas!",
-  "stampsDeleted": "🗑️ Todos os teus carimbos de visitas foram apagados!",
+  "badgesCreated": "Badges criadas no Firestore!",
+  "achievementsDeleted": "Todas as tuas conquistas foram apagadas!",
+  "stampsDeleted": "Todos os teus carimbos de visitas foram apagados!",
   
   "searchItineraries": "Pesquisar roteiros...",
   "suggested": "Sugeridos",
@@ -355,7 +355,7 @@
   "adminCreateButton": "CRIAR PONTO DE INTERESSE",
   "adminFillRequired": "Preenche os campos obrigatórios!",
   "adminAddAtLeastOnePhoto": "Adiciona pelo menos uma foto!",
-  "adminSuccessCreated": "✅ POI Criado com sucesso!",
+  "adminSuccessCreated": "POI Criado com sucesso!",
   "adminErrorSaving": "Erro ao gravar: {error}",
   "@adminErrorSaving": {
     "placeholders": {

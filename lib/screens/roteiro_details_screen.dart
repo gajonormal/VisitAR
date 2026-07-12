@@ -51,8 +51,8 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
   }
 
   Future<void> _checkAndFetchFullRoteiro() async {
-    // Se o Roteiro foi carregado a partir de favoritos antigos ou offline,
-    // o criadorId pode estar vazio. Precisamos de ir buscar a versão completa.
+    // Se o roteiro foi carregado a partir de favoritos antigos ou offline,
+    // o criadorId pode estar vazio — vai buscar a versão completa ao Firestore.
     if (_currentRoteiro.criadorId.isEmpty || _currentRoteiro.criadorId == 'admin' && _currentRoteiro.mapaDescricao.isEmpty) {
       try {
         final doc = await FirebaseFirestore.instance.collection('roteiros').doc(_currentRoteiro.id).get();
@@ -62,7 +62,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
           });
         }
       } catch (e) {
-        debugPrint("Erro ao tentar buscar roteiro completo: $e");
+        debugPrint('Erro ao buscar roteiro completo: $e');
       }
     }
   }
@@ -281,7 +281,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                   final doc = await FirebaseFirestore.instance.collection('roteiros').doc(_currentRoteiro.id).get();
                   if (doc.exists && mounted) {
                     setState(() {
-                      // Fetch updated POI list from Firestore to refresh progress calculation
+                      // Atualiza o roteiro local com os dados mais recentes do Firestore
                       _currentRoteiro = Roteiro.fromFirestore(doc);
                     });
                   }
@@ -329,18 +329,18 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Categoria
+            // Categoria do roteiro
             Text(
               AppLocalizations.of(context)!.category,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             SizedBox(height: 10),
             
-            // IMAGEM DE CAPA
+            // Imagem de capa do roteiro
             _buildCoverImage(),
             SizedBox(height: 15),
 
-            // ESTATÍSTICAS EM BLOCOS (ESTILO HEADER VERDE)
+            // Blocos de estatísticas (POIs, duração e distância)
             Row(
               children: [
                 Expanded(child: _buildStatBlock("POIs", "${_currentRoteiro.poiIds.length}")),
@@ -353,7 +353,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             
             SizedBox(height: 25),
             
-            // DESCRIÇÃO
+            // Descrição do roteiro
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -379,14 +379,14 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             ),
             SizedBox(height: 30),
 
-            // PROGRESSO DO ROTEIRO
+            // Progresso de exploração do roteiro (em tempo real via stream)
             StreamBuilder<RoteiroProgress>(
               stream: PassportService().getRoteiroProgressStream(_currentRoteiro),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return SizedBox();
                 final progress = snapshot.data!;
                 
-                // Se o roteiro acabou de ser concluído, regista e possivelmente lança conquista
+                // Se o roteiro foi concluído, regista a conquista (uma só vez)
                 if (progress.isCompleted) {
                   WidgetsBinding.instance.addPostFrameCallback((_) async {
                     if (!mounted) return;
@@ -439,12 +439,11 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             ),
             SizedBox(height: 30),
             
-            // PONTOS DE INTERESSE ADICIONADOS (ESTILO FIGMA)
+            // Lista de POIs do roteiro em formato de linha cronológica
             _buildGreenSection(
               title: AppLocalizations.of(context)!.poisAdded,
               child: Column(
                 children: [
-                  // Lista
                   _isLoadingPois 
                       ? Padding(padding: const EdgeInsets.all(20.0), child: CircularProgressIndicator(color: kPrimaryGreen))
                       : _buildPoiTimeline(),
@@ -454,7 +453,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
             
             SizedBox(height: 40),
             
-            // BOTÕES INFERIORES
+            // Botão para iniciar o roteiro no mapa
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -562,11 +561,11 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey[300]!),
       ),
-      clipBehavior: Clip.antiAlias, // Ensures the grey banner doesn't spill over bottom corners
+      clipBehavior: Clip.antiAlias, // Garante que os cantos arredondados não são ultrapassados pelo banner
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header Verde
+          // Cabeçalho verde com o título da secção
           Container(
             padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
             decoration: BoxDecoration(
@@ -577,7 +576,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
             ),
           ),
-          // Content
+          // Conteúdo da secção
           child,
         ],
       ),
@@ -606,7 +605,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // COLUNA DA LINHA E ÍCONE
+              // Coluna do ícone e linha de ligação entre POIs
               SizedBox(
                 width: 30,
                 child: Column(
@@ -636,7 +635,7 @@ class _RoteiroDetailsScreenState extends State<RoteiroDetailsScreen> {
                 ),
               ),
               
-              // COLUNA DO CONTEÚDO DO POI
+              // Coluna com o conteúdo do POI (nome, categoria e seta)
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 20.0, left: 10),

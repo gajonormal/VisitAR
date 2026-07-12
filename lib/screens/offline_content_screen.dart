@@ -21,7 +21,6 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
   final Color kPrimaryGreen = const Color(0xFF0F9D58);
   final DownloadService _downloadService = DownloadService();
   
-  // Controlador para a barra de pesquisa
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
 
@@ -44,13 +43,13 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     super.dispose();
   }
 
-  // 1. LOAD
+  /// Carrega todos os POIs e roteiros guardados localmente
   Future<void> _loadAllOfflineData() async {
     setState(() => _isLoading = true);
     
     final prefs = await SharedPreferences.getInstance();
     
-    // Carregar POIs
+    // Carrega IDs dos POIs guardados
     List<String> offlinePoiIds = prefs.getStringList('offline_poi_ids') ?? [];
     List<POI> loadedPois = [];
     for (String id in offlinePoiIds) {
@@ -58,7 +57,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
       if (poi != null) loadedPois.add(poi);
     }
     
-    // Carregar Roteiros
+    // Carrega IDs dos roteiros guardados
     List<String> offlineRoteiroIds = prefs.getStringList('offline_roteiro_ids') ?? [];
     List<Roteiro> loadedRoteiros = [];
     for (String id in offlineRoteiroIds) {
@@ -75,7 +74,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     }
   }
 
-  // 2. DELETE POI
+  /// Remove um POI e todos os seus ficheiros associados do armazenamento local
   Future<void> _deletePoi(POI poi) async {
     try {
       await _downloadService.deleteFile("poi_${poi.id}.glb");
@@ -96,15 +95,15 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     }
   }
 
-  // 3. DELETE ROTEIRO
+  /// Remove um roteiro e os POIs que não são partilhados com outros roteiros
   Future<void> _deleteRoteiro(Roteiro roteiro) async {
     try {
-      // Usa a nova versão inteligente que apaga o roteiro e os POIs não utilizados
+      // Remove roteiro e POIs exclusivos associados
       await _downloadService.deleteRoteiroCompletoSmart(roteiro);
 
       setState(() => _offlineRoteiros.removeWhere((r) => r.id == roteiro.id));
       
-      // Recarrega todos os dados porque alguns POIs podem ter sido apagados
+      // Atualiza a lista de dados após remoção
       await _loadAllOfflineData();
 
       if (mounted) {
@@ -160,11 +159,10 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
     );
   }
 
-  // --- BARRA DE PESQUISA (Estilo HomeMap Atualizado com Filtro) ---
+  /// Constrói a barra de pesquisa com filtros avançados
   Widget _buildSearchBar() {
     return Container(
       margin: const EdgeInsets.fromLTRB(25, 20, 25, 10),
-      // Ajustei o padding da direita para não ficar colado
       padding: const EdgeInsets.only(left: 15, right: 5), 
       height: 50,
       decoration: BoxDecoration(
@@ -178,7 +176,6 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
           Icon(Icons.search, color: Colors.grey),
           SizedBox(width: 10),
           
-          // Campo de Texto
           Expanded(
             child: TextField(
               controller: _searchController,
@@ -197,7 +194,6 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             ),
           ),
 
-          // Botão Limpar (X) - Só aparece se houver texto
           if (_searchQuery.isNotEmpty)
             IconButton(
               icon: Icon(Icons.close, color: kPrimaryGreen, size: 20),
@@ -212,15 +208,13 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
               constraints: const BoxConstraints(),
             ),
 
-          // --- NOVO: Divisória Vertical ---
           Container(
             width: 1,
             height: 24,
             color: Colors.grey[300],
-            margin: const EdgeInsets.symmetric(horizontal: 10), // Espaçamento à volta da linha
+            margin: const EdgeInsets.symmetric(horizontal: 10),
           ),
 
-          // --- NOVO: Botão Filtros ---
           IconButton(
             icon: Icon(Icons.tune, color: (_poiFilter.isActive || _roteiroFilter.isActive) ? kPrimaryGreen : Colors.grey),
             splashRadius: 24,
@@ -249,7 +243,7 @@ class _OfflineContentScreenState extends State<OfflineContentScreen> {
             },
           ),
           
-          SizedBox(width: 5), // Pequena margem final
+          SizedBox(width: 5),
         ],
       ),
     );

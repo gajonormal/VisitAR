@@ -73,9 +73,7 @@ class _PassportScreenState extends State<PassportScreen> {
   }
 }
 
-// ————————————————————————————————————————————————
-// TAB: CARIMBOS (Visitas)
-// ————————————————————————————————————————————————
+// Separador: Carimbos de Visitas
 class _StampsTab extends StatelessWidget {
   final String uid;
   const _StampsTab({required this.uid});
@@ -131,7 +129,7 @@ class _StampsTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Contador
+              // Informações do local visitado
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
@@ -247,7 +245,7 @@ class _StampCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Imagem / Placeholder
+          // Imagem ou placeholder
           Expanded(
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -257,7 +255,7 @@ class _StampCard extends StatelessWidget {
                   image.isNotEmpty
                       ? CachedNetworkImage(imageUrl: image, fit: BoxFit.cover, errorWidget: (_,__,___) => _placeholder())
                       : _placeholder(),
-                  // Carimbo overlay
+                  // Overlay com ícone de verificação no canto superior direito
                   Positioned(
                     top: 8, right: 8,
                     child: Container(
@@ -273,7 +271,7 @@ class _StampCard extends StatelessWidget {
               ),
             ),
           ),
-          // Info
+          // Informações
           Padding(
             padding: const EdgeInsets.all(10),
             child: Column(
@@ -302,21 +300,19 @@ class _StampCard extends StatelessWidget {
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// TAB: CONQUISTAS (Badges)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Separador: Conquistas (Badges)
 class _BadgesTab extends StatelessWidget {
   final String uid;
   const _BadgesTab({required this.uid});
 
-  // Icons por categoria
+  // Ícones mapeados por categoria de badge
   static const Map<String, IconData> _categoryIcons = {
-    'exploraÃ§Ã£o': Icons.map_outlined,
+    'exploração': Icons.map_outlined,
     'roteiros': Icons.route_outlined,
-    'criaÃ§Ã£o': Icons.edit_location_alt_outlined,
+    'criação': Icons.edit_location_alt_outlined,
   };
 
-  // Icons por badge ID
+  // Ícones mapeados pelo ID de cada badge específico
   static const Map<String, IconData> _badgeIcons = {
     'primeiro_carimbo': Icons.pin_drop_outlined,
     'conhecedor': Icons.account_balance_outlined,
@@ -364,7 +360,7 @@ class _BadgesTab extends StatelessWidget {
               );
             }
 
-            // Agrupar por categoria
+            // Agrupa os badges por categoria
             final Map<String, List<QueryDocumentSnapshot<Map<String, dynamic>>>> grouped = {};
             for (final doc in allBadges) {
               final cat = doc.data()['categoria'] as String? ?? 'outros';
@@ -377,7 +373,7 @@ class _BadgesTab extends StatelessWidget {
             return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Header de progresso
+            // Progresso: conquistas desbloqueadas vs total
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -425,7 +421,7 @@ class _BadgesTab extends StatelessWidget {
             ),
             SizedBox(height: 24),
 
-            // Por categoria
+            // Lista de badges agrupados por categoria
             ...grouped.entries.map((entry) {
               final cat = entry.key;
               final badges = entry.value;
@@ -472,11 +468,11 @@ class _BadgesTab extends StatelessWidget {
 
   String _getBadgeCategoryTranslation(BuildContext context, String category) {
     switch (category.toLowerCase()) {
-      case 'exploraÃ§Ã£o':
+      case 'exploração':
         return AppLocalizations.of(context)!.badgeCatExploration;
       case 'roteiros':
         return AppLocalizations.of(context)!.badgeCatItineraries;
-      case 'criaÃ§Ã£o':
+      case 'criação':
         return AppLocalizations.of(context)!.badgeCatCreation;
       default:
         return category.isNotEmpty ? category[0].toUpperCase() + category.substring(1) : '';
@@ -520,7 +516,7 @@ class _BadgeTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Icon badge
+          // Ícone do badge (cadeado se bloqueado)
           Container(
             width: 52, height: 52,
             decoration: BoxDecoration(

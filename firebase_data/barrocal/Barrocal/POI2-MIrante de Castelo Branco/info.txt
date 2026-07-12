@@ -1,5 +1,0 @@
-﻿LATITUDE: 39.815152
-LONGITUDE: -7.493562
-CATEGORIA: Mirante
-DESC_PT: No topo da Chave do Barrocal a vista sobre a skyline de Castelo Branco ajuda-nos a compreender a história da cidade.
-DESC_EN: From the top of the Chave do Barrocal, the view over the Castelo Branco skyline helps us understand the city's history.

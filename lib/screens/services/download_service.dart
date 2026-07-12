@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:convert'; // Para JSON
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,36 +16,27 @@ class DownloadService {
   /// Faz o download de um ficheiro e devolve o caminho local.
   Future<String?> downloadFile(String url, String fileName) async {
     try {
-      if (url.isEmpty) return null; // ProteÃ§Ã£o contra URLs vazias
+      if (url.isEmpty) return null; // Proteção contra URLs vazias
 
       final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/$fileName';
       final file = File(filePath);
 
-      // 2. Verificar se jÃ¡ existe
+      // Verifica se o ficheiro já foi descarregado anteriormente
       if (await file.exists()) {
-        print("Ficheiro jÃ¡ existe localmente: $filePath");
-        return filePath; 
+        return filePath;
       }
 
-      // 3. Se nÃ£o existe, faz o download
-      print("A iniciar download de: $url");
+      // Ficheiro não existe localmente — inicia o download
       await _dio.download(
         url, 
         filePath,
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            // Podes descomentar para debug, mas pode poluir a consola
-            // print("Download: ${(received / total * 100).toStringAsFixed(0)}%");
-          }
-        },
+        onReceiveProgress: (received, total) {},
       );
 
-      print("Download concluÃ­do: $filePath");
       return filePath;
 
     } catch (e) {
-      print("Erro no download: $e");
       return null;
     }
   }
@@ -63,37 +54,37 @@ class DownloadService {
     return '${directory.path}/$fileName';
   }
 
-  // --- NOVAS FUNÃ‡Ã•ES PARA O MODO OFFLINE COMPLETO ---
+  // --- FUNÇÕES PARA O MODO OFFLINE COMPLETO ---
 
-  /// 1. Apagar um ficheiro fÃ­sico
+  /// Apaga um ficheiro físico do armazenamento local.
   Future<bool> deleteFile(String fileName) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
-      // Verifica se o fileName jÃ¡ Ã© um caminho completo ou sÃ³ o nome
+      // Suporta tanto o nome do ficheiro como um caminho absoluto
       final path = fileName.contains('/') ? fileName : '${directory.path}/$fileName';
       final file = File(path);
 
       if (await file.exists()) {
         await file.delete();
-        print("Ficheiro apagado: $path");
+
         return true;
       }
       return false;
     } catch (e) {
-      print("Erro ao apagar ficheiro: $e");
+
       return false;
     }
   }
 
-  /// 2. Guardar os dados do POI (JSON) para uso offline
+  /// Serializa e guarda os dados de um POI em JSON para uso offline.
   Future<void> saveOfflinePoiData(POI poi, {bool isStandalone = false}) async {
     final prefs = await SharedPreferences.getInstance();
-    // Converte o objeto POI (que jÃ¡ tem caminhos locais nas imagens) para texto
+    // O objeto POI já deve ter os caminhos locais nas imagens antes de ser guardado
     String jsonString = jsonEncode(poi.toMap());
     
     await prefs.setString('offline_poi_${poi.id}', jsonString);
     
-    // Adiciona Ã  lista de IDs offline (para listagens futuras)
+    // Mantém a lista de IDs offline atualizada para consultas futuras
     List<String> offlineIds = prefs.getStringList('offline_poi_ids') ?? [];
     if (!offlineIds.contains(poi.id)) {
       offlineIds.add(poi.id);
@@ -109,7 +100,7 @@ class DownloadService {
     }
   }
 
-  /// 3. Ler o POI Offline (Recuperar o objeto ao abrir a app)
+  /// Recupera um POI guardado offline a partir do armazenamento local.
   Future<POI?> getOfflinePoi(String poiId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -118,19 +109,19 @@ class DownloadService {
       if (jsonString != null) {
         Map<String, dynamic> map = jsonDecode(jsonString);
         POI poi = POI.fromMap(map);
-        // Check if there is an offline panorama for this POI
+        // Verifica se existe um panorama 360° guardado offline para este POI
         String? panoJson = prefs.getString('offline_panorama_${poi.id}');
         poi.tem360 = panoJson != null;
         return poi;
       }
       return null;
     } catch (e) {
-      print("Erro ao ler offline POI: $e");
+
       return null;
     }
   }
 
-  /// 4. Remover os dados do POI (JSON) da memÃ³ria
+  /// Remove os dados JSON de um POI do armazenamento offline.
   Future<void> removeOfflinePoiData(String poiId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('offline_poi_$poiId');
@@ -167,35 +158,35 @@ class DownloadService {
       }
       return null;
     } catch (e) {
-      print("Erro ao ler panorama offline: $e");
+
       return null;
     }
   }
 
   // --- ROTEIROS OFFLINE ---
 
-  /// Faz download de todos os recursos necessÃ¡rios para um Roteiro
+  /// Faz o download de todos os recursos necessários para um roteiro funcionar offline.
   Future<bool> downloadRoteiroCompleto(Roteiro roteiro, List<POI> pois) async {
     try {
-      // 1. PrÃ©-calcular a rota entre todos os POIs
+      // Pré-calcula a rota pedestre entre todos os POIs do roteiro
       List<LatLng> waypoints = pois.map((p) => p.localizacao).toList();
       List<LatLng> fullRoute = await RoutingService.getFullRoteiroRoute(waypoints);
       
       String localCapa = roteiro.imagemCapa;
 
-      // 2. Fazer download da capa do roteiro se existir
+      // Descarrega a imagem de capa do roteiro, se for uma URL remota
       if (roteiro.imagemCapa.startsWith('http')) {
         String fileName = 'roteiro_${roteiro.id}_capa.jpg';
         String? localPath = await downloadFile(roteiro.imagemCapa, fileName);
         if (localPath != null) {
           localCapa = localPath;
         } else {
-          // Se falhou o download (ex: Modo Avião), abortamos o Roteiro inteiro!
+          // Falha no download da capa (ex: modo avião) — aborta o processo inteiro
           throw Exception("Falha de Rede (SocketException) no download da capa");
         }
       }
 
-      // 3. Guardar o Roteiro offline com a imagem local e a rota pre-calculada
+      // Guarda o roteiro offline com a imagem local e a rota pré-calculada
       final localRoteiro = Roteiro(
         id: roteiro.id,
         titulo: roteiro.titulo,
@@ -212,10 +203,10 @@ class DownloadService {
       );
       await saveOfflineRoteiroData(localRoteiro);
 
-      // 3. Fazer download de TODOS os POIs (Modelos 3D, imagens, etc.)
+      // Descarrega todos os recursos de cada POI (imagens, áudios, panoramas)
       for (var poi in pois) {
 
-        // Download Images
+        // Descarrega as imagens do POI
         List<String> localImages = [];
         for (int i = 0; i < poi.imagens.length; i++) {
           String url = poi.imagens[i];
@@ -228,7 +219,7 @@ class DownloadService {
           }
         }
 
-        // Download Audios
+        // Descarrega os ficheiros de áudio em cada língua disponível
         Map<String, dynamic> localAudioMap = {};
         for (String lang in poi.mapaAudio.keys) {
           String aUrl = poi.mapaAudio[lang];
@@ -238,14 +229,14 @@ class DownloadService {
             if (lAudio != null) {
               localAudioMap[lang] = lAudio;
             } else {
-              localAudioMap[lang] = aUrl; // fallback
+              localAudioMap[lang] = aUrl; // fallback: mantém URL remota se o download falhar
             }
           } else {
             localAudioMap[lang] = aUrl;
           }
         }
 
-        // Download Panorama (se existir)
+        // Descarrega o panorama 360°, se existir para este POI
         var panorama = await DatabaseService().getPanoramaForPoi(poi.id);
         if (panorama != null && panorama.urlImagem.isNotEmpty) {
           String panoName = "poi_${poi.id}_panorama.jpg";
@@ -260,7 +251,7 @@ class DownloadService {
           }
         }
 
-        // Save local POI copy
+        // Guarda a cópia local do POI com todos os caminhos atualizados
         final offlinePoi = POI(
           id: poi.id,
           nome: poi.nome,
@@ -274,7 +265,7 @@ class DownloadService {
       }
       return true;
     } catch (e) {
-      print("Erro ao baixar roteiro completo: $e");
+
       return false;
     }
   }
@@ -303,7 +294,7 @@ class DownloadService {
       }
       return null;
     } catch (e) {
-      print("Erro ao ler offline Roteiro: $e");
+
       return null;
     }
   }
@@ -317,16 +308,16 @@ class DownloadService {
     await prefs.setStringList('offline_roteiro_ids', offlineIds);
   }
 
-  /// Remove um roteiro e todos os seus POIs que nÃ£o estejam a ser usados noutro lado
+  /// Remove um roteiro offline e os seus POIs, preservando os que estão noutros roteiros ou são standalone.
   Future<void> deleteRoteiroCompletoSmart(Roteiro roteiro) async {
-    // 1. Apagar capa do roteiro
+    // Apaga a imagem de capa do roteiro
     if (roteiro.imagemCapa.isNotEmpty) {
       await deleteFile("roteiro_${roteiro.id}_capa.jpg");
     }
-    // 2. Apagar Roteiro JSON
+    // Remove os metadados JSON do roteiro
     await removeOfflineRoteiroData(roteiro.id);
 
-    // 3. Obter todos os roteiros offline RESTANTES
+    // Recolhe os IDs de todos os roteiros offline que ainda existem
     final prefs = await SharedPreferences.getInstance();
     List<String> remainingRoteiroIds = prefs.getStringList('offline_roteiro_ids') ?? [];
     
@@ -340,22 +331,22 @@ class DownloadService {
 
     List<String> standaloneIds = prefs.getStringList('standalone_offline_poi_ids') ?? [];
 
-    // 4. Verificar POIs do roteiro que foi apagado
+    // Para cada POI do roteiro removido, verifica se pode ser apagado com segurança
     for (String poiId in roteiro.poiIds) {
       bool isStandalone = standaloneIds.contains(poiId);
       bool isUsedElsewhere = poisInOtherRoteiros.contains(poiId);
 
       if (!isStandalone && !isUsedElsewhere) {
-        // Pode ser apagado em seguranÃ§a!
+        // POI não é utilizado em mais nenhum lado — pode ser apagado com segurança
         POI? poi = await getOfflinePoi(poiId);
         if (poi != null) {
-          // Apagar Modelo 3D
+          // Apaga o modelo 3D
           await deleteFile("poi_${poi.id}.glb");
-          // Apagar Imagens
+          // Apaga as imagens
           for (int i = 0; i < poi.imagens.length; i++) {
             await deleteFile("poi_${poi.id}_img_$i.jpg");
           }
-          // Apagar Ã¡udios
+          // Apaga os ficheiros de áudio
           for (String lang in poi.mapaAudio.keys) {
             await deleteFile("poi_${poi.id}_audio_$lang.mp3");
           }
@@ -367,7 +358,7 @@ class DownloadService {
 
           // Remover dados offline
           await removeOfflinePoiData(poi.id);
-          await prefs.remove('nome_$poiId'); // remove nome guardado localmente
+          await prefs.remove('nome_$poiId'); // remove o nome guardado localmente
         }
       }
     }

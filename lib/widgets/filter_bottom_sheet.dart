@@ -4,6 +4,8 @@ import 'package:visitar_teste/l10n/app_localizations.dart';
 
 const Color kPrimaryGreen = Color(0xFF2E8B57);
 
+/// Painel deslizante de baixo para cima com opções de filtragem
+/// para POIs e/ou roteiros, consoante os parâmetros recebidos.
 class FilterBottomSheet extends StatefulWidget {
   final POIFilter? initialPoiFilter;
   final RoteiroFilter? initialRoteiroFilter;
@@ -64,7 +66,7 @@ class FilterBottomSheetState extends State<FilterBottomSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Puxador visual
+          // Puxador visual do painel
           Center(
             child: Container(
               width: 40,
@@ -201,6 +203,7 @@ class FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
+  /// Devolve a tradução localizada do nome da categoria, usando AppLocalizations.
   String _getCategoryTranslation(BuildContext context, String category) {
     switch (category) {
       case 'Tudo':

@@ -8,6 +8,7 @@ class RoteirosService {
 
   String? get _uid => _auth.currentUser?.uid;
 
+  /// Stream em tempo real de um roteiro específico. Devolve null se o documento não existir.
   Stream<Roteiro?> getRoteiroStream(String roteiroId) {
     return _firestore.collection('roteiros').doc(roteiroId).snapshots().map((doc) {
       if (!doc.exists) return null;
@@ -70,10 +71,11 @@ class RoteirosService {
         });
   }
 
+  /// Cria um novo roteiro no Firestore, atribuindo o utilizador atual como criador.
   Future<void> createRoteiro(Roteiro roteiro) async {
     if (_uid == null) throw Exception("Utilizador não autenticado");
     
-    // Garantir que o criador é o utilizador atual (a não ser que seja admin a usar outro fluxo, mas para users normais é assim)
+    // Força o criadorId a ser o utilizador atual (ignora o valor passado no objeto)
     final newRoteiro = Roteiro(
       id: '',
       titulo: roteiro.titulo,
@@ -93,7 +95,7 @@ class RoteirosService {
   /// Atualizar um roteiro existente
   Future<void> updateRoteiro(Roteiro roteiro) async {
     if (_uid == null) throw Exception("Utilizador não autenticado");
-    // Verify if the current user is the creator (or admin)
+    // Verifica se o utilizador atual é o criador do roteiro ou tem permissões de admin
     final doc = await _firestore.collection('roteiros').doc(roteiro.id).get();
     if (doc.exists && doc.data()?['criadorId'] != _uid && _uid != 'admin') {
       throw Exception("Não tens permissão para editar este roteiro");
@@ -168,7 +170,7 @@ class RoteirosService {
           final ids = snapshot.docs.map((doc) => doc.id).toList();
           if (ids.isEmpty) return [];
 
-          // Buscar os roteiros correspondentes (em lotes de 10 por limitação do Firestore)
+          // Firestore limita consultas whereIn a 10 elementos — processa em lotes
           List<Roteiro> result = [];
           for (int i = 0; i < ids.length; i += 10) {
             final batch = ids.sublist(i, i + 10 > ids.length ? ids.length : i + 10);

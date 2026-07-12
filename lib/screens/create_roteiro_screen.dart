@@ -39,10 +39,8 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
   List<POI> _allPois = [];
   final List<POI> _selectedPois = []; 
 
-  // Imagem de Capa
   File? _imagemCapaFile;
 
-  // Pesquisa
   String _searchQuery = "";
 
   @override
@@ -69,12 +67,12 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
   Future<void> _loadPois() async {
     final pois = await DatabaseService().getPOIs();
     
-    // Se estiver a editar, carregamos os POIs do roteiro
+    // Pré-seleciona POIs existentes no modo de edição
     List<POI> preSelected = [];
     if (widget.roteiroToEdit != null) {
       preSelected = pois.where((p) => widget.roteiroToEdit!.poiIds.contains(p.id)).toList();
     } else {
-      // Senão carregamos do carrinho
+      // Pré-seleciona POIs guardados no carrinho temporário
       final prefs = await SharedPreferences.getInstance();
       List<String> cartIds = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
       preSelected = pois.where((p) => cartIds.contains(p.id)).toList();
@@ -83,7 +81,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
     if (mounted) {
       setState(() {
         _allPois = pois;
-        _selectedPois.addAll(preSelected); // Adiciona logo ao criar a página!
+        _selectedPois.addAll(preSelected);
         _isLoadingPois = false;
       });
     }
@@ -167,7 +165,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
 
       String capa = '';
       if (_imagemCapaFile != null) {
-        // Upload para o Firebase Storage
+        // Envia a imagem de capa para o Firebase Storage
         final fileName = 'roteiros/${DateTime.now().millisecondsSinceEpoch}.jpg';
         final ref = FirebaseStorage.instance.ref().child(fileName);
         final uploadTask = await ref.putFile(_imagemCapaFile!);
@@ -197,16 +195,17 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
         await RoteirosService().updateRoteiro(novoRoteiro);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.roteiroUpdatedSuccess), backgroundColor: Colors.green));
-          Navigator.pop(context); // Voltar aos detalhes
+          // Regressa aos detalhes do roteiro após edição
+        Navigator.pop(context);
         }
       } else {
         await RoteirosService().createRoteiro(novoRoteiro);
         
-        // Limpar carrinho
+        // Limpa o carrinho após a criação do roteiro
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('roteiro_cart_poi_ids');
         
-        // Verificar conquistas
+        // Valida desbloqueio de novas conquistas
         final novasBadges = await PassportService().onRoteiroCreated();
 
         if (mounted) {
@@ -216,7 +215,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
             await _showBadgeUnlockedDialog(novasBadges);
           }
           
-          Navigator.pop(context); // Voltar
+          Navigator.pop(context);
         }
       }
     } catch (e) {
@@ -304,11 +303,10 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // Nome
                     _buildTextField(_tituloController, AppLocalizations.of(context)!.itineraryNameHint),
                     SizedBox(height: 15),
 
-                    // Imagem Placeholder / Selecionada
+                    // Área de seleção da imagem de capa
                     GestureDetector(
                       onTap: _pickImage,
                       child: Container(
@@ -348,7 +346,6 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                     ),
                     SizedBox(height: 15),
 
-                    // Categoria
                     DropdownButtonFormField<String>(
                       value: _categoria,
                       decoration: InputDecoration(
@@ -375,15 +372,13 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                     ),
                     SizedBox(height: 15),
 
-                    // Descrição PT
                     _buildTextField(_descricaoPtController, '${AppLocalizations.of(context)!.descriptionLabel} (PT)', maxLines: 4),
                     SizedBox(height: 15),
 
-                    // Descrição EN
                     _buildTextField(_descricaoEnController, '${AppLocalizations.of(context)!.descriptionLabel} (EN)', maxLines: 4),
                     SizedBox(height: 30),
 
-                    // PONTOS DE INTERESSE ADICIONADOS
+                    // Lista de pontos já associados ao roteiro
                     _buildGreenSection(
                       title: AppLocalizations.of(context)!.poisAdded,
                       child: _selectedPois.isEmpty
@@ -403,7 +398,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                                     icon: Icon(Icons.remove, color: Colors.black),
                                     onPressed: () async {
                                       setState(() => _selectedPois.remove(poi));
-                                      // Remove também do carrinho
+                                      // Remove POI do carrinho temporário
                                       final prefs = await SharedPreferences.getInstance();
                                       List<String> cart = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
                                       cart.remove(poi.id);
@@ -423,12 +418,11 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                     ),
                     SizedBox(height: 25),
 
-                    // PONTOS DE INTERESSE PRÓXIMOS (Para Selecionar)
+                    // Lista de pontos disponíveis para adicionar
                     _buildGreenSection(
                       title: AppLocalizations.of(context)!.nearbyPois,
                       child: Column(
                         children: [
-                          // Search bar inside
                           Padding(
                             padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
                             child: Container(
@@ -493,7 +487,7 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
                                     icon: Icon(Icons.add, color: Colors.black),
                                     onPressed: () async {
                                       setState(() => _selectedPois.add(poi));
-                                      // Adiciona ao carrinho caso o utilizador volte atrás
+                                      // Adiciona POI ao carrinho temporário
                                       final prefs = await SharedPreferences.getInstance();
                                       List<String> cart = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
                                       if (!cart.contains(poi.id)) cart.add(poi.id);
@@ -509,7 +503,6 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
 
                     SizedBox(height: 40),
 
-                    // BOTÃO CRIAR ROTEIRO
                     SizedBox(
                       width: 200,
                       height: 45,
@@ -564,7 +557,6 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header Verde
           Container(
             padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
             decoration: BoxDecoration(
@@ -576,7 +568,6 @@ class _CreateRoteiroScreenState extends State<CreateRoteiroScreen> {
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
             ),
           ),
-          // Content
           child,
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:visitar_teste/models/roteiro.dart';
 
+/// Opções de filtragem aplicadas à lista de POIs.
 class POIFilter {
   final String categoria;
   final bool tem360;
@@ -21,7 +22,8 @@ class POIFilter {
     );
   }
 
-  // Novo mÃ©todo para verificar se um POI passa no filtro
+  /// Verifica se um [poi] passa nos filtros ativos.
+  /// Devolve verdadeiro se não houver filtros ativos ou se o POI cumprir todas as condições.
   bool apply(dynamic poi) {
     if (!isActive) return true;
     if (categoria != 'Tudo' && poi.categoria.toLowerCase() != categoria.toLowerCase()) return false;
@@ -30,6 +32,7 @@ class POIFilter {
   }
 }
 
+/// Opções de filtragem aplicadas à lista de roteiros.
 class RoteiroFilter {
   final String categoria;
   final bool offlineOnly;
@@ -51,6 +54,7 @@ class RoteiroFilter {
     );
   }
 
+  /// Verifica se um [roteiro] passa nos filtros ativos.
   bool apply(Roteiro roteiro) {
     if (categoria != 'Qualquer' && roteiro.categoria.toLowerCase() != categoria.toLowerCase()) return false;
     return true;

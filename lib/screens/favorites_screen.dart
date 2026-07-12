@@ -58,7 +58,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         });
       }
     } catch (e) {
-      // ignorar
+      // Ignora erro se a coleção não existir
     }
   }
 
@@ -87,7 +87,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (uid == null) return;
 
     try {
-      // Limpar POIs
+      // Limpa POIs inválidos
       final favPoisSnap = await FirebaseFirestore.instance.collection('users').doc(uid).collection('favorites').get();
       if (favPoisSnap.docs.isNotEmpty) {
         final allPoisSnap = await FirebaseFirestore.instance.collection('pois').get();
@@ -97,7 +97,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         }
       }
 
-      // Limpar Roteiros
+      // Limpa roteiros inválidos
       final favRotSnap = await FirebaseFirestore.instance.collection('users').doc(uid).collection('favorite_roteiros').get();
       if (favRotSnap.docs.isNotEmpty) {
         final allRotSnap = await FirebaseFirestore.instance.collection('roteiros').get();
@@ -117,7 +117,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     super.dispose();
   }
 
-  // 2. DELETE
+  /// Remove um POI dos favoritos
   Future<void> _removeFavorite(POI poi) async {
     try {
       await _favoritesService.removeFavorite(poi.id);
@@ -143,7 +143,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       builder: (context, authSnapshot) {
         final user = authSnapshot.data;
 
-        // SE NÃO ESTÁ AUTENTICADO → ecrã de sessão necessária (igual aos Roteiros)
+        // Utilizador não autenticado: ecrã de acesso restrito
         if (authSnapshot.connectionState != ConnectionState.waiting && user == null) {
           return Scaffold(
             backgroundColor: Colors.grey[50],
@@ -152,7 +152,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // HEADER
+                  // Cabeçalho
                   Padding(
                     padding: const EdgeInsets.fromLTRB(25, 20, 25, 15),
                     child: Row(
@@ -205,7 +205,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           );
         }
 
-        // SE ESTÁ AUTENTICADO → ecrã normal com tabs
+        // Utilizador autenticado: tabs de favoritos
         return DefaultTabController(
           length: 2, 
           child: Scaffold(
@@ -215,7 +215,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // HEADER
+                  // Cabeçalho
                   Padding(
                     padding: const EdgeInsets.fromLTRB(25, 20, 25, 15),
                     child: Row(
@@ -263,7 +263,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  // --- BARRA DE PESQUISA (Estilo HomeMap/Offline) ---
+  /// Constrói a barra de pesquisa partilhada pelas tabs de favoritos
   Widget _buildSearchBar() {
     return Container(
       margin: const EdgeInsets.fromLTRB(25, 20, 25, 10),
@@ -523,7 +523,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               return StreamBuilder<Roteiro?>(
                 stream: _roteirosService.getRoteiroStream(favoriteRoteiro.id),
                 builder: (context, streamSnapshot) {
-                  // Usa a versão atualizada se existir, senão usa a em cache
+                  // Usa o roteiro atualizado se disponível na stream, senão usa o da cache
                   final roteiro = streamSnapshot.data ?? favoriteRoteiro;
                   
                   return _buildCard(

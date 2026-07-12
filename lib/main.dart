@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart'; // Ficheiro gerado pelo FlutterFire CLI
+import 'firebase_options.dart'; // Ficheiro gerado automaticamente pelo FlutterFire CLI
 import 'screens/home_map.dart';
 import 'package:provider/provider.dart';
 import 'screens/services/language_provider.dart';
@@ -10,7 +10,8 @@ import 'package:visitar_teste/l10n/app_localizations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Forçar a barra de status do Android (bateria, relógio) a ficar transparente e com ícones escuros
+  // Configura a barra de estado do Android para fundo transparente e ícones escuros,
+  // garantindo boa legibilidade sobre o mapa ou fundos claros.
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
@@ -18,7 +19,7 @@ void main() async {
   ));
   
   try {
-    // Inicialização moderna com suporte multi-plataforma
+    // Inicializa o Firebase com as opções da plataforma atual.
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -46,14 +47,14 @@ class MyApp extends StatelessWidget {
       builder: (context, languageProvider, child) {
         return MaterialApp(
           title: 'VisitAR',
-          debugShowCheckedModeBanner: false, // Tira a etiqueta "Debug" feia
+          debugShowCheckedModeBanner: false,
           locale: languageProvider.currentLocale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
             useMaterial3: true,
-            fontFamily: 'GoogleSans', // Define a fonte padrão da app
+            fontFamily: 'GoogleSans', // Fonte padrão da aplicação
             appBarTheme: const AppBarTheme(
               systemOverlayStyle: SystemUiOverlayStyle.dark,
               backgroundColor: Colors.white,
@@ -67,7 +68,7 @@ class MyApp extends StatelessWidget {
               ),
             ),
           ),
-          // A App começa no nosso mapa
+          // Ecrã inicial da aplicação
           home: const HomeMap(),
         );
       },

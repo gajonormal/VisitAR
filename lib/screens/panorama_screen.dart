@@ -33,7 +33,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
   final Color kPrimaryGreen = const Color(0xFF0F9D58);
   bool _isGyroEnabled = false;
   bool _isAutoRotateEnabled = true;
-  bool _isAdminMode = false; // MODO DE EDICAO DE MARCADORES
+  bool _isAdminMode = false; // Ativa a edição de marcadores no panorama
   final PanoramaController _panoramaController = PanoramaController();
 
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -94,7 +94,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
     List<String> onlineIdsToFetch = [];
     List<POI> finalPois = [];
 
-    // Tentar ler offline primeiro
+    // Tenta carregar os POIs offline, buscando os restantes online
     for (String id in ids) {
       POI? offlinePoi = await downloadService.getOfflinePoi(id);
       if (offlinePoi != null) {
@@ -109,7 +109,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
         final onlinePois = await DatabaseService().getPOIsByIds(onlineIdsToFetch);
         finalPois.addAll(onlinePois);
       } catch (e) {
-        print("Erro ao carregar POIs online no Panorama: $e");
+        debugPrint("Erro ao carregar POIs online no Panorama: $e");
       }
     }
 
@@ -125,7 +125,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
   void _onPanoramaTap(double longitude, double latitude, double tilt) async {
     if (!_isAdminMode) return;
     
-    // Obter todos os pontos para poder escolher
+    // Lista todos os POIs disponíveis para associar ao novo marcador
     final allPois = await DatabaseService().getPOIs();
     if (!mounted) return;
 
@@ -165,7 +165,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
   Future<void> _saveNewMarker(double lon, double lat, String poiId) async {
     final newMarker = PanoramaMarker(idPoi: poiId, rotacaoHorizontal: lon, rotacaoVertical: lat);
     
-    // Atualizar no Firebase
+    // Guarda o novo marcador no Firestore
     final docRef = FirebaseFirestore.instance.collection('panoramas').doc(_currentPanorama.id);
     await docRef.update({
       'markers': FieldValue.arrayUnion([
@@ -173,11 +173,11 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
       ])
     });
 
-    // Atualizar localmente
+    // Atualiza a interface com o novo marcador
     setState(() {
       _currentPanorama.marcadores.add(newMarker);
     });
-    // Carregar os dados deste novo POI caso nao esteja na cache
+    // Atualiza a cache com o novo POI
     _loadPois();
 
     if (mounted) {
@@ -187,7 +187,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
 
   void _onHotspotTap(PanoramaMarker marker) {
     if (_isAdminMode) {
-      // No modo admin, perguntar se quer apagar o marcador
+      // Modo admin: mostra o diálogo para remover o marcador
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -338,7 +338,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.pop(context); // Fechar bottom sheet
+                        Navigator.pop(context);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -380,7 +380,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
     try {
       initialMarker = _currentPanorama.marcadores.firstWhere((m) => m.idPoi == widget.initialPoiId);
     } catch (e) {
-      // Se não houver marcador para o POI inicial, inicializamos um genérico a olhar em frente (0,0)
+      // Caso o POI não tenha marcador, inicia na posição neutra (0,0)
       initialMarker = PanoramaMarker(idPoi: '', rotacaoHorizontal: 0, rotacaoVertical: 0);
     }
 
@@ -435,7 +435,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
                   ),
           ),
           
-          // Controles no topo (Voltar e Modo Admin)
+          // Barra superior: botão para voltar
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
             left: 20,
@@ -456,7 +456,7 @@ class _PanoramaScreenState extends State<PanoramaScreen> {
             ),
           ),
           
-          // Controles na base
+          // Barra inferior: controlos do giroscópio e rotação
           Positioned(
             bottom: 40,
             left: 20,

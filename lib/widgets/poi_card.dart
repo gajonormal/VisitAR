@@ -5,6 +5,8 @@ import '../models/poi.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../screens/details_screen.dart';
 
+/// Card reutilizável que mostra o resumo de um POI:
+/// imagem, categoria, nome, descrição e distância até ao utilizador.
 class PoiCard extends StatelessWidget {
   final POI poi;
   final Position? userPosition;
@@ -15,6 +17,8 @@ class PoiCard extends StatelessWidget {
     this.userPosition,
   });
 
+  /// Calcula e formata a distância entre o utilizador e o POI.
+  /// Devolve o valor em metros (< 1 km) ou em quilómetros.
   String _formatDistance(POI poi) {
     if (userPosition == null) return '- km';
     double dist = Geolocator.distanceBetween(
@@ -24,10 +28,11 @@ class PoiCard extends StatelessWidget {
     return '${(dist / 1000).toStringAsFixed(1)} km';
   }
 
+  /// Devolve a cor associada à categoria do POI, para destaque visual.
   Color _categoryColor(String category) {
     switch (category.toLowerCase()) {
-      case 'geolÃ³gico':   return const Color(0xFFE67E22);
-      case 'histÃ³rico':   return const Color(0xFF8B4513);
+      case 'geológico':   return const Color(0xFFE67E22);
+      case 'histórico':   return const Color(0xFF8B4513);
       case 'natureza':    return const Color(0xFF27AE60);
       case 'trilho':      return const Color(0xFF2980B9);
       case 'gastronomia': return const Color(0xFFC0392B);

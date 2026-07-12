@@ -8,14 +8,14 @@ class FavoritesService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Verifica se o utilizador estÃ¡ autenticado
+  // Retorna o UID do utilizador autenticado, ou null se não houver sessão
   String? get _uid => _auth.currentUser?.uid;
 
   /// Adiciona um POI aos favoritos do utilizador no Firestore
   Future<void> addFavorite(POI poi) async {
-    if (_uid == null) throw Exception("Utilizador nÃ£o autenticado");
+    if (_uid == null) throw Exception('Utilizador não autenticado');
 
-    // Guardamos um subconjunto dos dados do POI nos favoritos para facilitar a listagem
+    // Guarda apenas os campos necessários para exibir o POI nas listagens de favoritos
     final data = {
       'id': poi.id,
       'name': poi.nome,
@@ -47,7 +47,7 @@ class FavoritesService {
         .delete();
   }
 
-  /// Verifica se um dado POI Ã© favorito
+  /// Verifica se um dado POI é favorito do utilizador.
   Future<bool> isFavorite(String poiId) async {
     if (_uid == null) return false;
 
@@ -61,11 +61,13 @@ class FavoritesService {
     return doc.exists;
   }
 
+  /// Stream em tempo real com os POIs favoritos do utilizador, ordenados do mais recente.
   Stream<QuerySnapshot<Map<String, dynamic>>> getFavoritePoisStream() {
     if (_uid == null) return const Stream.empty();
     return _firestore.collection('users').doc(_uid).collection('favorites').orderBy('timestamp', descending: true).snapshots();
   }
 
+  /// Converte um snapshot do Firestore numa lista de objetos POI.
   List<POI> mapPoisFromSnapshot(QuerySnapshot<Map<String, dynamic>> snapshot) {
     return snapshot.docs.map((doc) {
       final data = doc.data();
@@ -81,10 +83,11 @@ class FavoritesService {
     }).toList();
   }
 
-  // --- FAVORITOS ROTEIROS ---
+  // --- FAVORITOS: ROTEIROS ---
 
+  /// Adiciona um roteiro aos favoritos do utilizador no Firestore.
   Future<void> addFavoriteRoteiro(Roteiro roteiro) async {
-    if (_uid == null) throw Exception("Utilizador nÃ£o autenticado");
+    if (_uid == null) throw Exception('Utilizador não autenticado');
 
     final data = roteiro.toMap();
     data['timestamp'] = FieldValue.serverTimestamp();
@@ -97,6 +100,7 @@ class FavoritesService {
         .set(data);
   }
 
+  /// Remove um roteiro dos favoritos do utilizador.
   Future<void> removeFavoriteRoteiro(String roteiroId) async {
     if (_uid == null) return;
     
@@ -108,6 +112,7 @@ class FavoritesService {
         .delete();
   }
 
+  /// Verifica se um roteiro é favorito do utilizador.
   Future<bool> isFavoriteRoteiro(String roteiroId) async {
     if (_uid == null) return false;
 
@@ -121,11 +126,13 @@ class FavoritesService {
     return doc.exists;
   }
 
+  /// Stream em tempo real com os roteiros favoritos do utilizador, ordenados do mais recente.
   Stream<QuerySnapshot<Map<String, dynamic>>> getFavoriteRoteirosStream() {
     if (_uid == null) return const Stream.empty();
     return _firestore.collection('users').doc(_uid).collection('favorite_roteiros').orderBy('timestamp', descending: true).snapshots();
   }
 
+  /// Converte um snapshot do Firestore numa lista de objetos Roteiro.
   List<Roteiro> mapRoteirosFromSnapshot(QuerySnapshot<Map<String, dynamic>> snapshot) {
     return snapshot.docs.map((doc) {
       final data = doc.data();

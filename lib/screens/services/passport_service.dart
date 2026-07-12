@@ -77,7 +77,7 @@ class PassportService {
         .collection('visits')
         .doc(poi.id);
 
-    // Idempotente: não regista duas vezes
+    // Operação idempotente: evita registar a mesma visita mais de uma vez
     if ((await visitRef.get()).exists) return [];
 
     await visitRef.set({
@@ -111,6 +111,7 @@ class PassportService {
     return RoteiroProgress(visitedCount: count, total: roteiro.poiIds.length);
   }
 
+  /// Stream em tempo real do progresso de um roteiro (POIs visitados vs. total).
   Stream<RoteiroProgress> getRoteiroProgressStream(Roteiro roteiro) {
     if (_uid == null) {
       return Stream.value(RoteiroProgress(visitedCount: 0, total: roteiro.poiIds.length));
@@ -137,6 +138,7 @@ class PassportService {
         .collection('concluidos')
         .doc(roteiroId);
 
+    // Operação idempotente: evita registar o mesmo roteiro como concluído duas vezes
     if ((await ref.get()).exists) return [];
 
     await ref.set({
@@ -185,11 +187,11 @@ class PassportService {
   Future<List<BadgeModel>> _checkAndAwardBadges() async {
     if (_uid == null) return [];
 
-    // Buscar todos os badges disponíveis
+    // Carrega todos os badges definidos na coleção global
     final allBadgesSnap = await _firestore.collection('badges').get();
     final allBadges = allBadgesSnap.docs.map(BadgeModel.fromFirestore).toList();
 
-    // Badges que o utilizador já tem
+    // Verifica quais os badges que o utilizador já desbloqueou
     final userBadgesSnap = await _firestore
         .collection('users')
         .doc(_uid)
@@ -197,7 +199,7 @@ class PassportService {
         .get();
     final earnedIds = userBadgesSnap.docs.map((d) => d.id).toSet();
 
-    // Contadores actuais
+    // Obtém os contadores atuais de atividade do utilizador
     final visitsSnap = await _firestore
         .collection('users')
         .doc(_uid)
@@ -218,7 +220,7 @@ class PassportService {
         .get();
     final createdCount = createdSnap.docs.length;
 
-    // Categorias visitadas
+    // Conta quantos POIs foram visitados por categoria
     final Map<String, int> categoryCount = {};
     for (final doc in visitsSnap.docs) {
       final cat = (doc.data()['poiCategory'] ?? '') as String;

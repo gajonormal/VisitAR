@@ -1,5 +1,0 @@
-﻿LATITUDE: 39.811401
-LONGITUDE: -7.492658
-CATEGORIA: Carreiro
-DESC_PT: Mais um dos caminhos adaptados à topografia única do lugar, que guia o visitante por entre as imponentes formações de granito do parque.
-DESC_EN: Another of the park's paths shaped by its unique topography, guiding visitors among the park's striking granite formations.

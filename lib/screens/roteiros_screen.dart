@@ -22,11 +22,12 @@ class RoteirosScreen extends StatefulWidget {
 
 class _RoteirosScreenState extends State<RoteirosScreen> {
   final Color kPrimaryGreen = const Color(0xFF0F9D58);
-  final Color kBgColor = Colors.white; // Fundo branco padrão da app
+  final Color kBgColor = Colors.white;
 
   final RoteirosService _roteirosService = RoteirosService();
 
-  int _selectedFilter = 0; // 0: Sugeridos, 1: Meus, 2: Concluídos
+  // 0 = Sugeridos, 1 = Meus, 2 = Concluídos
+  int _selectedFilter = 0;
   RoteiroFilter _roteiroFilter = RoteiroFilter();
   late Stream<List<Roteiro>> _roteirosStream;
 
@@ -123,7 +124,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
     );
   }
 
-  // --- BARRA DE PESQUISA ---
+  /// Constrói a barra de pesquisa com filtros avançados
   Widget _buildSearchBar() {
     return Container(
       margin: const EdgeInsets.fromLTRB(25, 5, 25, 20),
@@ -211,7 +212,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // HEADER
+            // Cabeçalho com título e botão para criar roteiro
             Padding(
               padding: const EdgeInsets.fromLTRB(25, 20, 25, 15),
               child: Row(
@@ -257,7 +258,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
 
             _buildSearchBar(),
 
-            // CHIPS DE FILTRO
+            // Filtros rápidos: Sugeridos, Meus, Concluídos
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -273,7 +274,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
 
             SizedBox(height: 15),
 
-            // LISTA DE CARTÕES
+            // Lista de roteiros
             Expanded(
               child: StreamBuilder<List<Roteiro>>(
                 stream: _roteirosStream,
@@ -453,7 +454,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
         ),
         child: Column(
           children: [
-            // IMAGEM COM BADGE E TÍTULO
+            // Imagem com categoria e título
             Stack(
               children: [
                 ClipRRect(
@@ -477,7 +478,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                         : Container(color: Colors.grey[200]),
                   ),
                 ),
-                // Gradiente escuro em baixo para o título ser legível
+                // Gradiente para legibilidade do título
                 Positioned(
                   bottom: 0, left: 0, right: 0,
                   height: 100,
@@ -494,7 +495,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                     ),
                   ),
                 ),
-                // BADGE CATEGORIA
+                // Categoria do roteiro
                 Positioned(
                   top: 15,
                   left: 15,
@@ -515,7 +516,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
                     ),
                   ),
                 ),
-                // TÍTULO
+                // Título do roteiro
                 Positioned(
                   bottom: 15,
                   left: 15,
@@ -534,7 +535,7 @@ class _RoteirosScreenState extends State<RoteirosScreen> {
               ],
             ),
             
-            // RODAPÉ (Duração, Distância, Rating)
+            // Informações resumidas (duração e distância)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
               child: Row(

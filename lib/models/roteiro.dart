@@ -4,17 +4,26 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class Roteiro {
   final String id;
   final String titulo;
-  final String descricao; // Mantido para compatibilidade — usa mapaDescricao para multilíngue
-  final Map<String, String> mapaDescricao; // {'pt': '...', 'en': '...'}
+  /// Mantido para compatibilidade — usar [mapaDescricao] para suporte multilíngue.
+  final String descricao;
+  /// Descrições traduzidas, com o código do idioma como chave (ex: {'pt': '...', 'en': '...'}).
+  final Map<String, String> mapaDescricao;
   final String imagemCapa;
-  final List<String> poiIds; // Lista de IDs dos POIs neste roteiro
-  final String categoria; // "Histórico", "Natureza", "Geológico", "Trilho"
-  final String duracao; // ex: "2h 30m"
-  final double distancia; // em km
-  final String criadorId; // 'admin' ou ID do utilizador autenticado
+  /// Lista de IDs dos POIs incluídos neste roteiro.
+  final List<String> poiIds;
+  /// Categoria do roteiro (ex: "Histórico", "Natureza", "Geológico", "Trilho").
+  final String categoria;
+  /// Duração estimada do roteiro (ex: "2h 30m").
+  final String duracao;
+  /// Distância total do roteiro, em quilómetros.
+  final double distancia;
+  /// ID do criador — pode ser 'admin' ou o ID de um utilizador autenticado.
+  final String criadorId;
   final DateTime? dataCriacao;
-  final List<LatLng>? routePoints; // Rota offline em cache
-  final String? trailAsset; // Caminho do asset GeoJSON para trilhos pré-feitos
+  /// Pontos da rota em cache para uso offline.
+  final List<LatLng>? routePoints;
+  /// Caminho para o asset GeoJSON de trilhos pré-definidos.
+  final String? trailAsset;
 
   Roteiro({
     required this.id,
@@ -45,7 +54,7 @@ class Roteiro {
   factory Roteiro.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
-    // Suporte a ambos os formatos: mapaDescricao (novo) e descricao (legado)
+    // Suporta tanto o novo formato (mapaDescricao) como o formato legado (descricao como string simples).
     Map<String, String> mapa = {};
     if (data['mapaDescricao'] != null) {
       mapa = Map<String, String>.from(data['mapaDescricao']);
@@ -123,7 +132,7 @@ class Roteiro {
     );
   }
 
-  // Utilizado especificamente para guardar offline através de jsonEncode
+  /// Serializa o roteiro para um mapa compatível com jsonEncode, para persistência offline.
   Map<String, dynamic> toJsonMap() {
     return {
       'id': id,

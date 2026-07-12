@@ -7,23 +7,23 @@ class DatabaseService {
   final CollectionReference poiCollection = 
       FirebaseFirestore.instance.collection('pois');
 
-  // POIs mock removidos da app.
-  // Função para obter a lista de POIs
+  /// Obtém todos os POIs do Firestore, ignorando entradas mock ou duplicadas.
+  /// Marca também quais os POIs que têm panorama 360°.
   Future<List<POI>> getPOIs() async {
     List<POI> pois = [];
     try {
-      // Timeout de 4 segundos para evitar que a app congele caso não haja ligação
+      // Timeout de 4 segundos para não bloquear a app em caso de ausência de rede
       QuerySnapshot snapshot = await poiCollection.get().timeout(const Duration(seconds: 4));
       for (var doc in snapshot.docs) {
         try {
           POI p = POI.fromFirestore(doc);
           
-          // IGNORAR PONTOS FALSOS/MOCKS (que ainda estejam no Firestore)
+          // Ignora entradas mock que possam ter ficado na base de dados
           if (p.id.startsWith('mock_') || p.id.contains('dummy')) {
             continue; 
           }
 
-          // Adiciona se não for duplicado
+          // Garante que não são adicionados POIs duplicados
           if (!pois.any((existing) => existing.id == p.id)) {
             pois.add(p);
           }
@@ -48,11 +48,12 @@ class DatabaseService {
     return pois;
   }
 
-  // Função para buscar múltiplos POIs através dos seus IDs (Para os Roteiros)
+  /// Obtém uma lista de POIs a partir de uma lista de IDs, preservando a ordem original.
+  /// Usa consulta em lote para listas até 10 IDs; caso contrário, filtra do conjunto completo.
   Future<List<POI>> getPOIsByIds(List<String> ids) async {
     if (ids.isEmpty) return [];
     
-    // Filtramos apenas os IDs reais (ignorando qualquer ID 'mock_' que possa ter ficado em cache nalgum roteiro antigo)
+    // Filtra IDs mock que possam ter ficado em cache de roteiros antigos
     List<String> firestoreIds = ids.where((id) => !id.startsWith('mock_')).toList();
     List<POI> foundPois = [];
 
@@ -81,7 +82,7 @@ class DatabaseService {
       }
     }
 
-    // Ordenar conforme a ordem original dos IDs
+    // Preserva a ordem original dos IDs fornecidos
     foundPois.sort((a, b) => ids.indexOf(a.id).compareTo(ids.indexOf(b.id)));
 
     try {
@@ -97,8 +98,9 @@ class DatabaseService {
     return foundPois;
   }
 
-  // --- PANORAMAS ---
+  // --- PANORAMAS 360° ---
 
+  /// Obtém o panorama 360° associado a um POI, ou null se não existir.
   Future<Panorama?> getPanoramaForPoi(String poiId) async {
     try {
       var doc = await FirebaseFirestore.instance.collection('panoramas').doc(poiId).get();

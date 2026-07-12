@@ -1,5 +1,0 @@
-﻿LATITUDE: 39.810774
-LONGITUDE: -7.492983
-CATEGORIA: Mirante
-DESC_PT: Grão a grão molda-se a forma de um granito, uma rocha composta essencialmente por feldspato, quartzo e micas. A água das chuvas infiltra-se nas fissuras, transformando minerais em argilas e desagregando a rocha. As arestas vivas são suavizadas e as formas tornam-se arredondadas devido às alterações climáticas ao longo de milhões de anos. O Barrocal é uma paisagem deslumbrante resultante dessas alterações.
-DESC_EN: Grain by grain, the shape of granite is formed — a rock made up mainly of feldspar, quartz and mica. Rainwater seeps into its cracks, turning minerals into clay and breaking the rock apart. Sharp edges are smoothed and shapes become rounded as a result of climate change acting over millions of years. Barrocal is a stunning landscape shaped by these processes.

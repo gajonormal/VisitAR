@@ -36,8 +36,8 @@
   "alreadyVisited": "You have already visited this place!",
   "youAreAt": "You are ",
   "approachToRegister": " away from this location. Get closer to register the visit.",
-  "visitRegistered": "✅ Visit registered in your Passport!",
-  "congratsCompletedItinerary": "🎉 Congratulations! You completed the itinerary",
+  "visitRegistered": "Visit registered in your Passport!",
+  "congratsCompletedItinerary": "Congratulations! You completed the itinerary",
   "achievementUnlocked": "Achievement Unlocked!",
   "fantastic": "Fantastic!",
   
@@ -107,9 +107,9 @@
   "languageChangedTo": "Language changed to",
   "local": "(local)",
   "loginRegister": "Login/Register",
-  "badgesCreated": "✅ Badges created in Firestore!",
-  "achievementsDeleted": "🗑️ All your achievements have been deleted!",
-  "stampsDeleted": "🗑️ All your visit stamps have been deleted!",
+  "badgesCreated": "Badges created in Firestore!",
+  "achievementsDeleted": "All your achievements have been deleted!",
+  "stampsDeleted": "All your visit stamps have been deleted!",
   
   "searchItineraries": "Search itineraries...",
   "suggested": "Suggested",
@@ -356,7 +356,7 @@
   "adminCreateButton": "CREATE POINT OF INTEREST",
   "adminFillRequired": "Fill in the required fields!",
   "adminAddAtLeastOnePhoto": "Add at least one photo!",
-  "adminSuccessCreated": "✅ POI created successfully!",
+  "adminSuccessCreated": "POI created successfully!",
   "adminErrorSaving": "Error saving: {error}",
   "@adminErrorSaving": {
     "placeholders": {

@@ -33,10 +33,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
   double _headerHeight = 220.0;
   int _currentImageIndex = 0; 
 
-  // --- NOVO: Variável para guardar o POI que está a ser mostrado ---
-  // Começa com o do widget, mas pode ser substituído pelo offline
-  late POI _displayPoi; 
-  // ---------------------------------------------------------------
+  // POI que está a ser mostrado — começa com os dados online mas pode ser substituído pela versão offline
+  late POI _displayPoi;
 
   bool isFavorite = false;
   bool isInItinerary = false;
@@ -99,8 +97,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
         setState(() => _panorama = pano);
       }
     } catch (e) {
-      // Ignora erros de permissão do Firestore (utilizador não autenticado)
-      // para não mostrar mensagens de erro desnecessárias ao utilizador
+      // Ignora erros de permissão do Firestore quando o utilizador não está autenticado
       final errStr = e.toString().toLowerCase();
       if (!errStr.contains('permission') && !errStr.contains('denied')) {
         if (mounted) {
@@ -137,7 +134,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
         );
         return;
       }
-      // Perto! Registar.
+      // Utilizador suficientemente perto — regista a visita
       final newBadges = await _passportService.registerVisit(widget.poi);
       if (mounted) {
         setState(() => _isVisited = true);
@@ -150,7 +147,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
         
         List<BadgeModel> allNewBadges = List.from(newBadges);
 
-        // --- VERIFICAÇÃO DE ROTEIRO ATIVO ---
+        // Verifica se o roteiro ativo fica concluído com esta visita
         if (activeRoteiroNotifier.value != null) {
           final roteiro = activeRoteiroNotifier.value!;
           if (roteiro.poiIds.contains(widget.poi.id)) {
@@ -168,7 +165,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                   ),
                 );
               }
-              // Fechar o roteiro automaticamente
+              // Fecha o roteiro automaticamente ao concluir todos os POIs
               activeRoteiroNotifier.value = null; 
             }
           }
@@ -227,7 +224,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
     );
   }
 
-  // --- ROTEIRO CART ---
+  // --- ITINERÁRIO (cart de roteiro temporário) ---
   Future<void> _checkItineraryStatus() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> cartIds = prefs.getStringList('roteiro_cart_poi_ids') ?? [];
@@ -255,22 +252,20 @@ class _DetailsScreenState extends State<DetailsScreen> {
     await prefs.setStringList('roteiro_cart_poi_ids', cartIds);
   }
 
-  // --- NOVO: Função para Carregar Dados Offline ---
+  /// Verifica se o POI tem dados descarregados e carrega a versão offline, se disponível.
   Future<void> _checkDownloadStatus() async {
     final downloadService = DownloadService();
     String fileName = "poi_${widget.poi.id}.glb";
-    
-    // 1. Verifica se o ficheiro 3D ou registo existe
+
+    // Verifica se existe ficheiro 3D ou registo offline
     bool exists = await downloadService.checkFileExists(fileName);
-    
-    // Tenta carregar o JSON completo do POI
     POI? offlinePoi = await downloadService.getOfflinePoi(widget.poi.id);
 
     if (exists || offlinePoi != null) {
       if (mounted) {
         setState(() {
           isDownloaded = true;
-          // SE tivermos dados offline guardados (com caminhos locais), usamos esses!
+          // Se houver dados offline com caminhos locais, usa-os diretamente
           if (offlinePoi != null) {
             _displayPoi = offlinePoi;
           }
@@ -279,7 +274,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
     }
   }
 
-  // --- LOCALIZAÇÃO & DISTÂNCIA ---
+  // --- LOCALIZAÇÃO E DISTÂNCIA ---
   Future<void> _getUserLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -433,43 +428,43 @@ class _DetailsScreenState extends State<DetailsScreen> {
     }
   }
 
-  // --- LÓGICA DE DOWNLOAD E APAGAR ATUALIZADA ---
+  /// Gera o download de todos os recursos do POI ou apaga-os, conforme o estado atual.
   Future<void> _handleDownload() async {
     final downloadService = DownloadService();
 
-    // MODO APAGAR
+    // Modo apagar: remove todos os ficheiros e dados offline
     if (isDownloaded) {
       setState(() => isLoadingDownload = true);
       
-      // Apagar Modelo 3D
+      // Remove o modelo 3D
       await downloadService.deleteFile("poi_${widget.poi.id}.glb");
       
-      // Apagar Panorama
+      // Remove o panorama 360° e a sua chave nas preferências
       await downloadService.deleteFile("poi_${widget.poi.id}_panorama.jpg");
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('offline_panorama_${widget.poi.id}');
 
-      // Apagar Imagens (baseado no índice)
+      // Remove as imagens descarregadas (por índice)
       for (int i = 0; i < widget.poi.imagens.length; i++) {
         await downloadService.deleteFile("poi_${widget.poi.id}_img_$i.jpg");
       }
       
-      // Apagar Dados JSON
+      // Remove os dados JSON e o nome guardado localmente
       await downloadService.removeOfflinePoiData(widget.poi.id);
       await _removePoiNameLocally();
 
       if (mounted) {
-        setState(() {
-          isDownloaded = false;
-          isLoadingDownload = false;
-          _displayPoi = widget.poi; // Volta a usar os dados originais (online)
-        });
+          setState(() {
+            isDownloaded = false;
+            isLoadingDownload = false;
+            _displayPoi = widget.poi; // Volta aos dados online após apagar o offline
+          });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.contentRemoved)));
       }
       return;
     }
 
-    // MODO BAIXAR
+    // Modo descarregar: requer conexão à internet
     if (!_hasInternet) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.noConnectionToDownload)));
       return;
@@ -479,7 +474,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
     
     try {
 
-      // 2. Baixar Imagens
+      // Descarrega as imagens e guarda os caminhos locais
       List<String> localImagePaths = [];
       for (int i = 0; i < widget.poi.imagens.length; i++) {
         String imgUrl = widget.poi.imagens[i];
@@ -488,7 +483,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
         if (localPath != null) localImagePaths.add(localPath);
       }
 
-      // 2.5 Baixar Áudios
+      // Descarrega os áudios para cada língua disponível
       Map<String, dynamic> localAudioMap = {};
       for (String lang in widget.poi.mapaAudio.keys) {
         String aUrl = widget.poi.mapaAudio[lang];
@@ -505,7 +500,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
         }
       }
 
-      // 2.6 Baixar Panorama (se existir)
+      // Descarrega o panorama 360°, se existir
       var panorama = await DatabaseService().getPanoramaForPoi(widget.poi.id);
       if (panorama != null && panorama.urlImagem.isNotEmpty) {
         String panoName = "poi_${widget.poi.id}_panorama.jpg";
@@ -520,27 +515,27 @@ class _DetailsScreenState extends State<DetailsScreen> {
         }
       }
 
-      // 3. Criar Objeto Offline (com caminhos locais)
+      // Cria o objeto POI com os caminhos locais para usar offline
       POI offlinePoi = POI(
         id: widget.poi.id,
         nome: widget.poi.nome,
         categoria: widget.poi.categoria,
         localizacao: widget.poi.localizacao,
-        imagens: localImagePaths, // <--- Lista de caminhos no telemóvel
+        imagens: localImagePaths, // Caminhos das imagens no dispositivo
         mapaDescricao: widget.poi.mapaDescricao,
         mapaAudio: localAudioMap,
       );
 
-      // 4. Guardar JSON
+      // Persiste os dados JSON e o nome do POI localmente
       await downloadService.saveOfflinePoiData(offlinePoi, isStandalone: true);
       await _savePoiNameLocally();
 
       if (mounted) {
-        setState(() {
-          isLoadingDownload = false;
-          isDownloaded = true;
-          _displayPoi = offlinePoi; // <--- Atualiza a UI para usar os ficheiros locais IMEDIATAMENTE
-        });
+          setState(() {
+            isLoadingDownload = false;
+            isDownloaded = true;
+            _displayPoi = offlinePoi; // Atualiza imediatamente a UI para usar os ficheiros locais
+          });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(backgroundColor: kPrimaryGreen, content: Text(AppLocalizations.of(context)!.savedOffline))
         );
@@ -560,12 +555,13 @@ class _DetailsScreenState extends State<DetailsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('nome_${widget.poi.id}');
   }
+  /// Abre a folha modal com a descrição completa e o player de áudio.
   void _openFullDescriptionPage() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _FullDescriptionSheet(poi: _displayPoi), // Usa _displayPoi
+      builder: (context) => _FullDescriptionSheet(poi: _displayPoi),
     );
   }
 
@@ -583,7 +579,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 
-                // CARROSSEL (Usa _displayPoi)
+                // Carrossel de imagens do POI (usa _displayPoi para suportar offline)
                 _buildFullWidthCarousel(),
 
                 if (_panorama != null) ...[
@@ -680,7 +676,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
             ),
           ),
 
-          // CABEÇALHO
+          // Cabeçalho fixo no topo com o nome, categoria, distância e botões de ação
           Positioned(
             top: 0, left: 0, right: 0,
             child: Material(
@@ -728,7 +724,7 @@ Widget _buildHeaderContent() {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. NOME
+              // Nome do POI
               Text(
                 _displayPoi.nome,
                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, height: 1.1),
@@ -736,7 +732,7 @@ Widget _buildHeaderContent() {
               
               SizedBox(height: 5),
 
-              // 2. CATEGORIA (NOVO)
+              // Categoria do POI
               Text(
                 _displayPoi.categoria, 
                 style: TextStyle(
@@ -748,7 +744,7 @@ Widget _buildHeaderContent() {
 
               SizedBox(height: 8),
 
-              // 3. LOCALIZAÇÃO E DISTÂNCIA
+              // Distância ao utilizador
               Row(
                 children: [
                   Icon(Icons.location_on, size: 16, color: kPrimaryGreen),
@@ -760,7 +756,7 @@ Widget _buildHeaderContent() {
           ),
         ),
         
-        // BOTÕES DO LADO DIREITO
+        // Botões de ação do lado direito (favorito, passaporte, download)
         Row(
           children: [
             _isLoadingFavorite
@@ -771,7 +767,7 @@ Widget _buildHeaderContent() {
                     onTap: _toggleFavorite,
                   ),
             SizedBox(width: 8),
-            // BOTÃO PASSAPORTE
+            // Botão de registo no passaporte
             _isRegisteringVisit
                 ? SizedBox(width: 35, height: 35, child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))
                 : _buildCircleButton(
@@ -784,15 +780,15 @@ Widget _buildHeaderContent() {
                     } : _registerVisit,
                   ),
             SizedBox(width: 8),
-if (isLoadingDownload)
-              SizedBox( // Removi o 'const' aqui
-                width: 35, 
-                height: 35, 
+            if (isLoadingDownload)
+              SizedBox(
+                width: 35,
+                height: 35,
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0), 
+                  padding: const EdgeInsets.all(8.0),
                   child: CircularProgressIndicator(
-                    strokeWidth: 2, 
-                    color: kPrimaryGreen, // <--- Define a cor verde aqui
+                    strokeWidth: 2,
+                    color: kPrimaryGreen,
                   )
                 )
               )
@@ -820,9 +816,8 @@ if (isLoadingDownload)
     );
   }
 
-  // --- CARROSSEL HÍBRIDO (LOCAL / NETWORK) ---
+  /// Constrói o carrossel híbrido de imagens (suporta URLs online e caminhos locais offline).
   Widget _buildFullWidthCarousel() {
-    // Usa as imagens do _displayPoi (que podem ser locais ou online)
     final images = _displayPoi.imagens;
     
     if (images.isEmpty) {
@@ -842,22 +837,21 @@ if (isLoadingDownload)
             onPageChanged: (index) => setState(() => _currentImageIndex = index), 
             itemBuilder: (context, index) {
               String imgPath = images[index];
-              // Verifica se é link online ou caminho local
-              bool isNetwork = imgPath.startsWith('http');
+              bool isNetwork = imgPath.startsWith('http'); // URL de rede ou ficheiro local?
 
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4), 
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: isNetwork 
-                    // SE FOR ONLINE
+                  child: isNetwork
+                    // Imagem de rede
                     ? CachedNetworkImage(
                         imageUrl: imgPath,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Center(child: CircularProgressIndicator(color: kPrimaryGreen)),
                         errorWidget: (context, url, error) => Container(color: Colors.grey[300], child: Icon(Icons.broken_image)),
                       )
-                    // SE FOR LOCAL (OFFLINE)
+                    // Imagem local (modo offline)
                     : Image.file(
                         File(imgPath), fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[300], child: Icon(Icons.broken_image, color: Colors.grey)),
@@ -900,10 +894,10 @@ if (isLoadingDownload)
       criadorId: 'app_navigation',
     );
     
-    // Inicia a navegação ativa global
+    // Publica o roteiro temporário no notifier global para iniciar a navegação
     activeRoteiroNotifier.value = tempRoteiro;
-    
-    // Fecha a página de detalhes para mostrar o mapa com a rota
+
+    // Volta ao mapa para mostrar a rota ativa
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
@@ -933,7 +927,7 @@ if (isLoadingDownload)
       ),
     );
   }}
-// --- COLA ISTO NO FINAL DO FICHEIRO, FORA DA CLASSE DETAILSSCREEN ---
+// Folha modal com a descrição completa e o player de áudio do POI
 
 class _FullDescriptionSheet extends StatefulWidget {
   final POI poi;
@@ -961,12 +955,12 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Lê a língua actual do LanguageProvider (reactivo)
+    // Lê a língua atual do contexto para carregar o áudio correto
     final locale = Localizations.localeOf(context);
     final newLang = locale.languageCode;
     if (newLang != _selectedLang) {
       _selectedLang = newLang;
-      // Recarrega o áudio para a nova língua
+      // Recarrega o áudio quando a língua muda
       _loadAudioForLang(_selectedLang);
     }
   }
@@ -1048,7 +1042,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
       ),
       child: Column(
         children: [
-          // Pega (Handle)
+          // Pega de arrasto para redimensionar a folha
           Center(
             child: Container(
               margin: const EdgeInsets.only(top: 15, bottom: 5),
@@ -1071,7 +1065,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
             ),
           ),
           
-          // Conteúdo
+          // Área de conteúdo scrollável
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(25, 0, 25, 40),
@@ -1079,7 +1073,7 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  // Player de Áudio
+                  // Player de áudio (só visível se existir áudio para a língua selecionada)
                   if (widget.poi.getAudioUrl(_selectedLang).isNotEmpty) 
                     Container(
                       margin: const EdgeInsets.only(bottom: 25),
@@ -1142,8 +1136,8 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                         ],
                       ),
                     ),
-// --- ADICIONADO AQUI: Título Descrição ---
-                  Text(AppLocalizations.of(context)!.descriptionLabel,
+                    // Título da secção de descrição
+                    Text(AppLocalizations.of(context)!.descriptionLabel,
                     style: TextStyle(
                       fontSize: 22, 
                       fontWeight: FontWeight.bold,
@@ -1151,8 +1145,8 @@ class _FullDescriptionSheetState extends State<_FullDescriptionSheet> {
                     ),
                   ),
                   
-                  SizedBox(height: 10), // Espaçamento entre o título e o texto
-                  // Texto da Descrição
+                  SizedBox(height: 10),
+                  // Texto completo da descrição na língua ativa
                   Text(
                     widget.poi.getDescription(_selectedLang),
                     style: const TextStyle(fontSize: 16, height: 1.7, color: Colors.black87),

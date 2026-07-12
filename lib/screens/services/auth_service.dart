@@ -8,18 +8,19 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  /// Autentica o utilizador com email e password.
   Future<void> signIn({required String email, required String password}) async {
     await _auth.signInWithEmailAndPassword(email: email, password: password);
   }
 
-  // --- REGISTO COMPLETO (Com todos os campos do relatório) ---
+  /// Regista um novo utilizador e cria o documento de perfil no Firestore.
   Future<void> signUp({
-    required String email, 
+    required String email,
     required String password,
     required String nome,
-    required String genero, // <--- Novo Campo: Género
+    required String genero,
   }) async {
-    // 1. Criar conta de Autenticação
+    // Cria a conta no Firebase Authentication
     UserCredential result = await _auth.createUserWithEmailAndPassword(
       email: email, 
       password: password
@@ -28,24 +29,24 @@ class AuthService {
     User? user = result.user;
 
     if (user != null) {
-      // 2. Criar o documento na BD com a TUA estrutura exata
+      // Cria o documento de perfil do utilizador no Firestore
       await _db.collection('users').doc(user.uid).set({
         'uid': user.uid,
         'nome': nome,
         'email': email,
-        'genero': genero,            // Guarda o género escolhido
-        'urlFoto': '',               // Começa vazio (fará upload depois)
-        'linguagem': 'pt',           // Defeito
-        
-        // As tuas listas (Arrays) começam vazias
-        'favoritosPois': [],         
-        'favoritosRoteiros': [],     
-        'roteirosOffline': [],       
-        'poisOffline': [],           // Adicionei este também como pediste
+        'genero': genero,
+        'urlFoto': '',               // Foto de perfil — preenchida após upload
+        'linguagem': 'pt',           // Idioma padrão
+        // Listas inicializadas a vazio
+        'favoritosPois': [],
+        'favoritosRoteiros': [],
+        'roteirosOffline': [],
+        'poisOffline': [],
       });
     }
   }
 
+  /// Termina a sessão do utilizador atual.
   Future<void> signOut() async {
     await _auth.signOut();
   }

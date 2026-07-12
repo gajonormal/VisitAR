@@ -1,13 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Modelo de dados que representa um badge (conquista) do utilizador.
 class BadgeModel {
   final String id;
   final String titulo;
   final String descricao;
-  final String categoria; // ex: "exploração", "roteiros", "criação"
+  /// Grupo do badge (ex: "exploração", "roteiros", "criação").
+  final String categoria;
   final String urlIcone;
-  final String condicaoTipo; // "visitar_poi", "concluir_roteiro", "criar_roteiro", "visitar_categoria"
-  final String condicaoAlvo; // categoria específica, ou '' se não aplicável
+  /// Tipo de condição para desbloquear o badge
+  /// (ex: "visitar_poi", "concluir_roteiro", "criar_roteiro", "visitar_categoria").
+  final String condicaoTipo;
+  /// Categoria específica exigida pela condição, ou string vazia se não aplicável.
+  final String condicaoAlvo;
   final int quantidadeAlvo;
 
   BadgeModel({
@@ -21,6 +26,7 @@ class BadgeModel {
     required this.quantidadeAlvo,
   });
 
+  /// Constrói um [BadgeModel] a partir de um documento do Firestore.
   factory BadgeModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return BadgeModel(
@@ -35,6 +41,7 @@ class BadgeModel {
     );
   }
 
+  /// Constrói um [BadgeModel] a partir de um mapa JSON (para leitura offline).
   factory BadgeModel.fromMap(Map<String, dynamic> data) {
     return BadgeModel(
       id: data['id'] ?? '',
@@ -48,6 +55,7 @@ class BadgeModel {
     );
   }
 
+  /// Serializa o badge para um mapa, útil para persistência ou envio ao Firestore.
   Map<String, dynamic> toMap() => {
     'id': id,
     'titulo': titulo,
@@ -62,7 +70,7 @@ class BadgeModel {
 
 /// Badges pré-definidos para seed inicial no Firestore
 final List<Map<String, dynamic>> kDefaultBadges = [
-  // --- EXPLORAÇÃO ---
+  // Badges de exploração — desbloqueados ao visitar pontos de interesse.
   {
     'id': 'primeiro_carimbo',
     'titulo': 'Primeiro Carimbo',
@@ -103,7 +111,7 @@ final List<Map<String, dynamic>> kDefaultBadges = [
     'condicaoAlvo': '',
     'quantidadeAlvo': 25,
   },
-  // --- ROTEIROS ---
+  // Badges de roteiros — desbloqueados ao concluir roteiros.
   {
     'id': 'primeiro_roteiro',
     'titulo': 'Primeiro Roteiro',
@@ -134,7 +142,7 @@ final List<Map<String, dynamic>> kDefaultBadges = [
     'condicaoAlvo': '',
     'quantidadeAlvo': 5,
   },
-  // --- CRIAÇÃO ---
+  // Badges de criação — desbloqueados ao criar roteiros.
   {
     'id': 'criador',
     'titulo': 'Criador',

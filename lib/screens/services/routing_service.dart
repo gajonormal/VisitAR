@@ -35,7 +35,7 @@ class RoutingService {
           // e a linha reta for maior que 30 metros (para evitar falsos positivos perto de esquinas),
           // assumimos que não há trilho mapeado e o utilizador está a ser levado para muito longe.
           if (straightLineDistance > 30 && osrmDistance > (straightLineDistance * 3.5)) {
-            print("OSRM Fallback ativado: Rota muito longa ($osrmDistance m vs $straightLineDistance m). Usando linha reta.");
+            // Fallback ativado: rota calculada é desproporcionalmente longa — usa linha reta
             return [start, end];
           }
 
@@ -51,11 +51,10 @@ class RoutingService {
         }
       }
       
-      // Se a API falhou por alguma razão, desenha linha reta de segurança
+      // A API não devolveu uma rota válida — usa linha reta como fallback
       return [start, end];
     } catch (e) {
-      print("Erro no RoutingService: $e");
-      // Fallback para linha reta
+      // Erro de rede ou timeout — usa linha reta como fallback
       return [start, end];
     }
   }
@@ -67,11 +66,11 @@ class RoutingService {
 
     List<LatLng> fullRoute = [];
     
-    // Conecta cada ponto ao seguinte usando OSRM
+    // Liga cada ponto ao seguinte, obtendo o segmento de rota via OSRM
     for (int i = 0; i < waypoints.length - 1; i++) {
       List<LatLng> segment = await getPedestrianRoute(waypoints[i], waypoints[i+1]);
       
-      // Evita duplicar o ponto de ligação (o fim de um segmento é o início do outro)
+      // Remove o primeiro ponto do segmento para evitar duplicar o ponto de junção
       if (fullRoute.isNotEmpty && segment.isNotEmpty) {
         if (fullRoute.last == segment.first) {
           segment.removeAt(0);
@@ -103,7 +102,7 @@ class RoutingService {
         if (geometry['type'] == 'LineString') {
           final coords = geometry['coordinates'] as List;
           return coords.map((c) {
-            // GeoJSON usa [longitude, latitude]
+            // GeoJSON usa a ordem [longitude, latitude] — invertemos para LatLng
             return LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble());
           }).toList();
         }
